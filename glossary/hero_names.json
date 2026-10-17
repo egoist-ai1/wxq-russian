@@ -1,0 +1,3603 @@
+{
+ "schema": "wxq-hero-names/v1",
+ "note": "Справочная таблица для решения владельца; в корпус не применяется. category 'guest' (приглашённый) в источниках не размечен, поэтому не заполняется.",
+ "policy_status": "applied-2026-10-13-assistant",
+ "counts": {
+  "total": 112,
+  "heroes": 86,
+  "chess_players": 24,
+  "creatures": 2,
+  "diverges": 49,
+  "in_policy": 19,
+  "needs_decision": 31,
+  "no_comparison": 2
+ },
+ "entries": [
+  {
+   "cn": "廉颇",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Лянь По",
+   "game_en": "Lian Po",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Lian Po",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 5,
+    "without_game_name": 1
+   },
+   "term_id": "t-7fed5e6069"
+  },
+  {
+   "cn": "墨子",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Мо-цзы",
+   "game_en": "Mozi",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Mozi",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 5,
+    "without_game_name": 3
+   },
+   "term_id": "t-822303d90b"
+  },
+  {
+   "cn": "嬴政",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Ин Чжэн",
+   "game_en": "Ying Zheng",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Ying Zheng",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 7,
+    "without_game_name": 2
+   },
+   "term_id": "t-1da3758b42"
+  },
+  {
+   "cn": "鲁班七号",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Лубань Седьмой",
+   "game_en": "Luban No. 7",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Luban No.7",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 4,
+    "longer_strings_containing_cn": 15,
+    "without_game_name": 2
+   },
+   "term_id": "t-0c4ede0808"
+  },
+  {
+   "cn": "庄周",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Чжуан Чжоу",
+   "game_en": "Zhuang Zhou",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Zhuangzi",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "in_policy",
+   "ru_proposal": "Чжуан-цзы",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 9,
+    "without_game_name": 4
+   },
+   "term_id": "t-ff2cbb3f7d"
+  },
+  {
+   "cn": "孙膑",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Сунь Бинь",
+   "game_en": "Sun Bin",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Sun Bin",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 14,
+    "without_game_name": 2
+   },
+   "term_id": "t-a851b2edcd"
+  },
+  {
+   "cn": "扁鹊",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Бянь Цюэ",
+   "game_en": "Bian Que",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Dr Bian",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "in_policy",
+   "ru_proposal": "Доктор Бянь",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 2,
+    "longer_strings_containing_cn": 12,
+    "without_game_name": 7
+   },
+   "term_id": "t-5816600aa0"
+  },
+  {
+   "cn": "白起",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Бай Ци",
+   "game_en": "Bai Qi",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Bai Qi",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 2,
+    "longer_strings_containing_cn": 12,
+    "without_game_name": 7
+   },
+   "term_id": "t-0b964e2f52"
+  },
+  {
+   "cn": "芈月",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Ми Юэ",
+   "game_en": "Mi Yue",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Mi Yue",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 2,
+    "longer_strings_containing_cn": 12,
+    "without_game_name": 10
+   },
+   "term_id": "t-c5d316b257"
+  },
+  {
+   "cn": "老夫子",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Лао Фуцзы",
+   "game_en": "old master",
+   "game_en_variants": null,
+   "game_en_is_translation": true,
+   "patcher_en": "Fuzi",
+   "diverges": true,
+   "divergence_kind": "game_en_is_translation",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 3,
+    "longer_strings_containing_cn": 6,
+    "without_game_name": 4
+   },
+   "term_id": "t-910d46fa13"
+  },
+  {
+   "cn": "曜",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin",
+    "ResVFDialogDataBin"
+   ],
+   "ru_now": "Яо",
+   "game_en": "Yao",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Yao",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 1,
+    "longer_strings_containing_cn": 34,
+    "without_game_name": 8
+   },
+   "term_id": "t-b94fe08931"
+  },
+  {
+   "cn": "西施",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Си Ши",
+   "game_en": "Xi Tzu",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Shi",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 2,
+    "longer_strings_containing_cn": 22,
+    "without_game_name": 22
+   },
+   "term_id": "t-6701556658"
+  },
+  {
+   "cn": "蒙犽",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Мэн Я",
+   "game_en": "Meng Ya",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Meng Ya",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 13,
+    "without_game_name": 5
+   },
+   "term_id": "t-ae88e60b9d"
+  },
+  {
+   "cn": "鲁班大师",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Мастер Лубань",
+   "game_en": "Master Luban",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Master Luban",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 4,
+    "longer_strings_containing_cn": 6,
+    "without_game_name": 1
+   },
+   "term_id": "t-bd382315b1"
+  },
+  {
+   "cn": "蒙恬",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Мэн Тянь",
+   "game_en": "Meng Tian",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Meng Tian",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 34,
+    "without_game_name": 13
+   },
+   "term_id": "t-61ab91e82b"
+  },
+  {
+   "cn": "镜",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin",
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResNBCfg",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Цзин",
+   "game_en": "mirror",
+   "game_en_variants": null,
+   "game_en_is_translation": true,
+   "patcher_en": "Jing",
+   "diverges": true,
+   "divergence_kind": "game_en_is_translation",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 1,
+    "longer_strings_containing_cn": 82,
+    "without_game_name": 40
+   },
+   "term_id": "t-601e41f3ad"
+  },
+  {
+   "cn": "小乔",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Сяо Цяо",
+   "game_en": "Xiao Qiao",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Xiao Qiao",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 22,
+    "without_game_name": 8
+   },
+   "term_id": "t-67e210997d"
+  },
+  {
+   "cn": "赵云",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Чжао Юнь",
+   "game_en": "Zhao Yun",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Zilong",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 14,
+    "without_game_name": 3
+   },
+   "term_id": "t-d949c9c8d5"
+  },
+  {
+   "cn": "孙尚香",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Сунь Шансян",
+   "game_en": "Sun Shangxiang",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Lady Sun",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "in_policy",
+   "ru_proposal": "Леди Сунь",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 3,
+    "longer_strings_containing_cn": 13,
+    "without_game_name": 0
+   },
+   "term_id": "t-823d59e4b1"
+  },
+  {
+   "cn": "刘禅",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Лю Шань",
+   "game_en": "Liu Chan",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Liu Shan",
+   "diverges": true,
+   "divergence_kind": "spelling",
+   "status": "in_policy",
+   "ru_proposal": "Лю Шань",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 2,
+    "longer_strings_containing_cn": 17,
+    "without_game_name": 9
+   },
+   "term_id": "t-93037d718c"
+  },
+  {
+   "cn": "吕布",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Люй Бу",
+   "game_en": "Lu Bu",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Lu Bu",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 24,
+    "without_game_name": 5
+   },
+   "term_id": "t-990961b2ff"
+  },
+  {
+   "cn": "周瑜",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Чжоу Юй",
+   "game_en": "Zhou Yu",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Zhou Yu",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 12,
+    "without_game_name": 2
+   },
+   "term_id": "t-ff0ae9c2a3"
+  },
+  {
+   "cn": "甄姬",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Чжэнь Цзи",
+   "game_en": "Zhen Ji",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Lady Zhen",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 12,
+    "without_game_name": 4
+   },
+   "term_id": "t-63a09249bb"
+  },
+  {
+   "cn": "曹操",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Цао Цао",
+   "game_en": "Cao Cao",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Cao Cao",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 22,
+    "without_game_name": 4
+   },
+   "term_id": "t-4fbe01ab8d"
+  },
+  {
+   "cn": "貂蝉",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Дяо Чань",
+   "game_en": "Diao Chan",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Diaochan",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 29,
+    "without_game_name": 3
+   },
+   "term_id": "t-5d3f27adab"
+  },
+  {
+   "cn": "蔡文姬",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Цай Вэньцзи",
+   "game_en": "Cai Wenji",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Cai Yan",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 3,
+    "longer_strings_containing_cn": 31,
+    "without_game_name": 4
+   },
+   "term_id": "t-8e64b2b304"
+  },
+  {
+   "cn": "诸葛亮",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Чжугэ Лян",
+   "game_en": "Zhuge Liang",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Kongming",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 3,
+    "longer_strings_containing_cn": 24,
+    "without_game_name": 4
+   },
+   "term_id": "t-53081486f9"
+  },
+  {
+   "cn": "大乔",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Да Цяо",
+   "game_en": "Da Qiao",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Da Qiao",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 19,
+    "without_game_name": 5
+   },
+   "term_id": "t-8ac44a43f0"
+  },
+  {
+   "cn": "马超",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Ма Чао",
+   "game_en": "Ma Chao",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Ma Chao",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 25,
+    "without_game_name": 5
+   },
+   "term_id": "t-63655267ba"
+  },
+  {
+   "cn": "李白",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Ли Бай",
+   "game_en": "Li Bai",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Li Bai",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 32,
+    "without_game_name": 4
+   },
+   "term_id": "t-b23f840ff5"
+  },
+  {
+   "cn": "狄仁杰",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Ди Жэньцзе",
+   "game_en": "Di Renjie",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Di Renjie",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 3,
+    "longer_strings_containing_cn": 16,
+    "without_game_name": 5
+   },
+   "term_id": "t-96fa3c87b4"
+  },
+  {
+   "cn": "武则天",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "У Цзэтянь",
+   "game_en": "Wu Zetian",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Wu Zetian",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 3,
+    "longer_strings_containing_cn": 12,
+    "without_game_name": 1
+   },
+   "term_id": "t-08b61c17a6"
+  },
+  {
+   "cn": "程咬金",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Чэн Яоцзинь",
+   "game_en": "Cheng Yaojin",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Cheng Yaojin",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 3,
+    "longer_strings_containing_cn": 13,
+    "without_game_name": 8
+   },
+   "term_id": "t-8db1cc1db2"
+  },
+  {
+   "cn": "李元芳",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Ли Юаньфан",
+   "game_en": "Li Yuanfang",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Fang",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 3,
+    "longer_strings_containing_cn": 16,
+    "without_game_name": 5
+   },
+   "term_id": "t-076eedda4a"
+  },
+  {
+   "cn": "钟馗",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Чжун Куй",
+   "game_en": "Zhong Kui",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Kui",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 2,
+    "longer_strings_containing_cn": 14,
+    "without_game_name": 11
+   },
+   "term_id": "t-2d4bb89f1e"
+  },
+  {
+   "cn": "铠",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Кай",
+   "game_en": "armor",
+   "game_en_variants": null,
+   "game_en_is_translation": true,
+   "patcher_en": "Kaizer",
+   "diverges": true,
+   "divergence_kind": "game_en_is_translation",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 1,
+    "longer_strings_containing_cn": 38,
+    "without_game_name": 4
+   },
+   "term_id": "t-8f48aa5722"
+  },
+  {
+   "cn": "苏烈",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Су Ле",
+   "game_en": "Su Lie",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Su Lie",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 12,
+    "without_game_name": 1
+   },
+   "term_id": "t-57f013dbdb"
+  },
+  {
+   "cn": "百里玄策",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Байли Сюаньцэ",
+   "game_en": "Baili Xuance",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Xuance",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 4,
+    "longer_strings_containing_cn": 7,
+    "without_game_name": 5
+   },
+   "term_id": "t-857591ecd2"
+  },
+  {
+   "cn": "百里守约",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Байли Шоуюэ",
+   "game_en": "Baili keeps his promise",
+   "game_en_variants": null,
+   "game_en_is_translation": true,
+   "patcher_en": "Shouyue",
+   "diverges": true,
+   "divergence_kind": "game_en_is_translation",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 4,
+    "longer_strings_containing_cn": 15,
+    "without_game_name": 15
+   },
+   "term_id": "t-cd31426a22"
+  },
+  {
+   "cn": "沈梦溪",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Шэнь Мэнси",
+   "game_en": "Shen Mengxi",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Shen Mengxi",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 3,
+    "longer_strings_containing_cn": 9,
+    "without_game_name": 4
+   },
+   "term_id": "t-2818c8a45a"
+  },
+  {
+   "cn": "李信",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Ли Синь",
+   "game_en": "Li Xin",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Li Xin",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 16,
+    "without_game_name": 5
+   },
+   "term_id": "t-69e1dc5423"
+  },
+  {
+   "cn": "盾山",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Дунь Шань",
+   "game_en": "shield mountain",
+   "game_en_variants": null,
+   "game_en_is_translation": true,
+   "patcher_en": "Dunshan",
+   "diverges": true,
+   "divergence_kind": "game_en_is_translation",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 4,
+    "without_game_name": 2
+   },
+   "term_id": "t-8f7bdbb46a"
+  },
+  {
+   "cn": "上官婉儿",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Шангуань Ваньэр",
+   "game_en": "Shangguan Wan'er",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Shangguan",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "in_policy",
+   "ru_proposal": "Шангуань",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 4,
+    "longer_strings_containing_cn": 17,
+    "without_game_name": 3
+   },
+   "term_id": "t-33015694e6"
+  },
+  {
+   "cn": "司空震",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Сыкун Чжэнь",
+   "game_en": "Sikong Zhen",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Sikong Zhen",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 3,
+    "longer_strings_containing_cn": 11,
+    "without_game_name": 2
+   },
+   "term_id": "t-8b8f79fabd"
+  },
+  {
+   "cn": "花木兰",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Хуа Мулань",
+   "game_en": "Mulan",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Mulan",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 3,
+    "longer_strings_containing_cn": 13,
+    "without_game_name": 3
+   },
+   "term_id": "t-aa16d85e3d"
+  },
+  {
+   "cn": "马可波罗",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Марко Поло",
+   "game_en": "Marco Polo",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Marco Polo",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 4,
+    "longer_strings_containing_cn": 10,
+    "without_game_name": 6
+   },
+   "term_id": "t-776f938773"
+  },
+  {
+   "cn": "安琪拉",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin",
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResNBCfg",
+    "ResOfflineLevelCfg",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Анжела",
+   "game_en": "Angela",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Angela",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 3,
+    "longer_strings_containing_cn": 48,
+    "without_game_name": 11
+   },
+   "term_id": "t-31a2f3ebe1"
+  },
+  {
+   "cn": "露娜",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Луна",
+   "game_en": "Luna",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Luna",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 28,
+    "without_game_name": 3
+   },
+   "term_id": "t-ba3bf32563"
+  },
+  {
+   "cn": "朵莉亚",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Дория",
+   "game_en": "Doria",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Dolia",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 3,
+    "longer_strings_containing_cn": 14,
+    "without_game_name": 8
+   },
+   "term_id": "t-a6acd99da9"
+  },
+  {
+   "cn": "亚瑟",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Артур",
+   "game_en": "Arthur",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Arthur",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 18,
+    "without_game_name": 0
+   },
+   "term_id": "t-193140aa5e"
+  },
+  {
+   "cn": "雅典娜",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Афина",
+   "game_en": "athena",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Athena",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 3,
+    "longer_strings_containing_cn": 16,
+    "without_game_name": 8
+   },
+   "term_id": "t-809943c4be"
+  },
+  {
+   "cn": "艾琳",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Эрин",
+   "game_en": "Erin",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Erin",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 2,
+    "longer_strings_containing_cn": 24,
+    "without_game_name": 15
+   },
+   "term_id": "t-e6c2c1d8c1"
+  },
+  {
+   "cn": "亚连",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Аллен",
+   "game_en": "Allen",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Allain",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "in_policy",
+   "ru_proposal": "Аллен",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 2,
+    "longer_strings_containing_cn": 10,
+    "without_game_name": 9
+   },
+   "term_id": "t-ae241fc0d3"
+  },
+  {
+   "cn": "狂铁",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Куанте",
+   "game_en": "Crazy iron",
+   "game_en_variants": null,
+   "game_en_is_translation": true,
+   "patcher_en": "Biron",
+   "diverges": true,
+   "divergence_kind": "game_en_is_translation",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 2,
+    "longer_strings_containing_cn": 12,
+    "without_game_name": 8
+   },
+   "term_id": "t-96f49e60b5"
+  },
+  {
+   "cn": "米莱狄",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Милади",
+   "game_en": "Milady",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Milady",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 3,
+    "longer_strings_containing_cn": 8,
+    "without_game_name": 8
+   },
+   "term_id": "t-52359e4466"
+  },
+  {
+   "cn": "姬小满",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Цзи Сяомань",
+   "game_en": "Ji Xiaoman",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Mayene",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "in_policy",
+   "ru_proposal": "Майен",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 3,
+    "longer_strings_containing_cn": 4,
+    "without_game_name": 2
+   },
+   "term_id": "t-8b7e655179"
+  },
+  {
+   "cn": "莱西奥",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Алессио",
+   "game_en": "Lessio",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Alessio",
+   "diverges": true,
+   "divergence_kind": "spelling",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 3,
+    "longer_strings_containing_cn": 12,
+    "without_game_name": 8
+   },
+   "term_id": "t-7afaa0fd8c"
+  },
+  {
+   "cn": "海诺",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Хай Но",
+   "game_en": "Hainuo",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Heino",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 2,
+    "longer_strings_containing_cn": 16,
+    "without_game_name": 11
+   },
+   "term_id": "t-7a747ef234"
+  },
+  {
+   "cn": "项羽",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Сян Юй",
+   "game_en": "Xiang Yu",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Xiang Yu",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 7,
+    "without_game_name": 1
+   },
+   "term_id": "t-7865e02d41"
+  },
+  {
+   "cn": "刘邦",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Лю Бан",
+   "game_en": "Liu Bang",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Liu Bang",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 12,
+    "without_game_name": 2
+   },
+   "term_id": "t-3d3fe911cf"
+  },
+  {
+   "cn": "韩信",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Хань Синь",
+   "game_en": "Han Xin",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Han Xin",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 12,
+    "without_game_name": 2
+   },
+   "term_id": "t-32bd3bf049"
+  },
+  {
+   "cn": "张良",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Чжан Лян",
+   "game_en": "Zhang Liang",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Liang",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "in_policy",
+   "ru_proposal": "Лян",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 2,
+    "longer_strings_containing_cn": 14,
+    "without_game_name": 7
+   },
+   "term_id": "t-c3496a57c0"
+  },
+  {
+   "cn": "虞姬",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Юй Цзи",
+   "game_en": "Yu Ji",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Consort Yu",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 19,
+    "without_game_name": 7
+   },
+   "term_id": "t-97c9f3a845"
+  },
+  {
+   "cn": "干将莫邪",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Гань Цзян и Мо Е",
+   "game_en": "Go-getter Moye",
+   "game_en_variants": null,
+   "game_en_is_translation": true,
+   "patcher_en": "Gan & Mo",
+   "diverges": true,
+   "divergence_kind": "game_en_is_translation",
+   "status": "in_policy",
+   "ru_proposal": "Гань и Мо",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 4,
+    "longer_strings_containing_cn": 13,
+    "without_game_name": 12
+   },
+   "term_id": "t-11dec6590b"
+  },
+  {
+   "cn": "东皇太一",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Дунхуан Тайи",
+   "game_en": "Donghuang Taiyi",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Donghuang",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "in_policy",
+   "ru_proposal": "Дунхуан",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 4,
+    "longer_strings_containing_cn": 5,
+    "without_game_name": 2
+   },
+   "term_id": "t-fd2dafa004"
+  },
+  {
+   "cn": "鬼谷子",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Гуйгу-цзы",
+   "game_en": "Guiguzi",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Guiguzi",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 3,
+    "longer_strings_containing_cn": 16,
+    "without_game_name": 6
+   },
+   "term_id": "t-6a39a695f0"
+  },
+  {
+   "cn": "瑶",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Ярия",
+   "game_en": "Yao",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Yaria",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "in_policy",
+   "ru_proposal": "Ярия",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 1,
+    "longer_strings_containing_cn": 59,
+    "without_game_name": 14
+   },
+   "term_id": "t-1f4a1c5889"
+  },
+  {
+   "cn": "云中君",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Юньчжун Цзюнь",
+   "game_en": "Yun Zhongjun",
+   "game_en_variants": {
+    "Yun Zhongjun": 21,
+    "Yunzhongjun": 18
+   },
+   "game_en_is_translation": false,
+   "patcher_en": "Cirrus",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "in_policy",
+   "ru_proposal": "Сирус",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 3,
+    "longer_strings_containing_cn": 21,
+    "without_game_name": 11
+   },
+   "term_id": "t-aad2e21aea"
+  },
+  {
+   "cn": "大司命",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Да Сымин",
+   "game_en": "Da Siming",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Augran",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "in_policy",
+   "ru_proposal": "Огран",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 3,
+    "longer_strings_containing_cn": 12,
+    "without_game_name": 7
+   },
+   "term_id": "t-6207354bb7"
+  },
+  {
+   "cn": "敖隐",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Ао Инь",
+   "game_en": "Ao Yin",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Ao'yin",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "in_policy",
+   "ru_proposal": "Ао Инь",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 7,
+    "without_game_name": 1
+   },
+   "term_id": "t-88ccdec8c7"
+  },
+  {
+   "cn": "阿轲",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "А Кэ",
+   "game_en": "A Ke",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Arke",
+   "diverges": true,
+   "divergence_kind": "spelling",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 7,
+    "without_game_name": 7
+   },
+   "term_id": "t-511547a5c4"
+  },
+  {
+   "cn": "姜子牙",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Цзян Цзыя",
+   "game_en": "Jiang Ziya",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Ziya",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "in_policy",
+   "ru_proposal": "Цзыя",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 3,
+    "longer_strings_containing_cn": 4,
+    "without_game_name": 0
+   },
+   "term_id": "t-0fb00597b7"
+  },
+  {
+   "cn": "孙悟空",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Сунь Укун",
+   "game_en": "Sun Wukong",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Wukong",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "in_policy",
+   "ru_proposal": "Укун",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 3,
+    "longer_strings_containing_cn": 15,
+    "without_game_name": 4
+   },
+   "term_id": "t-8675b38c59"
+  },
+  {
+   "cn": "牛魔",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Ню Мо",
+   "game_en": "Bull Demon",
+   "game_en_variants": null,
+   "game_en_is_translation": true,
+   "patcher_en": "Niu Mo",
+   "diverges": true,
+   "divergence_kind": "game_en_is_translation",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 3,
+    "without_game_name": 0
+   },
+   "term_id": "t-4a469f4ca5"
+  },
+  {
+   "cn": "杨玉环",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Ян Юйхуань",
+   "game_en": "Yang Yuhuan",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Yuhuan",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 3,
+    "longer_strings_containing_cn": 9,
+    "without_game_name": 0
+   },
+   "term_id": "t-87d8e18333"
+  },
+  {
+   "cn": "苍",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Цан",
+   "game_en": "Cang",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Chano",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 1,
+    "longer_strings_containing_cn": 24,
+    "without_game_name": 12
+   },
+   "term_id": "t-05b7504e5b"
+  },
+  {
+   "cn": "太乙真人",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Тайи Чжэньжэнь",
+   "game_en": "Taiyi Zhenren",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Taiyi Zhenren",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 4,
+    "longer_strings_containing_cn": 47,
+    "without_game_name": 41
+   },
+   "term_id": "t-990005f857"
+  },
+  {
+   "cn": "弈星",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin",
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResNBCfg",
+    "ResSceneDialogActorCfg",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "И Син",
+   "game_en": "Yixing",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Yixing",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 2,
+    "longer_strings_containing_cn": 30,
+    "without_game_name": 16
+   },
+   "term_id": "t-81e70001c7"
+  },
+  {
+   "cn": "梦奇",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Мэнци",
+   "game_en": "Mengqi",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Menki",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "in_policy",
+   "ru_proposal": "Менки",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 80,
+    "without_game_name": 5
+   },
+   "term_id": "t-e145ae8477"
+  },
+  {
+   "cn": "公孙离",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Гунсунь Ли",
+   "game_en": "Gongsunli",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Arli",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "in_policy",
+   "ru_proposal": "Арли",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 3,
+    "longer_strings_containing_cn": 20,
+    "without_game_name": 17
+   },
+   "term_id": "t-69906460ad"
+  },
+  {
+   "cn": "明世隐",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Мин Шиинь",
+   "game_en": "Ming Shiyin",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Ming",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 3,
+    "longer_strings_containing_cn": 12,
+    "without_game_name": 4
+   },
+   "term_id": "t-e5291a0ec6"
+  },
+  {
+   "cn": "裴擒虎",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Пэй Циньху",
+   "game_en": "Pei Qinhu",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Pei",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 3,
+    "longer_strings_containing_cn": 10,
+    "without_game_name": 5
+   },
+   "term_id": "t-ecb1574406"
+  },
+  {
+   "cn": "猪八戒",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Чжу Бацзе",
+   "game_en": "Zhu Bajie",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Zhu Bajie",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 3,
+    "longer_strings_containing_cn": 5,
+    "without_game_name": 3
+   },
+   "term_id": "t-95600fd43f"
+  },
+  {
+   "cn": "海月",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Хай Юэ",
+   "game_en": "Haiyue",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Haya",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 4,
+    "without_game_name": 2
+   },
+   "term_id": "t-7c733ad2ea"
+  },
+  {
+   "cn": "少司缘",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Шао Сыюань",
+   "game_en": "Shao Siyuan",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Dyadia",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "in_policy",
+   "ru_proposal": "Дайадия",
+   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 3,
+    "longer_strings_containing_cn": 9,
+    "without_game_name": 7
+   },
+   "term_id": "t-c64b2d3f76"
+  },
+  {
+   "cn": "始祖熊灵",
+   "category": "creature",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [
+    "ResAffixCfg",
+    "ResCardInfoDataBin",
+    "ResChessHeroConfDataBin"
+   ],
+   "ru_now": "Дух медведя-прародителя",
+   "game_en": "Ancestor Bear Spirit",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Ancestral Bear Spirit",
+   "diverges": true,
+   "divergence_kind": "spelling",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 4,
+    "longer_strings_containing_cn": 9,
+    "without_game_name": 9
+   },
+   "term_id": "t-6f29a004ca"
+  },
+  {
+   "cn": "王维",
+   "category": "hero",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [],
+   "ru_now": "Ван Вэй",
+   "game_en": null,
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Wang Wei",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "no_comparison",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": null,
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 0,
+    "without_game_name": 0
+   },
+   "term_id": "t-3dc14978a1"
+  },
+  {
+   "cn": "圣殿骑士",
+   "category": "creature",
+   "category_basis": "reviewed-hero-names + ResCardInfo/ResChessHeroConf",
+   "tables": [],
+   "ru_now": "Храмовый рыцарь",
+   "game_en": null,
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Templar Knight",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "no_comparison",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "reviewed-hero-names.json",
+    "game_en": null,
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 4,
+    "longer_strings_containing_cn": 0,
+    "without_game_name": 0
+   },
+   "term_id": "t-6f6341a606"
+  },
+  {
+   "cn": "庄小鱼",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResNBCfg",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Чжуан Сяоюй",
+   "game_en": "Zhuang Xiaoyu",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Zhuang Xiaoyu",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 3,
+    "longer_strings_containing_cn": 24,
+    "without_game_name": 6
+   },
+   "term_id": "t-fe06fe5c4d"
+  },
+  {
+   "cn": "常小娥",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Чан Сяоэ",
+   "game_en": "Chang Xiao'e",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Chang Xiao'e",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 3,
+    "longer_strings_containing_cn": 27,
+    "without_game_name": 11
+   },
+   "term_id": "t-c05393e24f"
+  },
+  {
+   "cn": "阿离",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResNBCfg",
+    "ResOfflineLevelCfg",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Арли",
+   "game_en": "A Li",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Arli",
+   "diverges": true,
+   "divergence_kind": "spelling",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 47,
+    "without_game_name": 19
+   },
+   "term_id": "t-00251912c1"
+  },
+  {
+   "cn": "小妲己",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResNBCfg",
+    "ResOfflineLevelCfg",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Малышка Дацзи",
+   "game_en": "Xiao Daji",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Little Daji",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 3,
+    "longer_strings_containing_cn": 61,
+    "without_game_name": 24
+   },
+   "term_id": "t-6663a068b4"
+  },
+  {
+   "cn": "闹闹",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResNBCfg",
+    "ResVFDialogDataBin",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Наонао",
+   "game_en": "noisy",
+   "game_en_variants": null,
+   "game_en_is_translation": true,
+   "patcher_en": "Naonao",
+   "diverges": true,
+   "divergence_kind": "game_en_is_translation",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 2,
+    "longer_strings_containing_cn": 30,
+    "without_game_name": 22
+   },
+   "term_id": "t-1a7933fc89"
+  },
+  {
+   "cn": "白歌",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResNBCfg",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Бай Гэ",
+   "game_en": "Bai Ge",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Bai Ge",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 32,
+    "without_game_name": 8
+   },
+   "term_id": "t-a14ce9d634"
+  },
+  {
+   "cn": "香香",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Сянсян",
+   "game_en": "fragrant",
+   "game_en_variants": null,
+   "game_en_is_translation": true,
+   "patcher_en": "Xiangxiang",
+   "diverges": true,
+   "divergence_kind": "game_en_is_translation",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 2,
+    "longer_strings_containing_cn": 50,
+    "without_game_name": 50
+   },
+   "term_id": "t-c9a8c23885"
+  },
+  {
+   "cn": "木兰",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Мулань",
+   "game_en": "Mulan",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Mulan",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 24,
+    "without_game_name": 3
+   },
+   "term_id": "t-1ea2645645"
+  },
+  {
+   "cn": "昭君",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResNBCfg",
+    "ResOfflineLevelCfg",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Чжаоцзюнь",
+   "game_en": "Zhaojun",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Zhaojun",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 29,
+    "without_game_name": 6
+   },
+   "term_id": "t-44ffeab4c0"
+  },
+  {
+   "cn": "武凤",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResNBCfg",
+    "ResOfflineLevelCfg",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "У Фэн",
+   "game_en": "Wu Feng",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Wu Feng",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 30,
+    "without_game_name": 5
+   },
+   "term_id": "t-096d61e685"
+  },
+  {
+   "cn": "蝉儿",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Чаньэр",
+   "game_en": "cicada",
+   "game_en_variants": null,
+   "game_en_is_translation": true,
+   "patcher_en": "cicada",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 15,
+    "without_game_name": 7
+   },
+   "term_id": "t-9ce9b8ddef"
+  },
+  {
+   "cn": "班叔",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResNBCfg",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Дядя Бань",
+   "game_en": "Uncle Ban",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Uncle Ban",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 48,
+    "without_game_name": 13
+   },
+   "term_id": "t-d153a35a01"
+  },
+  {
+   "cn": "吕无双",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Люй Ушуан",
+   "game_en": "Lu Wushuang",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Lu Wushuang",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 3,
+    "longer_strings_containing_cn": 20,
+    "without_game_name": 2
+   },
+   "term_id": "t-2bf404fc46"
+  },
+  {
+   "cn": "马可",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResNBCfg",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Марко",
+   "game_en": "Marco",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Marco",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 42,
+    "without_game_name": 11
+   },
+   "term_id": "t-bef2e5a383"
+  },
+  {
+   "cn": "姜导",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Режиссёр Цзян",
+   "game_en": "Director Jiang",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Director Jiang",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 30,
+    "without_game_name": 10
+   },
+   "term_id": "t-2fba615e02"
+  },
+  {
+   "cn": "瑶妹",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResNBCfg",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Ярия",
+   "game_en": "Yaomei",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Yaria",
+   "diverges": true,
+   "divergence_kind": "different_name",
+   "status": "needs_decision",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 38,
+    "without_game_name": 14
+   },
+   "term_id": "t-5b7be816cc"
+  },
+  {
+   "cn": "明先生",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResNBCfg",
+    "ResOfflineLevelCfg",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Господин Мин",
+   "game_en": "Mr. Ming",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Mr. Ming",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 3,
+    "longer_strings_containing_cn": 38,
+    "without_game_name": 7
+   },
+   "term_id": "t-3088b38a80"
+  },
+  {
+   "cn": "乔汐",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Цяо Си",
+   "game_en": "Qiao Xi",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Qiao Xi",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 16,
+    "without_game_name": 6
+   },
+   "term_id": "t-389aab9f47"
+  },
+  {
+   "cn": "嬴律",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Ин Люй",
+   "game_en": "Ying Lv",
+   "game_en_variants": {
+    "Ying Lv": 3,
+    "Qin Law": 2
+   },
+   "game_en_is_translation": false,
+   "patcher_en": "Ying Lu",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 2,
+    "longer_strings_containing_cn": 20,
+    "without_game_name": 18
+   },
+   "term_id": "t-8bb5156dc1"
+  },
+  {
+   "cn": "玉环",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResNBCfg",
+    "ResOfflineLevelCfg",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Юйхуань",
+   "game_en": "Yuhuan",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Yuhuan",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 53,
+    "without_game_name": 10
+   },
+   "term_id": "t-9e697d9ca4"
+  },
+  {
+   "cn": "鹊隐",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": null,
+   "game_en": "magpie hidden",
+   "game_en_variants": null,
+   "game_en_is_translation": true,
+   "patcher_en": "magpie hidden",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 2,
+    "longer_strings_containing_cn": 9,
+    "without_game_name": 8
+   },
+   "term_id": null
+  },
+  {
+   "cn": "孙小宾",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResNBCfg",
+    "ResOfflineLevelCfg",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Сунь Сяобинь",
+   "game_en": "Sun Xiaobin",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Sun Xiaobin",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "low",
+    "chars": 3,
+    "longer_strings_containing_cn": 32,
+    "without_game_name": 5
+   },
+   "term_id": "t-812fc3155a"
+  },
+  {
+   "cn": "七号",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Седьмой",
+   "game_en": "No. 7",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "No. 7",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "medium",
+    "chars": 2,
+    "longer_strings_containing_cn": 58,
+    "without_game_name": 14
+   },
+   "term_id": "t-2222e8fb8a"
+  },
+  {
+   "cn": "太乙",
+   "category": "chess_player",
+   "category_basis": "ResLordInfoConfDataBin, не в reviewed-hero-names",
+   "tables": [
+    "ResLordFileDataBin",
+    "ResLordInfoConfDataBin",
+    "ResLordQuestionAndAnswerDataBin",
+    "ResLordSkinDataBin",
+    "ResNBCfg",
+    "ResVirtualFriendsDataBin"
+   ],
+   "ru_now": "Тайи",
+   "game_en": "Taiyi",
+   "game_en_variants": null,
+   "game_en_is_translation": false,
+   "patcher_en": "Taiyi",
+   "diverges": false,
+   "divergence_kind": null,
+   "status": "match",
+   "ru_proposal": null,
+   "ru_proposal_source": null,
+   "sources": {
+    "ru_now": "glossary.json ru_canon (proposed)",
+    "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",
+    "patcher_en": "english-patcher-1.4.3 catalog.json unique"
+   },
+   "false_match_risk": {
+    "level": "high",
+    "chars": 2,
+    "longer_strings_containing_cn": 75,
+    "without_game_name": 43
+   },
+   "term_id": "t-b818a41bdd"
+  }
+ ]
+}

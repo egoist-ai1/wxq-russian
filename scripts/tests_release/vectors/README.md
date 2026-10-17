@@ -1,0 +1,1 @@
+Вектор для C#-теста (.NET Framework). Проверка: RSACryptoServiceProvider, импорт public.pem (SubjectPublicKeyInfo), VerifyData(data.bin, "SHA256", Convert.FromBase64String(sig.b64)) должен вернуть true; после изменения любого байта data.bin - false. Закрытый ключ вектора не сохранён.

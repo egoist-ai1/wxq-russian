@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "keys": [
+    {
+      "key_id": "b8491cfba0a3444d",
+      "role": "primary",
+      "algorithm": "RSA-3072",
+      "signature": "PKCS1v15-SHA256",
+      "created_utc": "2026-10-17T16:45:04Z",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEA8D1aBIqg4bnqumqM61mh\nWSlib87qbyTzCeu7910IIdmGr+ToNRHtQ8ZClE0daYuedKSynlt/L0AtaFNjpN/D\nyQKytkkCTx6hplrhPZ2IfrZzIge1/Ic28jYJEp6D5HN6u+I58TEdfeQCNau7+7ZR\npEmUXGxRfuekOCs8t7nXmfJn0UvvXKoh9H3c5XrAM+21CR+COx9Blzqw8Y8ICsL0\nYsPNcXQ6/JdLOxWZVUzBlaa9kMVWbdIc3ZLah8WpfWbfqXHdDC1Mw9q3QR1wlKhv\n0cEvU8e0pTpp8zk+ah2ns655x12kDjn0WU1bAxWUcJuGEQkxNSu3nkonYdv2ZtoA\nrALwRRaLGggyAMT2WtKX8As7WdXExguf5IIRZXMKcf+cw1bGVzw+lTNx/puQ6wgJ\nxRGs59iCfhv2VicS+Uei5Q45QVFJ73RKr6c88b4ZUQGfbiAInXMPSN0754gQbs2F\nfcWh8KFW7Yu3rrgRDokRKIVxMMWAOCFKLL2gz4q1wkhxAgMBAAE=\n-----END PUBLIC KEY-----\n"
+    },
+    {
+      "key_id": "8e295f871a2c18c6",
+      "role": "backup",
+      "algorithm": "RSA-3072",
+      "signature": "PKCS1v15-SHA256",
+      "created_utc": "2026-10-17T16:45:04Z",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAu/LrD1jCIfb2UDvqrErU\nw/y8HOS9zdHlc2ECZpvSOqUUaWBDq+mZICZ7BHNWpul1csoT7RwQgXAr8QhOCv3E\nJGIaoB4IS0jSmSzCzCDKVna0uMCGRfkwyFN4vRuBSQ0bRKpc/Bm2IU9gEJiORAbO\n1DVpyzaQlcvEOHCz2HItVTcyTFKPqP2jxA3dIJLXy1xcbairVss1eJpbB2kfyVvR\nM+Q9wybwsurF5o3+7poHRSVXMGczr4tkOkzYekKcDM0BqYgERmw+mCvfKfhoWesl\nX4k1HyTglFK++jvpRpo+Gk80DAEzgLCBUX518d8MlBzxZuMQxzYnFdTvR55+aeae\niYQHZJI1pfCzTTl2m0rIc7A7M0oevHXcTEd3l5RqQfKUyrY1xJGdgqElks12VyI3\nC/XDbeGDLQW1Gr/0hfQTygUk2LlWTM00cEB4oX1EJpLbrl7oUft4Ak8zIkdU0V7l\nn9YbvKNseBofLxskOBo3QyXnI7LvWoX+bALWquq6u6n/AgMBAAE=\n-----END PUBLIC KEY-----\n"
+    }
+  ]
+}
