@@ -132,9 +132,25 @@ namespace Egoist.WXQRussian
                 stream.Flush(true);
         }
 
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        static extern uint GetLongPathName(string shortPath, StringBuilder longPath, uint size);
+
+        // Короткие имена 8.3 (PROGRA~1) превращаются в длинные, чтобы сравнение корней с путями процессов не промахивалось. Несуществующий путь остаётся как есть.
+        public static string LongPath(string path)
+        {
+            try
+            {
+                if (path == null || path.IndexOf('~') < 0) return path;
+                var text = new StringBuilder(1024);
+                uint n = GetLongPathName(path, text, (uint)text.Capacity);
+                return n > 0 && n < text.Capacity ? text.ToString() : path;
+            }
+            catch (Exception) { return path; }
+        }
+
         public static string NormPath(string path)
         {
-            return Path.GetFullPath(path).TrimEnd('\\', '/');
+            return LongPath(Path.GetFullPath(path).TrimEnd('\\', '/'));
         }
 
         public static bool SamePath(string a, string b)
@@ -238,8 +254,20 @@ namespace Egoist.WXQRussian
             try { path = Path.GetFullPath(file); }
             catch (Exception) { return; }
             phase = command;
+            baseCommand = command;
             Active = true;
             clock = Stopwatch.StartNew();
+            Flush(false);
+        }
+
+        // Временная фаза «closing»: помощник закрывает мешающие процессы, item - их имена. Вызов с name == null возвращает фазу команды.
+        static string baseCommand = "";
+
+        public static void Phase(string name, string text)
+        {
+            if (!Active) return;
+            phase = name ?? baseCommand;
+            item = (text ?? "").Replace("\r", " ").Replace("\n", " ");
             Flush(false);
         }
 
@@ -874,6 +902,424 @@ namespace Egoist.WXQRussian
         static string Megabytes(long n) { return ((n + 1048575) / 1048576).ToString(CultureInfo.InvariantCulture); }
     }
 
+    // Закрытие игры и лаунчера (0.6.1). Работает только в режиме `--close all` (установка, удаление и откат в окне; явный тихий запуск без /UPDATE):
+    // пользователь сам запустил установщик, значит согласился закрыть игру и лаунчер. Фоновое обновление ничего не закрывает.
+    //
+    // Что считается целью (все условия сразу):
+    //  * корень игры (сама папка игры) и корень лаунчера (только папка WXQLauncher* с exe лаунчера внутри или на уровень ниже);
+    //    корень диска, %windir%, Program Files, ProgramData, C:\Users и папка профиля корнем не бывают никогда;
+    //  * образ внутри корня - цель при любом имени (кроме помощника и каталога данных); образ вне корней или с недоступным путём - только точное имя из закрытого списка;
+    //  * никогда: PID <= 4, образ под %windir%, csrss/smss/wininit/winlogon/services/lsass/svchost/explorer/dwm, службы (родитель services.exe), сам помощник и его родители;
+    //  * процесс другого сеанса Windows (другой пользователь) не закрывается: отказ running;
+    //  * потомок цели закрывается, только если он сам цель по этим правилам (папки игры и лаунчера или имя из списка); остальные потомки (браузер, открытый лаунчером) остаются.
+    // Завершение идёт по дескриптору, открытому при осмотре (PID не может «переехать» на чужой процесс), с проверкой времени старта.
+    static class Closer
+    {
+        static readonly HashSet<string> ExactNames = new HashSet<string>(new[] { "WXQ", "WXQLauncher", "WXQLauncherRU", "HonorofKingsACE", "王者万象棋" }, StringComparer.OrdinalIgnoreCase);
+        static readonly HashSet<string> NeverNames = new HashSet<string>(new[] { "system", "idle", "registry", "memcompression", "csrss", "smss", "wininit", "winlogon", "services", "lsass", "svchost", "explorer", "dwm" }, StringComparer.OrdinalIgnoreCase);
+        static readonly Regex LauncherFolder = new Regex("^WXQLauncher", RegexOptions.IgnoreCase);
+        static readonly string[] SystemFolders = { "windows", "users", "programdata", "program files", "program files (x86)" };
+        public static bool KnownName(string name) { return ExactNames.Contains(name); }
+
+        const uint AccessTerminate = 0x1, AccessSynchronize = 0x100000, AccessQueryLimited = 0x1000;
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern IntPtr OpenProcess(uint access, bool inherit, uint pid);
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        static extern bool QueryFullProcessImageName(IntPtr process, uint flags, StringBuilder name, ref uint size);
+        [DllImport("kernel32.dll")]
+        static extern bool CloseHandle(IntPtr handle);
+        [DllImport("kernel32.dll")]
+        static extern bool ProcessIdToSessionId(uint pid, out uint session);
+        [DllImport("kernel32.dll")]
+        static extern bool GetProcessTimes(IntPtr process, out long created, out long exited, out long kernel, out long user);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern bool TerminateProcess(IntPtr process, uint code);
+        [DllImport("kernel32.dll")]
+        static extern uint WaitForSingleObject(IntPtr handle, uint milliseconds);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern IntPtr CreateToolhelp32Snapshot(uint flags, uint pid);
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "Process32FirstW")]
+        static extern bool Process32First(IntPtr snapshot, ref ProcessEntry entry);
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "Process32NextW")]
+        static extern bool Process32Next(IntPtr snapshot, ref ProcessEntry entry);
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        struct ProcessEntry
+        {
+            public uint Size, Usage, Pid;
+            public IntPtr HeapId;
+            public uint ModuleId, Threads, ParentPid;
+            public int PriorityBase;
+            public uint Flags;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string ExeFile;
+        }
+
+        public class Target : IDisposable
+        {
+            public int Pid, ParentPid;
+            public string Name, Path, Why, How = "";
+            public uint Session;
+            public bool OtherSession, HasWindow, IsChild;
+            public long Start, ParentStart;
+            public IntPtr Handle;
+            public Process Proc;
+            public string Title { get { return Name + ".exe (PID " + Pid + ")"; } }
+            public void Dispose()
+            {
+                if (Handle != IntPtr.Zero) { CloseHandle(Handle); Handle = IntPtr.Zero; }
+                if (Proc != null) { Proc.Dispose(); Proc = null; }
+            }
+        }
+
+        static string ImagePathOf(IntPtr handle)
+        {
+            var text = new StringBuilder(1024);
+            uint size = (uint)text.Capacity;
+            return QueryFullProcessImageName(handle, 0, text, ref size) ? text.ToString(0, (int)size) : null;
+        }
+
+        static string ImagePath(int pid)
+        {
+            IntPtr handle = OpenProcess(AccessQueryLimited, false, (uint)pid);
+            if (handle == IntPtr.Zero) return null;
+            try { return ImagePathOf(handle); }
+            finally { CloseHandle(handle); }
+        }
+
+        // pid -> родитель по снимку процессов.
+        static Dictionary<int, int> ParentMap()
+        {
+            var map = new Dictionary<int, int>();
+            IntPtr snapshot = CreateToolhelp32Snapshot(2, 0);   // TH32CS_SNAPPROCESS
+            if (snapshot == IntPtr.Zero || snapshot == new IntPtr(-1)) return map;
+            try
+            {
+                var entry = new ProcessEntry();
+                entry.Size = (uint)Marshal.SizeOf(typeof(ProcessEntry));
+                for (bool more = Process32First(snapshot, ref entry); more; more = Process32Next(snapshot, ref entry))
+                    map[(int)entry.Pid] = (int)entry.ParentPid;
+            }
+            finally { CloseHandle(snapshot); }
+            return map;
+        }
+
+        // Свой процесс и родители (установщик, оболочка): их не закрываем ни при каких условиях.
+        static HashSet<int> Protected(Dictionary<int, int> parents)
+        {
+            var set = new HashSet<int>();
+            int pid = Process.GetCurrentProcess().Id;
+            for (int i = 0; i < 12 && pid > 0 && set.Add(pid); i++)
+            {
+                int parent;
+                if (!parents.TryGetValue(pid, out parent)) break;
+                pid = parent;
+            }
+            return set;
+        }
+
+        static string WinDir()
+        {
+            string dir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            return string.IsNullOrEmpty(dir) ? null : Util.NormPath(dir) + "\\";
+        }
+
+        // Папка, которую нельзя считать корнем цели: корень диска, системные и общие папки, профиль.
+        static bool Forbidden(string dir)
+        {
+            try
+            {
+                string d = Util.NormPath(dir).TrimEnd('\\');
+                string drive = Path.GetPathRoot(d);
+                if (d.Length < 3 || (drive != null && string.Equals(drive.TrimEnd('\\'), d, StringComparison.OrdinalIgnoreCase))) return true;
+                string windir = WinDir();
+                if (windir != null && (d + "\\").StartsWith(windir, StringComparison.OrdinalIgnoreCase)) return true;
+                var bad = new List<string>
+                {
+                    Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+                    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    Environment.GetEnvironmentVariable("ProgramW6432")
+                };
+                foreach (string b in bad)
+                    if (!string.IsNullOrEmpty(b) && string.Equals(Util.NormPath(b).TrimEnd('\\'), d, StringComparison.OrdinalIgnoreCase)) return true;
+                // Те же папки на другом диске: D:\Windows, D:\Program Files, D:\Users, D:\ProgramData.
+                string parent = Path.GetDirectoryName(d);
+                if (parent != null && Path.GetPathRoot(d) != null && string.Equals(parent.TrimEnd('\\'), Path.GetPathRoot(d).TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)
+                    && SystemFolders.Contains(Path.GetFileName(d).ToLowerInvariant())) return true;
+                return false;
+            }
+            catch (Exception) { return true; }
+        }
+
+        // Корень лаунчера: папка WXQLauncher* (регистр не важен) с exe лаунчера из закрытого списка внутри или на уровень ниже
+        // (версионная папка, например 26101.0.1.30004\王者万象棋.exe). Иначе null: родитель игры (C:\WXQ, D:\Games, диск) корнем не считается.
+        public static string LauncherRoot(string dir)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(dir)) return null;
+                string d = Util.NormPath(dir).TrimEnd('\\');
+                if (Forbidden(d) || !Directory.Exists(d) || !LauncherFolder.IsMatch(Path.GetFileName(d))) return null;
+                foreach (string name in ExactNames)
+                {
+                    if (name == "WXQLauncherRU") continue;   // наш активатор лежит в {app}\launcher и признаком лаунчера не служит
+                    if (File.Exists(Path.Combine(d, name + ".exe"))) return d + "\\";
+                    foreach (string sub in Directory.GetDirectories(d))
+                        if (File.Exists(Path.Combine(sub, name + ".exe"))) return d + "\\";
+                }
+                return null;
+            }
+            catch (Exception) { return null; }
+        }
+
+        // Корни цели: корень лаунчера (если он признан) и сама папка игры (если она не запрещённая); пусто - только по именам.
+        public static List<string> Roots(Context ctx)
+        {
+            var roots = new List<string>();
+            string launcher = LauncherRoot(ctx.Launcher);
+            if (launcher != null) roots.Add(launcher);
+            try
+            {
+                if (!string.IsNullOrEmpty(ctx.Game) && !Forbidden(ctx.Game)) roots.Add(Util.NormPath(ctx.Game).TrimEnd('\\') + "\\");
+            }
+            catch (Exception) { }
+            return roots;
+        }
+
+        static bool Under(string path, IEnumerable<string> roots)
+        {
+            foreach (string root in roots) if (path.StartsWith(root, StringComparison.OrdinalIgnoreCase)) return true;
+            return false;
+        }
+
+        // Жёсткий запрет: этот процесс не закрывается ни при каких правилах.
+        static bool Denied(int pid, string name, string path, Dictionary<int, int> parents, string windir)
+        {
+            if (pid <= 4 || NeverNames.Contains(name)) return true;
+            if (path != null && windir != null && path.StartsWith(windir, StringComparison.OrdinalIgnoreCase)) return true;
+            int parent;
+            if (parents.TryGetValue(pid, out parent) && parent > 4)
+            {
+                try { using (var p = Process.GetProcessById(parent)) if (string.Equals(p.ProcessName, "services", StringComparison.OrdinalIgnoreCase)) return true; }
+                catch (Exception) { }
+            }
+            return false;
+        }
+
+        // Правило выбора. Образ в корне - цель при любом имени (кроме помощника и каталога данных). Вне корней или без пути - только точное имя из списка.
+        static bool Eligible(string name, string path, List<string> roots, List<string> own, string testRoot, out string why)
+        {
+            why = null;
+            if (!string.IsNullOrEmpty(testRoot) && (path == null || !path.StartsWith(testRoot, StringComparison.OrdinalIgnoreCase))) return false;
+            bool exact = ExactNames.Contains(name);
+            if (path != null && Under(path, roots))
+            {
+                if (!exact && Under(path, own)) return false;   // помощник и значок русификатора не закрываем
+                why = exact ? "папка игры или лаунчера и имя из списка" : "папка игры или лаунчера";
+                return true;
+            }
+            if (exact) { why = "имя из списка" + (path == null ? " (путь недоступен)" : " (образ вне папок игры и лаунчера)"); return true; }
+            return false;
+        }
+
+        // Открывает цель с правом завершения, ожидания и запроса данных: дальше все действия идут через этот дескриптор.
+        static Target Open(int pid, string name, string path, string why, uint mySession)
+        {
+            IntPtr handle = OpenProcess(AccessTerminate | AccessSynchronize | AccessQueryLimited, false, (uint)pid);
+            long start = 0;
+            if (handle != IntPtr.Zero)
+            {
+                long created, exited, kernel, user;
+                if (GetProcessTimes(handle, out created, out exited, out kernel, out user)) start = created;
+                string again = Util.LongPath(ImagePathOf(handle));
+                if ((again != null && path != null && !string.Equals(again, path, StringComparison.OrdinalIgnoreCase)) || WaitForSingleObject(handle, 0) == 0)
+                {
+                    CloseHandle(handle);   // PID занят другим процессом либо процесс уже завершился
+                    return null;
+                }
+            }
+            var t = new Target { Pid = pid, Name = name, Path = path, Why = why, Handle = handle, Start = start };
+            uint session;
+            t.OtherSession = !ProcessIdToSessionId((uint)pid, out session) || session != mySession;
+            t.Session = session;
+            try
+            {
+                t.Proc = Process.GetProcessById(pid);
+                t.HasWindow = !t.OtherSession && t.Proc.MainWindowHandle != IntPtr.Zero;
+            }
+            catch (Exception) { }   // окно не прочитано: считаем, что окна нет, закрытие пойдёт сразу принудительно
+            return t;
+        }
+
+        public static List<Target> Scan(Context ctx, bool log)
+        {
+            var result = new List<Target>();
+            var roots = Roots(ctx);
+            var parents = ParentMap();
+            var keep = Protected(parents);
+            string windir = WinDir();
+            var own = new List<string>();
+            try { own.Add(Util.NormPath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName)).TrimEnd('\\') + "\\"); } catch (Exception) { }
+            if (!string.IsNullOrEmpty(ctx.Data)) own.Add(Util.NormPath(ctx.Data).TrimEnd('\\') + "\\");
+            string testRoot = null;
+#if TESTBUILD
+            testRoot = Environment.GetEnvironmentVariable("WXQ_RU_TEST_CLOSE_ROOT");   // тесты закрывают только свои заглушки, настоящая игра на этом ПК не затрагивается
+            if (!string.IsNullOrEmpty(testRoot)) testRoot = Util.NormPath(testRoot).TrimEnd('\\') + "\\";
+#endif
+            uint mySession = 0;
+            ProcessIdToSessionId((uint)Process.GetCurrentProcess().Id, out mySession);
+            var seen = new HashSet<int>();
+            foreach (var process in Process.GetProcesses())
+            {
+                try
+                {
+                    int pid = process.Id;
+                    if (pid <= 4 || keep.Contains(pid)) continue;
+                    string name = process.ProcessName, path = Util.LongPath(ImagePath(pid)), why;
+                    if (Denied(pid, name, path, parents, windir) || !Eligible(name, path, roots, own, testRoot, out why)) continue;
+                    var t = Open(pid, name, path, why, mySession);
+                    if (t == null) continue;
+                    result.Add(t); seen.Add(pid);
+                }
+                catch (Exception) { }
+                finally { process.Dispose(); }
+            }
+            // Потомки целей: только те, что сами подходят под правила; остальные остаются и попадают в журнал.
+            var queue = new Queue<Target>(result);
+            while (queue.Count > 0)
+            {
+                var parent = queue.Dequeue();
+                foreach (var pair in parents)
+                {
+                    if (pair.Value != parent.Pid) continue;
+                    int pid = pair.Key;
+                    if (pid <= 4 || seen.Contains(pid) || keep.Contains(pid)) continue;
+                    string name, path, why;
+                    try { using (var p = Process.GetProcessById(pid)) name = p.ProcessName; }
+                    catch (Exception) { continue; }
+                    path = Util.LongPath(ImagePath(pid));
+                    if (Denied(pid, name, path, parents, windir)) continue;
+                    if (!Eligible(name, path, roots, own, testRoot, out why))
+                    {
+                        if (log) Log.Write("  оставлен дочерний процесс " + name + ".exe (PID " + pid + ", путь " + (path ?? "недоступен") + "): он не из папок игры и лаунчера, и его имени нет в списке");
+                        continue;
+                    }
+                    var child = Open(pid, name, path, why, mySession);
+                    if (child == null) continue;
+                    if (parent.Start != 0 && child.Start != 0 && child.Start < parent.Start) { child.Dispose(); continue; }   // PID родителя переиспользован: это не потомок
+                    child.IsChild = true; child.ParentPid = parent.Pid; child.ParentStart = parent.Start;
+                    child.Why = "дочерний процесс " + parent.Name + ".exe: " + why;
+                    seen.Add(pid); result.Add(child); queue.Enqueue(child);
+                }
+            }
+            return result;
+        }
+
+        // Имена запущенных процессов игры и лаунчера по тем же правилам (для проверки без закрытия).
+        public static List<string> ActiveNames(Context ctx)
+        {
+            var found = Scan(ctx, false);
+            try { return found.Select(t => t.Name).Distinct().ToList(); }
+            finally { foreach (var t in found) t.Dispose(); }
+        }
+
+        static string Join(IEnumerable<Target> targets)
+        {
+            return string.Join(", ", targets.Select(t => t.Title).ToArray());
+        }
+
+        static bool Gone(Target t)
+        {
+            if (t.Handle != IntPtr.Zero) return WaitForSingleObject(t.Handle, 0) == 0;
+            try { t.Proc.Refresh(); return t.Proc.HasExited; }
+            catch (InvalidOperationException) { return true; }
+            catch (System.ComponentModel.Win32Exception) { return false; }   // нет доступа: не считаем процесс завершившимся
+            catch (NullReferenceException) { return false; }
+        }
+
+        static void WaitGone(List<Target> targets, int milliseconds)
+        {
+            var clock = Stopwatch.StartNew();
+            while (clock.ElapsedMilliseconds < milliseconds && targets.Any(t => !Gone(t))) Thread.Sleep(100);
+        }
+
+        // Завершение через дескриптор. Потомка перед этим проверяем ещё раз: родитель и время старта те же, иначе PID мог достаться другому процессу.
+        static void Terminate(Target t, HashSet<int> keep)
+        {
+            if (keep.Contains(t.Pid) || Gone(t)) return;
+            if (t.IsChild)
+            {
+                int parent;
+                bool same = ParentMap().TryGetValue(t.Pid, out parent) && parent == t.ParentPid && (t.ParentStart == 0 || t.Start == 0 || t.Start >= t.ParentStart);
+                if (!same) { Log.Write("  " + t.Title + ": родитель или время старта изменились, не трогаю"); return; }
+            }
+#if TESTBUILD
+            if (Environment.GetEnvironmentVariable("WXQ_RU_TEST_NOKILL") == "1") { Log.Write("  тест: принудительное завершение отключено, PID " + t.Pid + " не тронут"); return; }
+#endif
+            if (t.Handle == IntPtr.Zero) { Log.Write("  " + t.Title + ": нет прав открыть процесс для завершения"); return; }
+            if (!TerminateProcess(t.Handle, 1)) Log.Write("  не удалось завершить " + t.Title + ": ошибка " + Marshal.GetLastWin32Error());
+        }
+
+        public static void Run(Context ctx, string mode)
+        {
+            if (mode != "all") return;
+            try
+            {
+                for (int attempt = 1; attempt <= 3; attempt++)
+                {
+                    var found = Scan(ctx, attempt == 1);
+                    try
+                    {
+                        if (found.Count == 0) return;
+                        var foreign = found.Where(t => t.OtherSession).ToList();
+                        if (foreign.Count > 0)
+                        {
+                            Log.Write("запущено у другого пользователя Windows или в другом сеансе: " + Join(foreign));
+                            throw new StopException("running", "Игра или лаунчер запущены у другого пользователя Windows (" + Join(foreign) + "). Закрыть их отсюда нельзя: попросите этого пользователя закрыть игру или выйти из Windows и повторите.");
+                        }
+                        Progress.Phase("closing", string.Join(", ", found.Select(t => t.Name + ".exe").Distinct().ToArray()));
+                        Log.Write("закрываю игру и лаунчер, проход " + attempt + ":");
+                        foreach (var t in found)
+                            Log.Write("  найден " + t.Name + ".exe, PID " + t.Pid + ", путь " + (t.Path ?? "недоступен") + ", окно " + (t.HasWindow ? "есть" : "нет") + ", причина: " + t.Why);
+                        // 1. Корректное закрытие окон, ждём до 5 секунд.
+                        var windowed = found.Where(x => x.HasWindow && x.Proc != null).ToList();
+                        foreach (var t in windowed)
+                        {
+#if TESTBUILD
+                            if (Environment.GetEnvironmentVariable("WXQ_RU_TEST_NOKILL") == "1") continue;
+#endif
+                            if (!Gone(t)) { try { t.Proc.CloseMainWindow(); } catch (Exception) { } }
+                        }
+                        WaitGone(windowed, 5000);
+                        foreach (var t in windowed.Where(x => Gone(x))) t.How = "закрыт через окно (CloseMainWindow)";
+                        // 2. Остальные - принудительно, сначала потомки (самые глубокие), потом родители; ждём до 10 секунд.
+                        var keep = Protected(ParentMap());
+                        var rest = found.Where(x => !Gone(x)).ToList();
+                        foreach (var t in rest.Where(x => x.IsChild).Reverse()) Terminate(t, keep);
+                        foreach (var t in rest.Where(x => !x.IsChild)) Terminate(t, keep);
+                        WaitGone(rest, 10000);
+                        foreach (var t in rest.Where(x => Gone(x))) t.How = "завершён принудительно" + (t.IsChild ? " как дочерний процесс" : "");
+                        foreach (var t in found)
+                            Log.Write("  " + t.Name + ".exe, PID " + t.Pid + ": " + (Gone(t) ? t.How : "не закрылся"));
+                    }
+                    finally { foreach (var t in found) t.Dispose(); }
+                    Thread.Sleep(1200);   // лаунчер мог перезапустить свой процесс: следующий проход проверит заново
+                }
+                var left = Scan(ctx, false);
+                try
+                {
+                    if (left.Count > 0)
+                    {
+                        Log.Write("не закрылись: " + Join(left));
+                        throw new StopException("running", "Игра или лаунчер сейчас запущены, и закрыть их не удалось (" + Join(left) + "). Закройте их вручную: диспетчер задач, вкладка «Подробности», «Снять задачу», в том числе значок лаунчера в области уведомлений, и повторите.");
+                    }
+                }
+                finally { foreach (var t in left) t.Dispose(); }
+            }
+            finally { Progress.Phase(null, ""); }
+        }
+    }
+
     class Context
     {
         public string Payload, Data, Game, Cache, Launcher;
@@ -892,6 +1338,8 @@ namespace Egoist.WXQRussian
         static readonly Regex RelativeName = new Regex(@"^packages/([1-9][0-9]{0,9})/(\1\.db|\1_0\.db|\1\.info)$");
         static readonly Regex MountLine = new Regex(@"MountPackage (\d+), prime, \d+ => succeed! .*?pkgHash:(\d+) basePkgHash:(\d+)");
 
+        static string CloseMode = "none";
+
         static int Main(string[] argv)
         {
             var args = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -900,6 +1348,8 @@ namespace Egoist.WXQRussian
             if (checkOnly) argv = argv.Where(a => a != "--check-only").ToArray();
             string command = argv.Length > 0 ? argv[0] : "";
             for (int i = 1; i + 1 < argv.Length; i += 2) args[argv[i].TrimStart('-')] = argv[i + 1];
+            // --close all|stale: сам закрыть мешающие процессы игры и лаунчера (см. Closer); без параметра только проверка и отказ running.
+            CloseMode = args.ContainsKey("close") && (args["close"] == "all" || args["close"] == "stale") ? args["close"] : "none";
             var ctx = new Context();
             // Пути нормализуются сразу: Sdk.Load меняет текущую папку процесса, относительные пути после этого указывали бы не туда.
             ctx.Payload = args.ContainsKey("payload") && args["payload"].Length > 0 ? Util.NormPath(args["payload"]) : "";
@@ -950,6 +1400,10 @@ namespace Egoist.WXQRussian
                     case "update": Update(ctx, args, checkOnly); break;
                     case "task-register": TaskRegister(ctx, args); break;
                     case "task-remove": TaskRemove(ctx, args); break;
+#if TESTBUILD
+                    // Только для тестов закрытия процессов: без игры, пакетов и receipt.
+                    case "close-probe": ctx.Game = gameArg; ctx.Launcher = args.ContainsKey("launcher") ? args["launcher"] : (Directory.GetParent(Util.NormPath(gameArg)) == null ? null : Directory.GetParent(Util.NormPath(gameArg)).FullName); ctx.Result["roots"] = string.Join("|", Closer.Roots(ctx).ToArray()); Closer.Run(ctx, CloseMode); break;
+#endif
                     default: throw new StopException("usage", "Неизвестная команда: " + command);
                 }
             }
@@ -1583,24 +2037,8 @@ namespace Egoist.WXQRussian
 
         static void RequireClosed(Context ctx)
         {
-            var active = new List<string>();
-            string root = Util.NormPath(ctx.Launcher) + "\\";
-            int self = Process.GetCurrentProcess().Id;
-            foreach (var process in Process.GetProcesses())
-            {
-                try
-                {
-                    if (process.Id == self) continue;
-                    string name = process.ProcessName;
-                    string path = null;
-                    try { path = process.MainModule.FileName; } catch (Exception) { }
-                    bool inside = path != null && path.StartsWith(root, StringComparison.OrdinalIgnoreCase);
-                    bool named = Regex.IsMatch(name, "^(WXQ|WXQLauncher.*|HonorofKingsACE|王者万象棋)$");
-                    if (inside || named) active.Add(name);
-                }
-                catch (Exception) { }
-                finally { process.Dispose(); }
-            }
+            // Те же правила, что у Closer: корни игры и лаунчера, точные имена вне корней, запрет системных процессов.
+            var active = Closer.ActiveNames(ctx);
             if (active.Count > 0)
                 throw new StopException("running", "Игра или лаунчер сейчас запущены (" + string.Join(", ", active.Distinct().ToArray()) + "). Закройте их полностью, в том числе в области уведомлений, и повторите.");
         }
@@ -1943,6 +2381,7 @@ namespace Egoist.WXQRussian
             {
                 // Пересадка: SHA prime, индекс, QtsVFS.dll и .info не проверяются (игра новее сборки); жёстко проверяются скелет, журнал и QtskDB.dll.
                 CheckSdkFile(ctx);
+                Closer.Run(ctx, CloseMode);
                 RequireClosed(ctx);
                 string transplantState;
                 PlanTransplant(ctx, out transplantState);
@@ -1958,6 +2397,7 @@ namespace Egoist.WXQRussian
                         throw new StopException("version", "Версия игры (" + version + ") не совпадает с версией, для которой собран перевод (" + ctx.M.GameVersion + "). Ничего не изменено. " + RefreshHint);
                 }
             }
+            Closer.Run(ctx, CloseMode);   // версия сошлась, дальше читаются файлы игры: мешающие процессы закрываются здесь
             VerifyPrime(ctx, useMemo);
             CheckIndexAndSdk(ctx);
             CheckMountLog(ctx);
@@ -2864,6 +3304,7 @@ namespace Egoist.WXQRussian
             ctx.Launcher = Directory.GetParent(ctx.Game).FullName;
             ctx.Cache = Path.Combine(ctx.Game, "QtsDataFolder", "QtsVFSCache", "packages");
             if (Progress.Active) PlanRestore(ctx, pending);
+            Closer.Run(ctx, CloseMode);
             RequireClosed(ctx);
             foreach (var pair in pending)
             {
@@ -2938,18 +3379,22 @@ namespace Egoist.WXQRussian
     class UpdateStatus
     {
         readonly string path;
+        public string StatusFile { get { return path; } }
         readonly Context ctx;
         readonly Stopwatch clock = Stopwatch.StartNew();
         long lastWrite = -1000;
         string state = "", code = "", message = "";
         public string Installed = "", Available = "", NextTry = "", Notes = "", GameVersion = "";
-        public long BytesDone, BytesTotal;
+        public long BytesDone, BytesTotal, SetupBytes;
+        public string SetupPath = "", SetupSha = "";   // готовый проверенный установщик для кнопки «Обновить сейчас»
 
         public UpdateStatus(Context context, string file) { ctx = context; path = file; }
 
         public void Set(string newState, string newCode, string newMessage)
         {
             state = newState; code = newCode ?? ""; message = newMessage ?? "";
+            // Готовый установщик теряет смысл, когда идёт загрузка новой версии, установка или всё уже актуально; при сбое сети и отсрочке он остаётся.
+            if (newState == "downloading" || newState == "applying" || newState == "done" || newState == "idle") { SetupPath = ""; SetupSha = ""; SetupBytes = 0; }
             Write();
         }
 
@@ -2967,7 +3412,7 @@ namespace Egoist.WXQRussian
             var data = new Dictionary<string, object>
             {
                 { "state", state }, { "code", code }, { "message", message }, { "installed", Installed }, { "available", Available },
-                { "next_try_utc", NextTry }, { "game_version", GameVersion }, { "bytes_done", BytesDone }, { "bytes_total", BytesTotal },
+                { "next_try_utc", NextTry }, { "game_version", GameVersion }, { "setup_path", SetupPath }, { "setup_sha", SetupSha }, { "setup_bytes", SetupBytes }, { "bytes_done", BytesDone }, { "bytes_total", BytesTotal },
                 { "updated_utc", DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture) }
             };
             try { Util.WriteJson(path, data); }
@@ -2999,6 +3444,18 @@ namespace Egoist.WXQRussian
             try
             {
                 var status = new UpdateStatus(ctx, Path.Combine(ctx.Data, "update-status.json"));
+                // Прежний готовый установщик (и доступная версия) переносятся в новый статус, пока файл на месте: сбой сети не должен убирать кнопку «Обновить сейчас».
+                try
+                {
+                    var prev = Util.ReadJson(status.StatusFile);
+                    string path = Util.Str(prev, "setup_path"), sha = Util.Str(prev, "setup_sha");
+                    long bytes = UpdMetaNumber(prev, "setup_bytes");
+                    string updatesDir = Path.GetFullPath(Path.Combine(ctx.Data, "updates")).TrimEnd('\\') + "\\";
+                    if (!string.IsNullOrEmpty(path) && !string.IsNullOrEmpty(sha) && bytes > 0 && Path.GetFullPath(path).StartsWith(updatesDir, StringComparison.OrdinalIgnoreCase)
+                        && File.Exists(path) && new FileInfo(path).Length == bytes)
+                    { status.SetupPath = path; status.SetupSha = sha; status.SetupBytes = bytes; status.Available = Util.Str(prev, "available") ?? ""; }
+                }
+                catch (Exception) { }
                 status.Set("checking", "", "");
                 try { UpdateRun(ctx, args, checkOnly, status); }
                 catch (StopException stop)
@@ -3139,13 +3596,19 @@ namespace Egoist.WXQRussian
             return probe;
         }
 
+        // Имя кэшированного установщика: для окна UAC понятное. Версия проверена регулярным выражением (цифры, точки, -rcN), SHA-256 от имени не зависит.
+        static string UpdCacheBase(UpdateManifest m) { return "WXQ-Russian-Setup-" + m.Version; }
+
         // ---- сохранённый установщик текущей версии ----
 
         // updates\installed-<sha16>.exe; SHA-256 и размер записаны в update-meta.json (скачан и проверен по подписанному манифесту).
-        static string UpdSavedInstaller(Context ctx, Dictionary<string, object> meta)
+        // requiredVersion - версия из state.json: копия другой версии не берётся (иначе пересадка поставила бы старую версию поверх новой).
+        // null - версия не сверяется (state.json снят откатом оборванного обновления, нужна копия «до обновления»).
+        static string UpdSavedInstaller(Context ctx, Dictionary<string, object> meta, string requiredVersion)
         {
             try
             {
+                if (requiredVersion != null && Util.Str(meta, "installed_setup_version") != requiredVersion) return null;
                 string sha = Util.Str(meta, "installed_setup_sha");
                 long bytes = UpdMetaNumber(meta, "installed_setup_bytes");
                 if (sha == null || !UpdSha.IsMatch(sha) || bytes < 1) return null;
@@ -3375,7 +3838,7 @@ namespace Egoist.WXQRussian
             {
                 // Прерванное обновление: откат снял state.json, а новая версия не встала. Возвращаем сохранённую.
                 string inflightGame = Util.Str(meta, "inflight_game");
-                string savedForRecovery = checkOnly || string.IsNullOrEmpty(Util.Str(meta, "inflight_version")) ? null : UpdSavedInstaller(ctx, meta);
+                string savedForRecovery = checkOnly || string.IsNullOrEmpty(Util.Str(meta, "inflight_version")) ? null : UpdSavedInstaller(ctx, meta, null);
                 if (savedForRecovery != null && !string.IsNullOrEmpty(inflightGame) && Directory.Exists(inflightGame))
                 {
                     Log.Write("обновление: прошлое обновление не завершилось, возвращаю сохранённую версию");
@@ -3404,7 +3867,7 @@ namespace Egoist.WXQRussian
                 return;
             }
             bool reapply = probe.Kind == "changed_ready" || probe.Kind == "pending";
-            string savedExe = UpdSavedInstaller(ctx, meta);
+            string savedExe = UpdSavedInstaller(ctx, meta, installedVersion);
 
             // 3. Адрес и ключи.
             string baseUrl;
@@ -3456,6 +3919,23 @@ namespace Egoist.WXQRussian
                     meta["last_issued_utc"] = m.Issued.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
                 update = cmp > 0;
             }
+            // Версия из манифеста уже установлена (например, поставили кнопкой «Обновить сейчас»): проверенный установщик из кэша становится
+            // сохранённой копией текущей версии (для пересадки после обновления игры и отката), иначе она осталась бы от прежней версии.
+            if (m != null && cmp == 0)
+            {
+                try
+                {
+                    string cached = Path.Combine(updates, UpdCacheBase(m) + ".exe");
+                    if (File.Exists(cached) && !Util.IsReparse(updates) && !Util.IsReparse(cached) && UpdFileOk(cached, m))
+                    {
+                        UpdKeepInstalled(meta, cached, m.SetupSha, m.SetupBytes, m.Version);
+                        UpdSaveMeta(ctx, meta);
+                        savedExe = UpdSavedInstaller(ctx, meta, installedVersion);
+                        Log.Write("обновление: установленная версия " + m.Version + ", проверенный установщик сохранён как копия текущей версии");
+                    }
+                }
+                catch (Exception error) { Log.Write("обновление: копия установщика текущей версии не сохранена: " + error.Message); }
+            }
             if (!update && !reapply)
             {
                 UpdSaveMeta(ctx, meta);
@@ -3496,12 +3976,6 @@ namespace Egoist.WXQRussian
                 }
             }
             UpdSaveMeta(ctx, meta);
-            if (checkOnly)
-            {
-                if (update) status.Set("ready", "", "Доступна версия " + m.Version + ".");
-                else status.Set("ready", "reapply", "Перевод будет возвращён сохранённым установщиком.");
-                return;
-            }
 
             // 6. Установщик: сохранённый или скачанный (с докачкой) и проверенный.
             if (Directory.Exists(updates) && Util.IsReparse(updates))
@@ -3518,7 +3992,7 @@ namespace Egoist.WXQRussian
             }
             else
             {
-                string tag = m.SetupSha.Substring(0, 16);
+                string tag = UpdCacheBase(m);
                 string part = Path.Combine(updates, tag + ".part");
                 exe = Path.Combine(updates, tag + ".exe");
                 setupSha = m.SetupSha; setupBytes = m.SetupBytes;
@@ -3541,6 +4015,19 @@ namespace Egoist.WXQRussian
                 if (!File.Exists(exe)) throw UpdAvBlocked(updates);
             }
             status.BytesDone = setupBytes; status.BytesTotal = setupBytes;
+
+            // Только проверка (заход в русификатор): установщик скачан и проверен, но не запускается и ничего не закрывается.
+            // Применяет обновление только кнопка «Обновить сейчас» в трее: она запускает этот файл и сверяет его SHA-256 с записанным здесь.
+            if (checkOnly)
+            {
+                if (Util.IsReparse(updates) || Util.IsReparse(exe)) throw new StopException("acl", "Скачанный установщик или его папка стали ссылкой.");
+                status.SetupPath = exe; status.SetupSha = setupSha; status.SetupBytes = setupBytes;
+                status.Available = update ? m.Version : "";
+                if (update) status.Set("ready", "", "Доступна версия " + m.Version + ".");
+                else status.Set("ready", "reapply", "Перевод будет возвращён сохранённым установщиком.");
+                Log.Write("обновление: только проверка, установщик готов (" + exe + ")");
+                return;
+            }
 
             // 7. Игра или лаунчер запущены, идёт другой установщик или операция — ничего не пишем, ждём.
             string gate = UpdBlocker(ctx, gameRoot);
@@ -3642,6 +4129,7 @@ namespace Egoist.WXQRussian
         {
             ctx.Game = gameRoot;
             ctx.Launcher = Directory.GetParent(Util.NormPath(gameRoot)).FullName;
+            // Фоновая задача ничего не закрывает: если игра или лаунчер запущены, обновление ждёт кнопки «Обновить сейчас».
             try { RequireClosed(ctx); }
             catch (StopException stop) { if (stop.Code == "running") { Log.Write("обновление: " + stop.Message); return "game"; } throw; }
             try
@@ -4109,7 +4597,7 @@ namespace Egoist.WXQRussian
             catch (IOException error) { throw new NetFail("network", error.Message, false, 0); }
         }
 
-        // Докачка в <sha16>.part: если файл уже частично есть, просит Range; ответ 200 вместо 206 — начало заново.
+        // Докачка в WXQ-Russian-Setup-<версия>.part: если файл уже частично есть, просит Range; ответ 200 вместо 206 — начало заново.
         static void UpdFetchTo(string url, string part, long expected, UpdateStatus status)
         {
             long have = File.Exists(part) ? new FileInfo(part).Length : 0;
@@ -4207,7 +4695,7 @@ namespace Egoist.WXQRussian
             throw new StopException("network", "Не удалось скачать обновление: " + (last == null ? "нет адресов" : last.Message) + ". Скачанная часть сохранена для докачки.");
         }
 
-        // В updates\ остаются только файлы текущей загрузки (<sha16>.*) и журнал установщика.
+        // В updates\ остаются только файлы текущей загрузки (WXQ-Russian-Setup-<версия>.*) и журнал установщика.
         static void UpdPrune(string updates, string tag)
         {
             foreach (var item in new DirectoryInfo(updates).GetFileSystemInfos())
@@ -4226,8 +4714,8 @@ namespace Egoist.WXQRussian
 
     // ---- задача планировщика автообновления --------------------------------------------------------------------------------
     // task-register / task-remove [--name <имя>] [--folder <папка>] [--exe <путь>] [--out <файл>]. Раньше это делал Pascal-скрипт установщика
-    // и падал с пустым сообщением; здесь ошибка печатается с кодом HRESULT. Задача: от SYSTEM, при входе любого пользователя (через 2 минуты)
-    // и каждые 6 часов, ниже обычного приоритета; Users - только чтение и запуск (GRGX), менять и удалять могут администраторы и SYSTEM.
+    // и падал с пустым сообщением; здесь ошибка печатается с кодом HRESULT. Задача: от SYSTEM, БЕЗ триггеров (запускается только по запросу значка,
+    // действие update --check-only), ниже обычного приоритета; Users - только чтение и запуск (GRGX), менять и удалять могут администраторы и SYSTEM.
     static partial class Program
     {
         const string TaskDefaultName = "WXQ-Russian Update";
@@ -4266,7 +4754,7 @@ namespace Egoist.WXQRussian
                 try { folder = root.GetFolder(folderName); }
                 catch (Exception) { folder = root.CreateFolder(folderName); }
                 dynamic def = service.NewTask(0);
-                def.RegistrationInfo.Description = "Проверка и установка обновлений русификатора Honor of Kings ACE. Если игра запущена, установка откладывается до её закрытия.";
+                def.RegistrationInfo.Description = "Проверка обновлений русификатора Honor of Kings ACE. Запускается только по запросу, когда вы заходите в русификатор; ничего не устанавливает и не закрывает.";
                 def.Principal.UserId = "SYSTEM";
                 def.Principal.LogonType = 5;    // TASK_LOGON_SERVICE_ACCOUNT
                 def.Principal.RunLevel = 1;     // TASK_RUNLEVEL_HIGHEST
@@ -4279,13 +4767,11 @@ namespace Egoist.WXQRussian
                 settings.StopIfGoingOnBatteries = false;
                 settings.ExecutionTimeLimit = "PT2H";
                 settings.MultipleInstances = 2; // TASK_INSTANCES_IGNORE_NEW
-                dynamic trigger = def.Triggers.Create(9);   // TASK_TRIGGER_LOGON (8 - загрузка системы)
-                trigger.Delay = "PT2M";
-                trigger.Repetition.Interval = "PT6H";
-                trigger.Enabled = true;
+                // Триггеров нет намеренно: проверка идёт только по запросу (schtasks /run из трея), когда человек зашёл в русификатор.
+                // Определение задачи заменяется целиком (режим 6), поэтому триггеры задачи 0.6.0 (вход + каждые 6 часов) при обновлении исчезают.
                 dynamic action = def.Actions.Create(0);     // TASK_ACTION_EXEC
                 action.Path = exe;
-                action.Arguments = "update";
+                action.Arguments = "update --check-only";
                 action.WorkingDirectory = workDir;
                 dynamic task = folder.RegisterTaskDefinition(name, def, 6, "SYSTEM", null, 5);   // 6 = создать или обновить
                 task.SetSecurityDescriptor(TaskSddl, 0);

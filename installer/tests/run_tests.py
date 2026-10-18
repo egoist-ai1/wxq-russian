@@ -185,6 +185,7 @@ class Sandbox:
         # Жёсткая изоляция: помощник не должен видеть настоящие профили Windows и настоящую игру.
         full['WXQ_RU_USERS_ROOT'] = str(self.root / 'no-users')
         full['WXQ_RU_TRUST_ROOT'] = str(self.launcher)   # тестовая сборка помощника считает «Program Files» песочницей
+        full['WXQ_RU_TEST_CLOSE_ROOT'] = str(self.root)   # автозакрытие (0.6.1) видит только заглушки песочницы, настоящая игра на этом ПК не затрагивается
         full['MSYS2_ARG_CONV_EXCL'] = '*'
         full.update({k.upper(): v for k, v in (env or {}).items()})  # имена переменных в Windows без учёта регистра
         return subprocess.run(command, capture_output=True, env=full, timeout=300)
@@ -886,17 +887,18 @@ def main() -> int:
     done = box.run(installer)
     check('F11 другая версия в .info пакета 19: отказ, файлы целы', done.returncode != 0 and box.snapshot() == before_f9)
 
-    print('G. игра запущена: отказ')
+    print('G. игра запущена: установщик сам её закрывает (0.6.1)')
     box.build()
     stub = box.game / 'WXQ.exe'
     shutil.copyfile(Path(os.environ.get('SystemRoot', r'C:\Windows')) / 'System32/ping.exe', stub)
     process = subprocess.Popen([str(stub), '-n', '60', '127.0.0.1'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         time.sleep(1)
-        before_g = box.snapshot()
         done = box.run(installer)
-        check('G1 отказ при запущенной игре, файлы целы', done.returncode != 0 and box.snapshot() == before_g, f'{done.returncode}')
-        check('G2 причина названа', 'запущены' in box.install_log(), box.install_log()[-300:])
+        log_g = box.install_log()
+        check('G1 игра закрыта установщиком, установка прошла', done.returncode == 0 and process.poll() is not None, f'{done.returncode}')
+        check('G2 в журнале: что закрыто (имя, PID, способ)', 'закрываю игру и лаунчер' in log_g and 'WXQ.exe, PID %d' % process.pid in log_g and 'принудительно' in log_g, log_g[-400:])
+        box.uninstall()
     finally:
         process.kill()
         process.wait()

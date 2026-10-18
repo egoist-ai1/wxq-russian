@@ -1,14 +1,14 @@
 // WXQTray.exe - значок русификатора в области уведомлений. Права администратора не нужны и не запрашиваются.
 //
 // Что делает:
-//   * показывает состояние автообновления из update-status.json (пишет только помощник WXQTool.exe update, от SYSTEM);
-//   * пункт «Проверить обновление» просит планировщик запустить задачу «Egoist\WXQ-Russian Update» (schtasks /run; право на запуск у обычных
-//     пользователей выдано дескриптором безопасности задачи, повышать ничего не надо);
-//   * уведомления: «Перевод обновлён до X» и «Обновление ждёт закрытия игры»;
-//   * двойной щелчок по значку открывает окно состояния (версии перевода и игры, последняя проверка, итог, кнопки «Проверить сейчас», «Журнал»,
-//     «Страница релизов»); все тексты статусов - в таблице CodeText, технических кодов пользователь не видит;
-//   * следит за игрой и лаунчером: когда они закрылись, просит задачу выполниться (не чаще раза в 10 минут, при любом состоянии, не только
-//     при отложенном обновлении): после обновления игры именно закрытие игры возвращает перевод;
+//   * показывает состояние обновления из update-status.json (пишет только помощник WXQTool.exe update --check-only, от SYSTEM);
+//   * проверка идёт только когда человек зашёл в русификатор: открыл окно значка, нажал «Проверить обновление» или запустил лаунчер
+//     (появление процесса WXQLauncher*, не чаще раза в 12 часов). Таймеров, проверок при входе в Windows и при закрытии игры нет.
+//     Проверка = schtasks /run задачи «Egoist\WXQ-Russian Update» (право запуска у обычных пользователей выдано дескриптором безопасности задачи);
+//     она только сверяет update.json и докачивает установщик в кэш, ничего не ставит и не закрывает;
+//   * «Обновить сейчас» (меню, окно, уведомление): сверяет SHA-256 кэшированного установщика с записанным помощником и запускает его
+//     с запросом UAC; установщик в окне сам закрывает лаунчер и игру. Это единственный способ применить обновление;
+//   * двойной щелчок по значку открывает окно состояния; все тексты статусов - в таблице CodeText, технических кодов пользователь не видит;
 //   * когда установщик заменил WXQTray.exe новой версией, запускает её и выходит.
 // Сам ничего не скачивает, в игру и в каталог данных не пишет. Автозапуск - запись HKLM\...\Run (ставит установщик).
 //
@@ -45,7 +45,7 @@ namespace Egoist.WXQ
                 {
                     Application.EnableVisualStyles();
                     Application.SetCompatibleTextRenderingDefault(false);
-                    using (var tray = new TrayApp()) Application.Run();
+                    using (var tray = new TrayApp(restarted)) Application.Run();
                 }
                 finally { try { mutex.ReleaseMutex(); } catch (ApplicationException) { } }
             }
@@ -55,28 +55,30 @@ namespace Egoist.WXQ
     class TrayApp : IDisposable
     {
         const string TaskName = "Egoist\\WXQ-Russian Update";
-        static readonly Regex GameProcess = new Regex("^(WXQ|WXQLauncher.*|HonorofKingsACE|王者万象棋)$", RegexOptions.IgnoreCase);
+        static readonly Regex LauncherProcess = new Regex("^WXQLauncher", RegexOptions.IgnoreCase);
+        static readonly TimeSpan LauncherCheckEvery = TimeSpan.FromHours(12);
 
         readonly NotifyIcon icon = new NotifyIcon();
-        readonly ToolStripMenuItem statusItem = new ToolStripMenuItem("Обновление: проверка не выполнялась") { Enabled = false };
+        ToolStripMenuItem updateItem;
+        readonly ToolStripMenuItem statusItem =new ToolStripMenuItem("Обновление: проверка не выполнялась") { Enabled = false };
         readonly System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
         readonly string self = Application.ExecutablePath;
         readonly DateTime selfStamp;
         readonly string statusFile;
         const string ReleasesUrl = "https://github.com/egoist-ai1/wxq-russian/releases";
         // Ограничение, о котором владелец просил сказать прямо (то же слово в слово в установщике, README и CHANGELOG).
+        public const string VisitText = "Русификатор проверяет обновления, когда вы заходите в него: открываете значок в трее, нажимаете «Проверить» или запускаете игру через ярлык; постоянных проверок в фоне нет.";
         public const string UpdateLimit = "После выхода обновления игры первый запуск будет на китайском: перевод вернётся автоматически после того, как вы один раз запустите игру до главного меню и закроете её. Иначе нельзя — новые хеши файлов игры создаются только самой игрой.";
 
         string seenKey = "";
         string notifiedDeferred = "";
         string notifiedGameChanged = "";
-        bool gameWasRunning;
+        bool launcherWasRunning;
         DateTime lastRequest = DateTime.MinValue;
-        DateTime lastCloseRun = DateTime.MinValue;
         bool firstRead = true;
         StatusForm form;
 
-        public TrayApp()
+        public TrayApp(bool restarted)
         {
             selfStamp = File.GetLastWriteTimeUtc(self);
             statusFile = Path.Combine(DataDir(), "update-status.json");
@@ -90,6 +92,9 @@ namespace Egoist.WXQ
             var check = new ToolStripMenuItem("Проверить обновление");
             check.Click += delegate { RequestRun(true); };
             menu.Items.Add(check);
+            updateItem = new ToolStripMenuItem("Обновить сейчас") { Visible = false };
+            updateItem.Click += delegate { UpdateNow(); };
+            menu.Items.Add(updateItem);
             var exit = new ToolStripMenuItem("Закрыть значок");
             exit.Click += delegate { Application.Exit(); };
             menu.Items.Add(exit);
@@ -102,8 +107,10 @@ namespace Egoist.WXQ
             timer.Interval = 5000;
             timer.Tick += delegate { Tick(); };
             timer.Start();
-            gameWasRunning = GameRunning();
+            launcherWasRunning = LauncherRunning();
             Tick();
+            // Значок перезапущен после замены установщиком (обновление только что встало): статус «готово к установке» устарел, сверяем без 12-часового лимита.
+            if (restarted) RequestRun(false);
         }
 
         public void Dispose()
@@ -144,22 +151,51 @@ namespace Egoist.WXQ
             catch (Exception) { }
         }
 
-        static bool GameRunning()
+        static bool LauncherRunning()
         {
             foreach (var process in Process.GetProcesses())
             {
-                try { if (GameProcess.IsMatch(process.ProcessName)) return true; }
+                try { if (LauncherProcess.IsMatch(process.ProcessName)) return true; }
                 catch (Exception) { }
                 finally { process.Dispose(); }
             }
             return false;
         }
 
-        // Просит планировщик выполнить задачу. Сам процесс обновления идёт от SYSTEM; здесь только запуск.
+        // Время последней проверки хранится у пользователя (не в каталоге данных): ограничение «раз в 12 часов» переживает перезапуск значка.
+        static string VisitFile()
+        {
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Egoist", "WXQ-Russian", "tray-last-check.txt");
+        }
+
+        static DateTime LastCheck()
+        {
+            try
+            {
+                long ticks;
+                if (long.TryParse(File.ReadAllText(VisitFile()).Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out ticks) && ticks > 0 && ticks <= DateTime.UtcNow.Ticks)
+                    return new DateTime(ticks, DateTimeKind.Utc);
+            }
+            catch (Exception) { }
+            return DateTime.MinValue;
+        }
+
+        static void SaveLastCheck()
+        {
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(VisitFile()));
+                File.WriteAllText(VisitFile(), DateTime.UtcNow.Ticks.ToString(CultureInfo.InvariantCulture));
+            }
+            catch (Exception) { }
+        }
+
+        // Просит планировщик выполнить задачу (только проверка: update --check-only). Сам процесс идёт от SYSTEM; здесь только запуск.
         void RequestRun(bool manual)
         {
             if (!manual && (DateTime.UtcNow - lastRequest).TotalSeconds < 60) return;
             lastRequest = DateTime.UtcNow;
+            SaveLastCheck();
             try
             {
                 var info = new ProcessStartInfo("schtasks.exe", "/run /tn \"" + TaskName + "\"") { CreateNoWindow = true, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
@@ -217,17 +253,15 @@ namespace Egoist.WXQ
             }
             catch (Exception) { }
 
-            bool running = GameRunning();
+            // Запуск лаунчера = заход в русификатор: проверка один раз за запуск и не чаще раза в 12 часов. Работа лаунчера и закрытие игры ничего не запускают.
+            bool launcher = LauncherRunning();
+            if (launcher && !launcherWasRunning && DateTime.UtcNow - LastCheck() >= LauncherCheckEvery) RequestRun(false);
+            launcherWasRunning = launcher;
             var status = ReadStatus();
             string state = Text(status, "state");
-            // Игра закрылась: просим задачу выполниться. Не чаще раза в 10 минут и при любом состоянии - после обновления игры
-            // перевод возвращается именно после её первого запуска и закрытия, а не по расписанию.
-            if (gameWasRunning && !running && (DateTime.UtcNow - lastCloseRun).TotalMinutes >= 10)
-            {
-                lastCloseRun = DateTime.UtcNow;
-                RequestRun(false);
-            }
-            gameWasRunning = running;
+            bool canUpdate = HasInstaller(status);
+            updateItem.Visible = canUpdate;
+            if (form != null) form.ShowUpdate(canUpdate);
             if (status == null) { if (form != null && form.Visible) form.Fill("", "", "", "Проверка ещё не выполнялась."); return; }
 
             string key = state + "|" + Text(status, "installed") + "|" + Text(status, "available") + "|" + Text(status, "code") + "|" + Text(status, "updated_utc");
@@ -257,9 +291,10 @@ namespace Egoist.WXQ
             else if (state == "deferred" && notifiedDeferred != available)
             {
                 notifiedDeferred = available;
-                Balloon("Обновление ждёт закрытия игры", "Версия " + available + " установится, когда вы закроете игру и лаунчер.", ToolTipIcon.Info);
+                Balloon("Обновление не применено", "Версия " + available + " ждёт: нажмите «Обновить сейчас» в меню значка.", ToolTipIcon.Info);
             }
-            else if (state == "ready" && available.Length > 0) Balloon("Доступно обновление", "Версия " + available + ".", ToolTipIcon.Info);
+            else if (state == "ready" && code == "reapply") Balloon("Нужно вернуть перевод", "Нажмите «Обновить сейчас» в меню значка: установщик сам закроет лаунчер и игру.", ToolTipIcon.Info);
+            else if (state == "ready" && available.Length > 0) Balloon("Доступно обновление " + available, "Нажмите «Обновить сейчас» в меню значка: установщик сам закроет лаунчер и игру.", ToolTipIcon.Info);
             else if (state == "failed" && code != "network" && code != "retry_later" && code != "not_configured")
                 Balloon(code == "rolled_back" ? "Обновление отменено" : "Обновление не установилось", Describe(status, state), ToolTipIcon.Warning);
         }
@@ -276,12 +311,13 @@ namespace Egoist.WXQ
             { "not_configured", "В этой сборке не настроены обновления." },
             { "game_changed", "Игра обновилась. Запустите её один раз до меню и закройте — перевод вернётся сам." },
             { "game_old", "Версия {a} ждёт обновления игры. Пока работает версия {i}." },
-            { "game_running", "Обновление ждёт, когда вы закроете игру и лаунчер." },
+            { "game_running", "Игра или лаунчер запущены. Обновление само ничего не закрывает: нажмите «Обновить сейчас», когда будете готовы, — установщик закроет лаунчер и игру." },
+            { "reapply", "Игра обновилась, перевод нужно вернуть: нажмите «Обновить сейчас», установщик сам закроет лаунчер и игру." },
             { "setup_running", "Обновление ждёт: сейчас идёт установка перевода." },
             { "busy_running", "Обновление ждёт: русификатор занят другой операцией." },
             { "reapplied", "Игра обновилась, перевод возвращён." },
             { "rolled_back", "Новая версия не встала. Возвращена прежняя версия {i}, перевод работает." },
-            { "av_blocked", "Антивирус, похоже, убрал файл обновления в карантин. Восстановите его или добавьте папку русификатора в исключения и нажмите «Проверить сейчас»." },
+            { "av_blocked", "Антивирус, похоже, убрал файл обновления в карантин. Восстановите его или добавьте папку русификатора в исключения и нажмите «Проверить»." },
             { "setup_failed", "Установка обновления не удалась. Подробности в журнале." },
             { "setup_timeout", "Установщик обновления работает слишком долго. Подробности в журнале." },
             { "sha_mismatch", "Скачанный файл не прошёл проверку подлинности и удалён. Попробую позже." },
@@ -314,8 +350,8 @@ namespace Egoist.WXQ
                 case "checking": return "Проверяю обновление.";
                 case "downloading": return "Скачиваю версию " + Text(status, "available") + ".";
                 case "applying": return "Устанавливаю версию " + Text(status, "available") + ".";
-                case "ready": return "Доступна версия " + Text(status, "available") + ".";
-                case "deferred": return "Версия " + Text(status, "available") + " ждёт закрытия игры.";
+                case "ready": return "Доступно обновление " + Text(status, "available") + " — нажмите «Обновить сейчас»; установщик сам закроет лаунчер и игру.";
+                case "deferred": return "Версия " + Text(status, "available") + " не применена: нажмите «Обновить сейчас».";
                 case "done": return "Перевод обновлён до " + Text(status, "installed") + ".";
                 case "failed": return "Обновление не удалось. Подробности в журнале.";
                 case "idle": return "Обновлений нет.";
@@ -327,21 +363,63 @@ namespace Egoist.WXQ
 
         string DataFile(string name) { return Path.Combine(DataDir(), name); }
 
+        // Кнопка «Обновить сейчас» - явное согласие закрыть лаунчер и игру. Установщик берётся из кэша помощника; перед запуском сверяем путь,
+        // размер и SHA-256 с теми, что записал помощник (запись в каталог данных у обычного пользователя закрыта правами).
+        // Готовый установщик есть (помощник очищает путь при загрузке новой версии, установке и «всё актуально»; при сбое сети путь остаётся).
+        static bool HasInstaller(Dictionary<string, object> status)
+        {
+            string path = Text(status, "setup_path");
+            try { return path.Length > 0 && Text(status, "setup_sha").Length == 64 && File.Exists(path); }
+            catch (Exception) { return false; }
+        }
+
+        void UpdateNow()
+        {
+            var status = ReadStatus();
+            string path = Text(status, "setup_path"), sha = Text(status, "setup_sha").ToLowerInvariant();
+            long bytes;
+            long.TryParse(Text(status, "setup_bytes"), NumberStyles.None, CultureInfo.InvariantCulture, out bytes);
+            try
+            {
+                string updates = Path.GetFullPath(Path.Combine(DataDir(), "updates")).TrimEnd('\\') + "\\";
+                if (path.Length == 0 || sha.Length != 64 || !Path.GetFullPath(path).StartsWith(updates, StringComparison.OrdinalIgnoreCase) || !File.Exists(path) || new FileInfo(path).Length != bytes)
+                { Balloon("Установщик не готов", "Нажмите «Проверить обновление»: он будет скачан заново.", ToolTipIcon.Warning); return; }
+                string actual;
+                using (var stream = File.OpenRead(path))
+                using (var hash = System.Security.Cryptography.SHA256.Create())
+                    actual = BitConverter.ToString(hash.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+                if (actual != sha)
+                { Balloon("Установщик не прошёл проверку", "Нажмите «Проверить обновление»: файл будет скачан заново.", ToolTipIcon.Warning); return; }
+                // runas: запрос UAC в сеансе пользователя; установщик откроет окно с этапами и сам закроет лаунчер и игру.
+                Process.Start(new ProcessStartInfo(path) { UseShellExecute = true, Verb = "runas", WorkingDirectory = Path.GetDirectoryName(path) });
+            }
+            catch (System.ComponentModel.Win32Exception error)
+            {
+                if (error.NativeErrorCode != 1223) Balloon("Не удалось запустить установщик", "Windows ответила ошибкой " + error.NativeErrorCode + ". Попробуйте ещё раз или запустите установщик из папки updates вручную.", ToolTipIcon.Warning);
+                // 1223 (ERROR_CANCELLED) - человек отказал в запросе UAC: ничего не происходит
+            }
+            catch (Exception) { Balloon("Не удалось запустить установщик", "Подробности в журнале русификатора.", ToolTipIcon.Warning); }
+        }
+
         void ShowStatus()
         {
             if (form == null)
             {
                 form = new StatusForm();
                 form.CheckNow = delegate { RequestRun(true); };
+                form.UpdateNow = delegate { UpdateNow(); };
                 form.OpenLog = delegate { OpenLog(); };
                 form.OpenReleases = delegate { OpenUrl(ReleasesUrl); };
             }
             var status = ReadStatus();
             if (status == null) form.Fill("", "", "", "Проверка ещё не выполнялась.");
             else FillForm(status, Text(status, "state"));
-            if (!form.Visible) form.Show();
+            form.ShowUpdate(HasInstaller(status));
+            bool wasVisible = form.Visible;
+            if (!wasVisible) form.Show();
             form.WindowState = FormWindowState.Normal;
             form.Activate();
+            if (!wasVisible) RequestRun(false);   // открыли окно = зашли в русификатор: тихая проверка (не чаще раза в минуту)
         }
 
         void FillForm(Dictionary<string, object> status, string state)
@@ -375,7 +453,8 @@ namespace Egoist.WXQ
     // Окно состояния в стиле установщика (Egoist DS: монохром, золото только для акцента, радиусы и отступы кратны 4).
     class StatusForm : Form
     {
-        public Action CheckNow, OpenLog, OpenReleases;
+        public Action CheckNow, UpdateNow, OpenLog, OpenReleases;
+        readonly Button checkButton, updateButton, logButton, releasesButton;
         public bool Allow;   // true - закрытие настоящее (значок закрыт); иначе окно только прячется
         static readonly Color Bg = ColorTranslator.FromHtml("#0E0E0F"), Surface = ColorTranslator.FromHtml("#141416"), Surface2 = ColorTranslator.FromHtml("#1C1C1E"),
             Line = ColorTranslator.FromHtml("#26262A"), Text_ = ColorTranslator.FromHtml("#EDEBE6"), Soft = ColorTranslator.FromHtml("#B5B3AD"),
@@ -389,7 +468,7 @@ namespace Egoist.WXQ
             MaximizeBox = false; MinimizeBox = true; ShowInTaskbar = true;
             StartPosition = FormStartPosition.CenterScreen;
             AutoScaleMode = AutoScaleMode.Dpi;
-            ClientSize = new Size(520, 468);   // 404 (кнопки) + 40 + 24 отступ
+            ClientSize = new Size(520, 520);   // 456 (кнопки) + 40 + 24 отступ
             BackColor = Bg; ForeColor = Text_;
             Font = new Font("Segoe UI", 9.75f);
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch (Exception) { }
@@ -408,17 +487,37 @@ namespace Egoist.WXQ
             var resultCaption = MakeLabel("Результат", 16, 112, 160, 18, 9f, Muted); card.Controls.Add(resultCaption);
             resultValue = MakeLabel("", 16, 132, 440, 48, 10f, Text_); card.Controls.Add(resultValue);
 
-            var note = new Panel { Left = 24, Top = 292, Width = 472, Height = 96, BackColor = Bg };
+            var note = new Panel { Left = 24, Top = 292, Width = 472, Height = 148, BackColor = Bg };
             var dot = MakeLabel("Как работает обновление", 0, 0, 472, 18, 9.5f, Text_); dot.Font = new Font("Segoe UI Semibold", 9.5f); note.Controls.Add(dot);
-            var limit = MakeLabel(TrayApp.UpdateLimit, 0, 22, 472, 76, 9f, Muted); note.Controls.Add(limit);
+            var limit = MakeLabel(TrayApp.VisitText + "\n\n" + TrayApp.UpdateLimit, 0, 22, 472, 124, 9f, Muted); note.Controls.Add(limit);
             Controls.Add(note);
 
-            int y = 404;
-            var check = MakeButton("Проверить сейчас", 24, y, 168, true); check.Click += delegate { if (CheckNow != null) CheckNow(); };
-            var log = MakeButton("Журнал", 200, y, 96, false); log.Click += delegate { if (OpenLog != null) OpenLog(); };
-            var rel = MakeButton("Страница релизов", 304, y, 148, false); rel.Click += delegate { if (OpenReleases != null) OpenReleases(); };
-            Controls.Add(check); Controls.Add(log); Controls.Add(rel);
-            AcceptButton = check;
+            checkButton = MakeButton("Проверить", 24, 456, 168, true); checkButton.Click += delegate { if (CheckNow != null) CheckNow(); };
+            updateButton = MakeButton("Обновить сейчас", 24, 456, 148, true); updateButton.Click += delegate { if (UpdateNow != null) UpdateNow(); };
+            logButton = MakeButton("Журнал", 200, 456, 96, false); logButton.Click += delegate { if (OpenLog != null) OpenLog(); };
+            releasesButton = MakeButton("Страница релизов", 304, 456, 148, false); releasesButton.Click += delegate { if (OpenReleases != null) OpenReleases(); };
+            Controls.Add(updateButton); Controls.Add(checkButton); Controls.Add(logButton); Controls.Add(releasesButton);
+            ShowUpdate(false);
+        }
+
+        // Есть готовое обновление: «Обновить сейчас» - главная кнопка, «Проверить» уходит рядом.
+        public void ShowUpdate(bool available)
+        {
+            updateButton.Visible = available;
+            if (available)
+            {
+                checkButton.SetBounds(180, 456, 100, 40); checkButton.BackColor = Surface2; checkButton.ForeColor = Text_; checkButton.FlatAppearance.BorderColor = Line;
+                logButton.SetBounds(288, 456, 80, 40); releasesButton.SetBounds(376, 456, 120, 40);
+                releasesButton.Text = "Релизы";
+                AcceptButton = updateButton;
+            }
+            else
+            {
+                checkButton.SetBounds(24, 456, 168, 40); checkButton.BackColor = Text_; checkButton.ForeColor = Bg; checkButton.FlatAppearance.BorderColor = Text_;
+                logButton.SetBounds(200, 456, 96, 40); releasesButton.SetBounds(304, 456, 148, 40);
+                releasesButton.Text = "Страница релизов";
+                AcceptButton = checkButton;
+            }
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)

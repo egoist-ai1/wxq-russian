@@ -329,6 +329,8 @@ var
   UiTimer, UiAppWnd, UiLastPub, UiCloseAt: LongWord;
   UiCmdSize, UiLastSeq, SvRev, SvStep: Integer;
   SvScreen, SvOp, SvState, SvDetail, SvFile, SvEta, SvStepState, SvFailKind, SvFailMsg, SvFailCode, SvNote: String;
+  SvStage, SvDetailBeforeClose, PreClosingCaption: String;   // SvStage = 'close' пока помощник закрывает игру и лаунчер (протокол: поле stage)
+  ClosingShown: Boolean;
   SvDone, SvTotal: Int64;
   SvCanRemove, SvInterrupted, SvFailedBefore: Boolean;
 
@@ -422,7 +424,7 @@ begin
     IntToStr(ShownPermille div 10) + '.' + IntToStr(ShownPermille mod 10) + ',"step":' + IntToStr(SvStep) +
     ',"step_state":"' + SvStepState + '","detail":"' + JsonStr(SvDetail) + '","file":"' + JsonStr(SvFile) +
     '","eta":"' + JsonStr(SvEta) + '","done_bytes":' + IntToStr(SvDone) + ',"total_bytes":' + IntToStr(SvTotal) +
-    ',"state":"' + SvState + '","launcher_on":' + JsonBool(LauncherOn) + ',"launcher_available":' + JsonBool(LauncherAvailable) +
+    ',"state":"' + SvState + '","stage":"' + SvStage + '","launcher_on":' + JsonBool(LauncherOn) + ',"launcher_available":' + JsonBool(LauncherAvailable) +
     ',"launcher_installed":' + JsonBool(LauncherWanted) + ',"has_launcher_shortcut":' + JsonBool((LauncherLnk <> '') or LauncherWanted) +
     ',"failure_code":"' + JsonStr(SvFailCode) + '","failure_message":"' + JsonStr(SvFailMsg) + '","failed_before_write":' + JsonBool(SvFailedBefore) +
     ',"fail_kind":"' + SvFailKind + '","note":"' + JsonStr(SvNote) + '","interrupted":' + JsonBool(SvInterrupted) +
@@ -1011,6 +1013,7 @@ begin
   SvStep := 0;
   SvStepState := 'run';
   SvDetail := '';
+  SvStage := '';
   SvFile := '';
   SvEta := '';
   SvDone := 0;
@@ -1023,6 +1026,7 @@ procedure UiStepHook(I, State: Integer; Detail: String);
 begin
   if not UiActive then Exit;
   if State = StPending then Exit;
+  SvStage := '';
   if State = StDone then
   begin
     if I >= StepCount then SvStep := 6 else SvStep := I + 1;
@@ -1442,6 +1446,22 @@ var
   Idx, Cnt: String;
 begin
   if not UiActive then Exit;
+  // Фаза closing: помощник закрывает мешающие процессы (item - их имена). Подпись шага возвращается, когда фаза закончилась.
+  if LineValue(Lines, 'phase') = 'closing' then
+  begin
+    if SvStage <> 'close' then SvDetailBeforeClose := SvDetail;
+    SvStage := 'close';
+    SvDetail := 'Закрываю игру и лаунчер: ' + LineValue(Lines, 'item');
+    SvFile := '';
+    SvDone := 0;
+    SvTotal := 0;
+    Exit;
+  end;
+  if SvStage = 'close' then
+  begin
+    SvStage := '';
+    SvDetail := SvDetailBeforeClose;
+  end;
   SvDone := StrToInt64Def(LineValue(Lines, 'done'), 0);
   SvTotal := StrToInt64Def(LineValue(Lines, 'total'), 0);
   SvFile := LineValue(Lines, 'item');
@@ -1573,6 +1593,22 @@ begin
   else if Total >= 1048576 then
     SizeText := '  ·  ' + IntToStr(Done div 1048576) + ' из ' + IntToStr(Total div 1048576) + ' МБ';
   Item := LineValue(Lines, 'item');
+  if LineValue(Lines, 'phase') = 'closing' then
+  begin
+    // Помощник закрывает игру и лаунчер: строка видна и в окне Inno (запасные страницы), и в WXQSetupUI.
+    if (Step >= 1) and not ClosingShown then PreClosingCaption := StepDetail[Step].Caption;
+    ClosingShown := True;
+    if Step >= 1 then StepDetail[Step].Caption := 'Закрываю игру и лаунчер: ' + Item
+    else DetailLabel.Caption := 'Закрываю игру и лаунчер: ' + Item;
+    UiLiveHook(Step, Lines);
+    Exit;
+  end;
+  if ClosingShown then
+  begin
+    ClosingShown := False;
+    if Step >= 1 then StepDetail[Step].Caption := PreClosingCaption
+    else DetailLabel.Caption := 'Возвращаю исходные файлы по резервным копиям.';
+  end;
   if (Step >= 1) and (Item <> '') then StepDetail[Step].Caption := Item;
   UiLiveHook(Step, Lines);
   SetOverall(StepBase(Step) + (StepWeight(Step) * Frac) div 1000);
@@ -1618,6 +1654,13 @@ begin
   else Log('Остановка помощника по флагу: помощник не завершился за 10 минут');
 end;
 
+// Закрытие игры и лаунчера, которые мешают, берёт на себя помощник (WXQTool.cs, Closer). Фоновых закрытий нет: с /UPDATE=1 (старый путь помощника, вручную)
+// передаётся stale, который ничего не закрывает; интерактивный мастер (в том числе по кнопке «Обновить сейчас»), явный тихий запуск и удаление закрывают всё подходящее.
+function CloseParam: String;
+begin
+  if UpdateMode then Result := ' --close stale' else Result := ' --close all';
+end;
+
 // Запуск помощника с живым прогрессом: окно не зависает, полоса идёт по файлу --progress. Результат — как у RunTool.
 function RunToolLive(Command, Extra: String; Step: Integer): Boolean;
 var
@@ -1638,7 +1681,7 @@ begin
   DeleteFile(ProgFile);
   DeleteFile(ProgFile + '.cancel');
   Params := Command + ' --payload "' + SecDir +
-    '" --data "' + GetDataDir('') + '" --out "' + OutFile + '" --progress "' + ProgFile + '"' + GameParam + Extra;
+    '" --data "' + GetDataDir('') + '" --out "' + OutFile + '" --progress "' + ProgFile + '"' + GameParam + CloseParam + Extra;
   Log('Tool (live): ' + Command);
   Result := Exec(ToolPath, Params, '', SW_HIDE, ewNoWait, Code);
   if not Result then Exit;
@@ -1655,7 +1698,7 @@ begin
     SetArrayLength(PL, 0);
     if FileExists(ProgFile) and LoadStringsFromFile(ProgFile, PL) then
     begin
-      Cur := LineValue(PL, 'done') + '|' + LineValue(PL, 'index') + '|' + LineValue(PL, 'state');
+      Cur := LineValue(PL, 'done') + '|' + LineValue(PL, 'index') + '|' + LineValue(PL, 'state') + '|' + LineValue(PL, 'phase') + '|' + LineValue(PL, 'item');
       if Cur <> Last then
       begin
         Last := Cur;
@@ -1751,11 +1794,11 @@ function InfoWelcome: String;
 begin
 #ifdef WithLauncher
   Result := InfoWhatIs + NL + NL +
-    'Перед установкой закройте игру и лаунчер, в том числе значок в области уведомлений. Интернет не нужен. ' +
+    'Перед установкой закройте игру и лаунчер, в том числе значок в области уведомлений: если они ещё запущены, установщик сам закроет их и скажет об этом. Интернет не нужен. ' +
     'Перед записью делается резервная копия; перевод можно удалить кнопкой в этом окне или через «Установку и удаление программ».';
 #else
   Result := InfoWhatIs + NL + NL +
-    'Перед установкой закройте игру и лаунчер, в том числе значок в области уведомлений. Интернет не нужен.' + NL + NL +
+    'Перед установкой закройте игру и лаунчер, в том числе значок в области уведомлений: если они ещё запущены, установщик сам закроет их и скажет об этом. Интернет не нужен.' + NL + NL +
     'Перед записью установщик сохраняет резервную копию. Удалить перевод можно кнопкой в этом окне ' +
     'или через «Установку и удаление программ».' + NL + NL + InfoAfterUpdate;
 #endif
@@ -2803,8 +2846,8 @@ end;
 
 #ifdef WithUpdater
 // ---- автообновление ------------------------------------------------------------------------------------------
-// Задача планировщика «Egoist\WXQ-Russian Update»: от SYSTEM, при входе любого пользователя (через 2 минуты) и каждые 6 часов, ниже обычного приоритета,
-// действие - {app}\WXQTool.exe update (без пользовательских аргументов). Дескриптор безопасности даёт группе «Пользователи» только запуск и чтение
+// Задача планировщика «Egoist\WXQ-Russian Update»: от SYSTEM, БЕЗ триггеров (проверка только по запросу значка, когда человек зашёл в русификатор), ниже обычного приоритета,
+// действие - {app}\WXQTool.exe update --check-only (без пользовательских аргументов; только проверка и докачка установщика в кэш). Дескриптор безопасности даёт группе «Пользователи» только запуск и чтение
 // (GRGX): значок в трее просит schtasks /run, а менять или удалять задачу могут лишь администраторы и SYSTEM.
 // Любой сбой здесь не прерывает установку перевода: без задачи просто нет автообновления (в журнале строка).
 
@@ -2812,11 +2855,20 @@ end;
 // Установка запускает помощника из защищённой копии (как остальные команды); удаление - установленного {app}\WXQTool.exe.
 
 procedure RegisterUpdateTask;
+var
+  Code: Integer;
 begin
   if RunTool('task-register', ' --exe "' + ExpandConstant('{app}\{#ToolExe}') + '"') then
     Log('Задача автообновления зарегистрирована: ' + ToolValue('task'))
   else
+  begin
     Log('Задача автообновления не создана: ' + ToolValue('code') + ' ' + ToolValue('message'));
+    // Старая задача 0.6.0 (триггеры «вход» и «каждые 6 часов», действие update) осталась бы работать в фоне: убираем её, чтобы фона точно не было.
+    if Exec(ExpandConstant('{sys}\schtasks.exe'), '/delete /tn "Egoist\WXQ-Russian Update" /f', '', SW_HIDE, ewWaitUntilTerminated, Code) then
+      Log('Прежняя задача автообновления удалена (код ' + IntToStr(Code) + '; 0 - удалена, иначе её не было). Автообновления не будет, пока русификатор не переустановят.')
+    else
+      Log('ВНИМАНИЕ: задачу автообновления не удалось ни обновить, ни удалить: старая версия задачи может продолжать проверки в фоне.');
+  end;
 end;
 
 procedure RemoveUpdateTask;
@@ -2956,7 +3008,7 @@ begin
   OutFile := ExpandConstant('{app}') + '\restore-out.txt';
   DeleteFile(OutFile);
   SetArrayLength(Lines, 0);
-  Exec(Tool, 'restore --data "' + UninstDataDir + '" --out "' + OutFile + '"',
+  Exec(Tool, 'restore --data "' + UninstDataDir + '" --out "' + OutFile + '" --close all',
     '', SW_HIDE, ewWaitUntilTerminated, Code);
   Status := 'error';
   Message := 'Помощник не вернул результат.';

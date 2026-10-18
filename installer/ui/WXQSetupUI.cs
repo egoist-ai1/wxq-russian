@@ -81,8 +81,8 @@ namespace WXQSetup
             }
             catch (Exception) { return; }
             Func<string, string> u = d => new Uri(System.IO.Path.Combine(root, d) + System.IO.Path.DirectorySeparatorChar).AbsoluteUri;
-            Display = new FontFamily(u("unb") + "#Unbounded, Segoe UI");
-            Body = new FontFamily(u("onc") + "#Onest, " + u("onl") + "#Onest, Segoe UI");
+            Display = new FontFamily(u("unb") + "#Unbounded, Segoe UI Variable Display, Segoe UI");
+            Body = new FontFamily(u("onc") + "#Onest, " + u("onl") + "#Onest, Segoe UI Variable Text, Segoe UI");
         }
 
         public static TimeSpan D(int ms) { return TimeSpan.FromMilliseconds(Anim ? ms : 0); }
@@ -303,6 +303,7 @@ namespace WXQSetup
         public int Step;                    // 1..5, 0 = нет
         public string StepState = "run";    // run | fail
         public string Detail = "";
+        public string Stage = "";           // "" | close: помощник закрывает игру и лаунчер (подпись и пояснение этапа меняются)
         public string File = "";
         public string Eta = "";
         public string Op = "install";       // install | remove (что делает экран прогресса)
@@ -444,6 +445,7 @@ namespace WXQSetup
             s.Step = (int)Math.Max(0, Math.Min(6, Num(d, "step")));
             s.StepState = Str(d, "step_state") == "fail" ? "fail" : "run";
             s.Detail = Str(d, "detail"); s.File = Str(d, "file"); s.Eta = Str(d, "eta");
+            s.Stage = Str(d, "stage") == "close" ? "close" : "";
             s.Op = Str(d, "op") == "remove" ? "remove" : "install";
             string st = Str(d, "state"); s.State = (st == "running" || st == "finished" || st == "failed") ? st : "idle";
             s.DoneBytes = (long)Math.Max(0, Num(d, "done_bytes")); s.TotalBytes = (long)Math.Max(0, Num(d, "total_bytes"));
@@ -467,13 +469,13 @@ namespace WXQSetup
     // ===== Кадр окна: шапка + содержимое экрана =====
     class MainView : Grid
     {
-        public const double W = 880, H = 580, HeaderH = 128, FooterH = 104, Pad = 40;
+        public const double W = 880, H = 640, HeaderH = 128, FooterH = 104, ProgressFooterH = 168, Pad = 40;
         public event Action<string> Command;
         public UiState S = new UiState();
         readonly Grid host = new Grid();
         string current;
         // элементы экрана прогресса
-        TextBlock pctText, etaText, fileText, detailText;
+        TextBlock pctText, etaText, fileText, detailText, infoLead, infoMore;
         Border fillBar; double dispPct, targetPct; DispatcherTimer pctTimer;
         Grid[] markers; TextBlock[] stepTitles, stepDetails; Rectangle[] links;
         Toggle launcherToggle;
@@ -531,11 +533,11 @@ namespace WXQSetup
         void Fire(string cmd) { if (Command != null) Command(cmd); }
 
         // ----- каркас экрана: тело + подвал -----
-        Grid Frame(out Grid body, out Grid footer)
+        Grid Frame(out Grid body, out Grid footer, double footerH = FooterH)
         {
             var root = new Grid();
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(FooterH) });
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(footerH) });
             body = new Grid { Margin = new Thickness(Pad, 28, Pad, 8) };
             footer = new Grid { Margin = new Thickness(Pad, 0, Pad, 0) };
             SetRow(footer, 1);
@@ -626,7 +628,7 @@ namespace WXQSetup
             upd.Children.Add(ui2);
             var ut = new StackPanel(); SetColumn(ut, 1);
             ut.Children.Add(Tk.TB("Как работает обновление", 12.5, Tk.Text, Tk.Body, 18, TextWrapping.Wrap));
-            var ub = Tk.TB(UpdateLimit, 11.5, Tk.Muted, Tk.Body, 16, TextWrapping.Wrap); ub.Margin = new Thickness(0, 3, 0, 0); ut.Children.Add(ub);
+            var ub = Tk.TB(UpdateLimit, 12, Tk.Muted, Tk.Body, 17, TextWrapping.Wrap); ub.Margin = new Thickness(0, 3, 0, 0); ut.Children.Add(ub);
             upd.Children.Add(ut);
             left.Children.Add(upd);
             body.Children.Add(left);
@@ -646,7 +648,7 @@ namespace WXQSetup
             note.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             var ni = Ico.Make("info", 18, Tk.Muted); ni.HorizontalAlignment = HorizontalAlignment.Left; ni.VerticalAlignment = VerticalAlignment.Top; ni.Margin = new Thickness(0, 1, 0, 0);
             note.Children.Add(ni);
-            var nt = Tk.TB("Перед установкой закройте игру и лаунчер, в том числе значок в области уведомлений.", 12.5, Tk.TextSoft, Tk.Body, 18, TextWrapping.Wrap); SetColumn(nt, 1);
+            var nt = Tk.TB("Если игра или лаунчер запущены, установщик закроет их сам, в том числе значок в области уведомлений, и назовёт, что закрыл. Лучше закрыть их заранее. Нужны права администратора: Windows спросит разрешение.", 12.5, Tk.TextSoft, Tk.Body, 18, TextWrapping.Wrap); SetColumn(nt, 1);
             note.Children.Add(nt); card.Children.Add(note);
             var c = Card(card, 24); SetColumn(c, 2); c.VerticalAlignment = VerticalAlignment.Top; body.Children.Add(c);
 
@@ -678,7 +680,7 @@ namespace WXQSetup
             var ai = Ico.Make("alert", 20, Tk.Danger); ai.Margin = new Thickness(0, 0, 10, 0); qrow.Children.Add(ai);
             qrow.Children.Add(Tk.TB("Удалить перевод?", 15, Tk.Text));
             q.Children.Add(qrow);
-            var qs = Tk.TB("Файлы игры вернутся к исходным. Игру и лаунчер закройте.", 12.5, Tk.Muted, Tk.Body, 18); qs.Margin = new Thickness(30, 4, 0, 0); q.Children.Add(qs);
+            var qs = Tk.TB("Файлы игры вернутся к исходным. Запущенные игру и лаунчер установщик закроет сам.", 12.5, Tk.Muted, Tk.Body, 18); qs.Margin = new Thickness(30, 4, 0, 0); q.Children.Add(qs);
             t.Children.Add(q);
             var no = new Btn(BK.Secondary, "Отмена", null, null, 44, 112); no.Click += delegate { confirmRemove = false; Show(back); };
             var yes = new Btn(BK.Danger, "Удалить", "trash", null, 44, 148); yes.Click += delegate { confirmRemove = false; Fire("remove"); };
@@ -712,7 +714,7 @@ namespace WXQSetup
 
         FrameworkElement Progress()
         {
-            Grid body, footer; var root = Frame(out body, out footer);
+            Grid body, footer; var root = Frame(out body, out footer, ProgressFooterH);
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(48) });
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(340) });
@@ -732,7 +734,7 @@ namespace WXQSetup
             left.Children.Add(trackG);
             etaText = Tk.TB("", 14, Tk.TextSoft); etaText.Margin = new Thickness(0, 16, 0, 0); Typography.SetNumeralAlignment(etaText, FontNumeralAlignment.Tabular);
             left.Children.Add(etaText);
-            fileText = Tk.TB("", 12.5, Tk.Muted); fileText.Margin = new Thickness(0, 6, 0, 0); fileText.TextTrimming = TextTrimming.CharacterEllipsis;
+            fileText = Tk.TB("", 12.5, Tk.Muted, Tk.Body, 17, TextWrapping.Wrap); fileText.Margin = new Thickness(0, 6, 0, 0); fileText.TextTrimming = TextTrimming.CharacterEllipsis; fileText.MaxHeight = 36;
             left.Children.Add(fileText);
             body.Children.Add(left);
 
@@ -740,7 +742,7 @@ namespace WXQSetup
             markers = null;
             if (removing)
             {
-                var rn = Tk.TB("Игра и лаунчер должны быть закрыты. Установщик возвращает файлы по резервным копиям и сам скажет, когда закончит.", 14, Tk.TextSoft, Tk.Body, 21, TextWrapping.Wrap);
+                var rn = Tk.TB("Установщик возвращает файлы игры по резервным копиям. Если игра или лаунчер запущены, он закроет их сам и скажет об этом.", 14, Tk.TextSoft, Tk.Body, 21, TextWrapping.Wrap);
                 rn.Margin = new Thickness(0, 8, 0, 0); SetColumn(rn, 2); body.Children.Add(rn);
             }
             else
@@ -751,7 +753,7 @@ namespace WXQSetup
             markers = new Grid[5]; stepTitles = new TextBlock[5]; stepDetails = new TextBlock[5]; links = new Rectangle[5];
             for (int i = 0; i < 5; i++)
             {
-                steps.RowDefinitions.Add(new RowDefinition { Height = new GridLength(56) });
+                steps.RowDefinitions.Add(new RowDefinition { Height = new GridLength(54) });
                 if (i < 4)
                 {
                     links[i] = new Rectangle { Width = 2, Fill = Tk.Surface3, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(11, 30, 0, 6), RadiusX = 1, RadiusY = 1 };
@@ -768,9 +770,13 @@ namespace WXQSetup
             SetColumn(steps, 2); body.Children.Add(steps);
             }
 
-            var hint = Tk.TB("Закрывать окно во время записи не нужно: установщик сам закончит и скажет.", 12.5, Tk.Muted, Tk.Body, 18, TextWrapping.Wrap);
-            hint.VerticalAlignment = VerticalAlignment.Bottom; hint.Margin = new Thickness(0, 0, 0, 36); hint.MaxWidth = 560; hint.HorizontalAlignment = HorizontalAlignment.Left;
-            footer.Children.Add(hint);
+            // Пояснение этапа под шагами: суть в 1-2 предложениях + абзац «Подробнее» (что делается, как, зачем, что может пойти не так). Тексты - в StageInfo.
+            var info = new StackPanel { VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 4, 0, 0) };
+            info.Children.Add(new Border { Height = 1, Background = Tk.Line, Margin = new Thickness(0, 0, 0, 14) });
+            infoLead = Tk.TB("", 14.5, Tk.Text, Tk.Body, 21, TextWrapping.Wrap);
+            infoMore = Tk.TB("", 13, Tk.TextSoft, Tk.Body, 19, TextWrapping.Wrap); infoMore.Margin = new Thickness(0, 6, 0, 0);
+            info.Children.Add(infoLead); info.Children.Add(infoMore);
+            footer.Children.Add(info);
             if (pctTimer != null) pctTimer.Stop();
             pctTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
             pctTimer.Tick += delegate
@@ -782,6 +788,68 @@ namespace WXQSetup
             pctTimer.Start();
             UpdateProgress(true);
             return root;
+        }
+
+        // Пояснение этапа: суть (что происходит) и «Подробнее» (как, зачем, что может пойти не так и что делать). Русский язык без жаргона.
+        public static void StageInfo(UiState s, out string lead, out string more)
+        {
+            if (s.Stage == "close")
+            {
+                lead = "Закрываю игру и лаунчер: пока они запущены, их файлы нельзя менять безопасно.";
+                more = "Если идёт партия, она прервётся. Файлы игры не повреждаются: после установки запустите игру снова. Закрываются только лаунчер, игра и их зависшие процессы; сначала окна закрываются обычным способом, затем принудительно. Если процесс не закроется, установщик назовёт его: завершите его в диспетчере задач и повторите.";
+                return;
+            }
+            if (s.Op == "remove")
+            {
+                lead = "Возвращаю исходные файлы игры по резервным копиям.";
+                more = "Файлы перевода заменяются сохранёнными оригиналами, затем запись о переводе снимается из «Установки и удаления программ». Копии не трогаются, пока откат не закончится. Если игра или лаунчер запущены, установщик закроет их сам; если откат прервётся, нажмите «Удалить перевод» ещё раз: он продолжится.";
+                return;
+            }
+            switch (s.Step)
+            {
+                case 1:
+                    lead = "Ищу, где на компьютере стоит игра.";
+                    more = "Установщик смотрит папки лаунчера и ярлыки и находит нужную копию Honor of Kings ACE. В игре при этом ничего не меняется. Если папка не найдётся или их окажется несколько, окно предложит выбрать её вручную.";
+                    return;
+                case 2:
+                    lead = "Проверяю, что перевод подходит к вашей версии игры.";
+                    more = "Сверяю версию и контрольные суммы файлов игры с теми, для которых собран перевод, и при необходимости закрываю игру и лаунчер. Если игра обновилась, установщик остановится, ничего не тронув: запустите игру один раз до главного меню, закройте её и повторите.";
+                    return;
+                case 3:
+                    lead = "Сохраняю копии файлов игры, которые будут заменены.";
+                    more = "Копии лежат в папке данных русификатора (ProgramData\\Egoist\\WXQ-Russian\\backup) вместе с отметкой о каждом файле. По ним «Удалить перевод» вернёт игру в исходный вид, даже если установка прервётся. Если места на диске мало, установщик скажет об этом до записи.";
+                    return;
+                case 4:
+                    lead = "Записываю перевод в файлы игры: тексты, картинки интерфейса, перенос слов.";
+                    more = "Пакеты перевода записываются по одному: файл готовится рядом и подменяется целиком, затем проверяется. Не закрывайте окно и не выключайте компьютер: установщик сам закончит. Если запись сорвётся, он вернёт файлы из копии и скажет, что случилось.";
+                    return;
+                case 5:
+                    lead = "Проверяю, что записанные файлы совпали с эталоном.";
+                    more = "Для каждого записанного файла считается контрольная сумма SHA-256 и сверяется с эталоном; результат фиксируется в журнале. Если что-то не совпало, запись откатывается по копии. Запускать игру можно после сообщения «Перевод установлен».";
+                    return;
+                case 6:
+                    lead = "Ставлю русский лаунчер (если он включён), задачу автообновления и значок в области уведомлений.";
+                    more = "Это делается с правами администратора, которые вы уже разрешили. Лаунчер даёт ярлык «Honor of Kings ACE (RU)»; задача в планировщике проверяет новую версию перевода и ждёт, пока вы играете; значок показывает её состояние. Убрать всё можно удалением программы.";
+                    return;
+                default:
+                    lead = "Готовлюсь к установке.";
+                    more = "Распаковываю файлы перевода в защищённую папку, доступную только администраторам, и проверяю их контрольные суммы. Дальше пять этапов: поиск игры, проверка версии, резервная копия, запись и проверка результата.";
+                    return;
+            }
+        }
+
+        // Что делать при отказе: по коду из WXQTool; пустой код - общий совет.
+        public static string FixHint(string code, bool remove)
+        {
+            switch (code)
+            {
+                case "running": return "Закройте игру и лаунчер вручную: диспетчер задач (Ctrl+Shift+Esc), вкладка «Подробности», выберите процесс из причины, «Снять задачу». Не забудьте значок лаунчера в области уведомлений. Потом «Назад» и повторите.";
+                case "version": return "Игра обновилась. Запустите её один раз до главного меню, закройте и повторите; новая версия перевода выходит отдельно.";
+                case "disk_space": return "Освободите место на указанном диске и повторите: игра не изменялась.";
+                case "busy": return "Дождитесь окончания другой операции русификатора (или перезагрузите компьютер) и повторите.";
+                case "payload": case "acl": case "sha_mismatch": return "Скачайте установщик заново с официальной страницы и запустите от имени администратора.";
+                default: return remove ? "Закройте игру и лаунчер и нажмите «Удалить перевод» ещё раз: копии на месте. Если ошибка повторяется, пришлите файл install.log из папки данных русификатора в чат поддержки." : "Нажмите «Назад» и повторите. Если ошибка повторяется, пришлите файл install.log (ProgramData\\Egoist\\WXQ-Russian) в чат поддержки.";
+            }
         }
 
         // Применить S.Percent/Step/Detail к экрану прогресса. instant — без анимаций (render).
@@ -796,7 +864,14 @@ namespace WXQSetup
             if (instant || !Tk.Anim) { fillBar.BeginAnimation(WidthProperty, null); fillBar.Width = to; }
             else fillBar.BeginAnimation(WidthProperty, new DoubleAnimation(to, Tk.D(420)) { EasingFunction = Tk.Expo });
             etaText.Text = (string.IsNullOrEmpty(S.Eta) ? "" : S.Eta) + (S.TotalBytes > 0 ? (string.IsNullOrEmpty(S.Eta) ? "" : " · ") + Proto.SizeText(S.DoneBytes, S.TotalBytes) : "");
-            fileText.Text = S.File ?? "";
+            bool closing = S.Stage == "close";
+            fileText.Text = closing ? (S.Detail ?? "") : (S.File ?? "");   // при закрытии процессов здесь вся строка «Закрываю игру и лаунчер: имена»
+            string lead, more;
+            StageInfo(S, out lead, out more);
+            infoLead.Text = lead;
+            infoMore.Inlines.Clear();
+            infoMore.Inlines.Add(new Run("Подробнее  ") { Foreground = Tk.Gold });
+            infoMore.Inlines.Add(new Run(more));
             if (markers == null) return;
             for (int i = 0; i < 5; i++)
             {
@@ -804,7 +879,7 @@ namespace WXQSetup
                 if (S.Step == 6) st = "done";
                 SetMarker(i, st);
                 stepTitles[i].Foreground = st == "wait" ? Tk.Muted : Tk.Text;
-                stepDetails[i].Text = (i + 1 == S.Step) ? (S.Detail ?? "") : (st == "done" ? "готово" : "");
+                stepDetails[i].Text = (i + 1 == S.Step) ? (closing ? "закрываю игру и лаунчер" : (S.Detail ?? "")) : (st == "done" ? "готово" : "");
                 stepDetails[i].Foreground = st == "fail" ? Tk.Danger : (i + 1 == S.Step ? Tk.TextSoft : Tk.Muted);
                 if (i < 4) links[i].Fill = (st == "done") ? Tk.LineStrong : Tk.Surface3;
             }
@@ -875,7 +950,7 @@ namespace WXQSetup
             var l1 = ItemRow("play", S.HasLauncherShortcut ? "Запустите игру" : "Откройте игру вручную",
                 S.HasLauncherShortcut ? (S.LauncherInstalled ? "Откроется русский лаунчер: Windows спросит права администратора" : "Откроется оригинальный лаунчер") : "Ярлык лаунчера не найден");
             l1.Margin = new Thickness(0, 16, 0, 12); card.Children.Add(l1);
-            card.Children.Add(ItemRow("redo", "После обновления игры", "Запустите её, затем поставьте перевод заново"));
+            card.Children.Add(ItemRow("redo", "После обновления игры", "Первый запуск будет на китайском: дойдите до главного меню и закройте игру, перевод вернётся сам"));
             if (S.LauncherInstalled) card.Children.Add(ItemRow("shield", "Русский лаунчер", "Ярлык «Honor of Kings ACE (RU)»; новая функция, с ACE в игре не проверена. Выключить: переустановка с выключенным переключателем"));
             var c = Card(card, 24); SetColumn(c, 2); c.VerticalAlignment = VerticalAlignment.Top; body.Children.Add(c);
 
@@ -898,14 +973,25 @@ namespace WXQSetup
                 ? "Перевод удалён не до конца. Закройте игру и лаунчер, в том числе значок в области уведомлений, и повторите: резервные копии на месте."
                 : S.FailedBeforeWrite
                     ? "Ничего не повреждено: до записи в игру установщик остановился."
-                    : "Установка прервана, часть файлов могла записаться. Закройте игру, нажмите «Назад», затем «Удалить перевод»: установщик вернёт файлы игры.", 560));
+                    : "Установка прервана, часть файлов могла записаться. Закройте игру, нажмите «Назад», затем «Удалить перевод»: установщик вернёт файлы игры.", 340));
+            body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(340) });
+            body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(24) });
+            body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            var right = new StackPanel { VerticalAlignment = VerticalAlignment.Top };
+            SetColumn(right, 2);
             var reason = new StackPanel();
             reason.Children.Add(Tk.TB("Причина", 12, Tk.Muted));
             var m = Tk.TB(string.IsNullOrEmpty(S.FailureMessage) ? "Помощник установщика не отвечает. Проверьте антивирус и запустите установку ещё раз." : S.FailureMessage, 14, Tk.Text, Tk.Body, 21, TextWrapping.Wrap);
             m.Margin = new Thickness(0, 8, 0, 0); reason.Children.Add(m);
-            var card = Card(reason, 20); card.Margin = new Thickness(0, 20, 0, 0); card.Width = 560; card.HorizontalAlignment = HorizontalAlignment.Left;
-            left.Children.Add(card);
+            var card = Card(reason, 20); card.HorizontalAlignment = HorizontalAlignment.Stretch;
+            right.Children.Add(card);
+            var fix = new StackPanel { Margin = new Thickness(0, 14, 0, 0) };
+            fix.Children.Add(Tk.TB("Что делать", 12, Tk.Gold));
+            var fixText = Tk.TB(FixHint(S.FailureCode, rmFail), 13, Tk.TextSoft, Tk.Body, 19, TextWrapping.Wrap); fixText.Margin = new Thickness(0, 4, 0, 0);
+            fix.Children.Add(fixText);
+            right.Children.Add(fix);
             body.Children.Add(left);
+            body.Children.Add(right);
             var close = new Btn(BK.Secondary, "Закрыть", null, null, 44, 112); close.Click += delegate { Fire("close"); };
             var back = new Btn(BK.Primary, "Назад", "back", null, 44, 132); back.Click += delegate { Fire("back"); };
             // Игра не найдена или найдено несколько папок: папку можно выбрать вручную. Путь выбирает системный диалог в Setup, окно его не передаёт.
@@ -951,7 +1037,7 @@ namespace WXQSetup
                 card.Children.Add(Fact("Версия перевода", string.IsNullOrEmpty(S.TranslationVersion) ? "—" : S.TranslationVersion, 16));
                 card.Children.Add(Fact("Версия игры", string.IsNullOrEmpty(S.GameVersion) ? "—" : S.GameVersion, 12));
                 card.Children.Add(new Border { Height = 1, Background = Tk.Line, Margin = new Thickness(0, 6, 0, 14) });
-                var n = Tk.TB("Если игра обновится, запустите её один раз и поставьте перевод заново: новое останется китайским.", 12.5, Tk.Muted, Tk.Body, 18, TextWrapping.Wrap); card.Children.Add(n);
+                var n = Tk.TB("После обновления игры первый запуск будет на китайском: дойдите до главного меню и закройте игру, перевод вернётся сам.", 12.5, Tk.Muted, Tk.Body, 18, TextWrapping.Wrap); card.Children.Add(n);
             }
             var c = Card(card, 24); SetColumn(c, 2); c.VerticalAlignment = VerticalAlignment.Top; body.Children.Add(c);
 
@@ -1072,7 +1158,8 @@ namespace WXQSetup
             Tk.Still = true;
             Directory.CreateDirectory(dir);
             string[] names = { "01-welcome", "02-welcome-launcher-on", "03-progress", "04-done", "05-fail", "06-installed", "07-installed-confirm", "08-removed", "09-progress-start", "10-fail-after-write",
-                "11-done-no-launcher", "12-interrupted", "13-progress-remove", "14-fail-remove", "15-welcome-can-remove", "16-welcome-no-launcher-block", "17-removed-note", "18-interrupted-confirm", "19-fail-pick-game" };
+                "11-done-no-launcher", "12-interrupted", "13-progress-remove", "14-fail-remove", "15-welcome-can-remove", "16-welcome-no-launcher-block", "17-removed-note", "18-interrupted-confirm", "19-fail-pick-game",
+                "20-progress-closing", "21-progress-backup", "22-progress-verify", "23-progress-finish", "24-fail-running", "25-progress-remove-closing" };
             foreach (string n in names)
             {
                 var v = new MainView();
@@ -1081,6 +1168,12 @@ namespace WXQSetup
                 if (n == "02-welcome-launcher-on") v.S.LauncherOn = true;
                 if (n == "03-progress") { screen = "progress"; v.S.Percent = 47; v.S.Step = 4; v.S.Detail = "Файл 312 из 740"; v.S.Eta = "осталось ~3 мин"; v.S.DoneBytes = 2250L * 1048576; v.S.TotalBytes = 4800L * 1048576; v.S.File = "Resources\\Lua\\lang\\ru_RU\\hero_skill_text.bytes"; }
                 if (n == "09-progress-start") { screen = "progress"; v.S.Percent = 6; v.S.Step = 2; v.S.Detail = "Сверяю версию с перечнем"; v.S.Eta = "осталось ~8 мин"; v.S.File = "HonorOfKings.exe"; }
+                if (n == "20-progress-closing") { screen = "progress"; v.S.Percent = 8; v.S.Step = 2; v.S.Stage = "close"; v.S.Detail = "Закрываю игру и лаунчер: 王者万象棋.exe, WXQLauncher.exe, WXQLauncherRU.exe, WXQ.exe"; }
+                if (n == "25-progress-remove-closing") { screen = "progress"; v.S.Op = "remove"; v.S.Percent = 4; v.S.Stage = "close"; v.S.Detail = "Закрываю игру и лаунчер: WXQ.exe"; }
+                if (n == "21-progress-backup") { screen = "progress"; v.S.Percent = 22; v.S.Step = 3; v.S.Detail = "Файл 2 из 9"; v.S.Eta = "осталось ~5 мин"; v.S.File = "10/10.db"; }
+                if (n == "22-progress-verify") { screen = "progress"; v.S.Percent = 91; v.S.Step = 5; v.S.Detail = "Файл 4 из 9"; v.S.Eta = "осталось ~1 мин"; v.S.File = "19/19_0.db"; }
+                if (n == "23-progress-finish") { screen = "progress"; v.S.Percent = 98; v.S.Step = 6; v.S.Detail = ""; }
+                if (n == "24-fail-running") { screen = "fail"; v.S.FailureCode = "running"; v.S.FailureMessage = "Игра или лаунчер сейчас запущены, и закрыть их не удалось (王者万象棋.exe (PID 4120)). Закройте их вручную: диспетчер задач, вкладка «Подробности», «Снять задачу», в том числе значок лаунчера в области уведомлений, и повторите."; }
                 if (n == "04-done") screen = "done";
                 if (n == "11-done-no-launcher") { screen = "done"; v.S.LauncherInstalled = false; }
                 if (n == "12-interrupted" || n == "18-interrupted-confirm") { screen = "installed"; v.S.Interrupted = true; }
@@ -1292,7 +1385,8 @@ namespace WXQSetup
             string screen, sig; long rev = 0; var s = new UiState();
             Check("валидное состояние принято", Proto.TryApply(good, s, ref rev, out screen, out sig) && screen == "progress" && rev == 5 && s.Percent == 47.5 && s.Step == 4 && s.State == "running");
             { var f = new UiState(); long fr = 0; string fs, fg; Check("первое состояние «welcome» берёт launcher_on (по умолчанию включён)", Proto.TryApply("{\"rev\":1,\"screen\":\"welcome\",\"launcher_on\":true}", f, ref fr, out fs, out fg) && f.LauncherOn); }
-            Check("тот же rev повторно не применяется", !Proto.TryApply(good, s, ref rev, out screen, out sig));
+            { var f = new UiState(); long fr = 0; string fs, fg; Check("поле stage: close принимается, любое другое значение сбрасывается", Proto.TryApply("{\"rev\":1,\"screen\":\"progress\",\"stage\":\"close\"}", f, ref fr, out fs, out fg) && f.Stage == "close" && Proto.TryApply("{\"rev\":2,\"screen\":\"progress\",\"stage\":\"x<y\"}", f, ref fr, out fs, out fg) && f.Stage == ""); }
+            Check("тот же rev повторно не применяется",!Proto.TryApply(good, s, ref rev, out screen, out sig));
             Check("меньший rev не применяется", !Proto.TryApply(good.Replace("\"rev\":5", "\"rev\":4"), s, ref rev, out screen, out sig));
             Check("больший rev применяется", Proto.TryApply(good.Replace("\"rev\":5", "\"rev\":6").Replace("47.5", "60"), s, ref rev, out screen, out sig) && s.Percent == 60);
             // поломанные входы: ни один не меняет состояние и не бросает исключение

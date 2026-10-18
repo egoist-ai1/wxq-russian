@@ -29,6 +29,8 @@ HERE = Path(__file__).resolve().parent
 PROJECT = HERE.parents[1]
 sys.path.insert(0, str(PROJECT / 'scripts'))
 import publish_release as pr  # noqa: E402
+sys.path.insert(0, str(HERE))
+from close_stubs import build_stubs  # noqa: E402
 from cryptography.hazmat.primitives import serialization  # noqa: E402
 from cryptography.hazmat.primitives.asymmetric import rsa  # noqa: E402
 
@@ -224,7 +226,7 @@ class Env:
         out.unlink(missing_ok=True)
         args = [str(self.tool), 'update', *flags, '--data', str(box['data']), '--out', str(out), '--test-base-url', base or self.server.url]
         full = dict(os.environ, WXQ_RU_UPDATE_KEYS=str(self.keys_file), WXQ_RU_TEST_RETRY_MS='50', WXQ_FAKE_LOG=str(box['log']),
-                    WXQ_FAKE_STATE=str(box['state']), WXQ_FAKE_VERSION=getattr(self, 'fake_version', '9.9.9'), WXQ_RU_USERS_ROOT=str(box['root'] / 'no-users'))
+                    WXQ_RU_TEST_CLOSE_ROOT=str(box['root']), WXQ_FAKE_STATE=str(box['state']), WXQ_FAKE_VERSION=getattr(self, 'fake_version', '9.9.9'), WXQ_RU_USERS_ROOT=str(box['root'] / 'no-users'))
         full.update(env or {})
         done = subprocess.run(args, capture_output=True, timeout=timeout, env=full)
         rows = {'_exit': str(done.returncode)}
@@ -326,11 +328,21 @@ def main() -> int:
         env.publish('1.1.0')
         rows, status = env.run(box, '--check-only')
         check('U4 --check-only: state=ready, available=1.1.0, exit 0', rows['_exit'] == '0' and status.get('state') == 'ready' and status.get('available') == '1.1.0', str(rows) + str(status))
-        check('U4a --check-only: Setup.exe не запрашивался, версия прежняя', server.count('Setup.exe') == 0 and env.version_of(box) == '1.0.0')
+        setups = list((box['data'] / 'updates').glob('*.exe')) if (box['data'] / 'updates').exists() else []
+        check('U4a --check-only: установщик скачан в кэш и записан в статус (путь, размер, SHA-256), но не запущен; версия прежняя',
+              server.count('Setup.exe') >= 1 and len(setups) == 1 and status.get('setup_path', '').lower() == str(setups[0]).lower()
+              and status.get('setup_sha') == hashlib.sha256(setups[0].read_bytes()).hexdigest() and int(status.get('setup_bytes', 0)) == setups[0].stat().st_size
+              and not box['log'].exists() and env.version_of(box) == '1.0.0', str(status))
+        downloads = server.count('Setup.exe')
         sig_before = server.count('update.json.sig')
         rows, status = env.run(box, '--check-only')
         conditional = [h for p, h in server.log if p == '/update.json' and 'if-none-match' in h]
-        check('U4b повторная проверка: условный запрос If-None-Match, без повторной загрузки подписи', len(conditional) == 1 and server.count('update.json.sig') == sig_before and status.get('state') == 'ready', str(rows) + str(status))
+        check('U4b повторная проверка: условный запрос If-None-Match, без повторной загрузки подписи', len(conditional) == 1 and server.count('update.json.sig') == sig_before and status.get('state') == 'ready' and server.count('Setup.exe') == downloads, str(rows) + str(status))
+
+        # U4c. Задача планировщика без триггеров и с проверкой вместо установки (статически по исходнику: на живой системе задачу не регистрируем).
+        tool_src = (PROJECT / 'installer/WXQTool.cs').read_text('utf-8-sig')
+        register = tool_src[tool_src.index('static void TaskRegister'):tool_src.index('static void TaskRemove')]
+        check('U4c задача: нет Triggers.Create и PT6H, действие "update --check-only"', 'Triggers.Create' not in register and 'PT6H' not in register and 'action.Arguments = "update --check-only"' in register)
 
         # U5. Неверная подпись (чужой ключ): отказ, установщик не запрашивается и не запускается.
         box = env.new_box()
@@ -383,11 +395,13 @@ def main() -> int:
         else:
             box = env.new_box()
             env.publish('1.1.0')
+            # 0.6.1: фоновое обновление не убивает процесс с видимым окном (идёт игра), поэтому заглушка оконная.
+            _console_stub, window_stub = build_stubs(work / 'close-stubs')
             sleeper = box['game'] / 'sleep.exe'
-            shutil.copyfile(work / 'FakeSetup.exe', sleeper)
-            proc = subprocess.Popen([str(sleeper), 'sleep'])
+            shutil.copyfile(window_stub, sleeper)
+            proc = subprocess.Popen([str(sleeper)])
             try:
-                time.sleep(0.5)
+                time.sleep(1.5)
                 rows, status = env.run(box)
             finally:
                 proc.kill(); proc.wait()
@@ -409,7 +423,7 @@ def main() -> int:
         exe = env.publish('1.1.0')
         updates = box['data'] / 'updates'
         updates.mkdir()
-        part = updates / (hashlib.sha256(exe).hexdigest()[:16] + '.part')
+        part = updates / 'WXQ-Russian-Setup-1.1.0.part'
         part.write_bytes(exe[:SETUP_PAD // 3])
         rows, status = env.run(box)
         ranges = [h['range'] for p, h in server.log if p == '/Setup.exe' and 'range' in h]
@@ -495,6 +509,39 @@ def main() -> int:
         env.save_installed(box, '1.0.0')
         rows, status = env.run(box, base='http://127.0.0.1:9/', env={**ready, **own})
         check('U18a нет связи, кэш готов: пересадка из сохранённого установщика', status.get('state') == 'done' and status.get('code') == 'reapplied', str(rows) + str(status))
+
+        # U30. Кнопка «Обновить сейчас» поставила версию (state.json = версия манифеста): следующая проверка сохраняет проверенный установщик как копию
+        # текущей версии, и пересадка после обновления игры идёт именно из неё, без сети. Кэш называется понятно (WXQ-Russian-Setup-<версия>.exe).
+        box = env.new_box()
+        env.publish('1.1.0')
+        rows, status = env.run(box, '--check-only')
+        named = box['data'] / 'updates' / 'WXQ-Russian-Setup-1.1.0.exe'
+        check('U30 кэш установщика называется WXQ-Russian-Setup-<версия>.exe, путь в статусе тот же', named.is_file() and status.get('setup_path', '').lower() == str(named).lower(), str(status))
+        box['state'].write_text(json.dumps({'installed': True, 'version': '1.1.0', 'game_root': str(box['game'])}, indent=1), 'utf-8')
+        rows, status = env.run(box, '--check-only')
+        kept = list((box['data'] / 'updates').glob('installed-*.exe'))
+        meta = env.meta_of(box)
+        check('U30a после установки проверка сохранила копию текущей версии, статус idle без готового установщика',
+              len(kept) == 1 and meta.get('installed_setup_version') == '1.1.0' and not named.exists() and status.get('state') == 'idle' and not status.get('setup_path'), str(status) + str(meta))
+        env.add_receipt(box, ours=False)
+        rows, status = env.run(box, base='http://127.0.0.1:9/', env={**ready, **own})
+        lines = env.setup_lines(box)
+        check('U30b пересадка без сети берёт сохранённую копию 1.1.0', status.get('state') == 'done' and status.get('code') == 'reapplied' and len(lines) == 1 and env.version_of(box) == '1.1.0', str(rows) + str(status) + str(lines))
+
+        # U31. Сохранённая копия другой версии (старая 1.0.0 при установленной 1.1.0) не берётся: старую версию поверх новой не ставим.
+        box = env.new_box('1.1.0')
+        env.add_receipt(box, ours=False)
+        env.save_installed(box, '1.0.0')
+        rows, status = env.run(box, base='http://127.0.0.1:9/', env={**ready, **own})
+        check('U31 копия не той версии: пересадка не запущена, Setup не запускался', not box['log'].exists() and status.get('state') != 'done' and env.version_of(box) == '1.1.0', str(rows) + str(status))
+
+        # U32. Сбой сети при проверке не убирает готовый установщик из статуса (кнопка «Обновить сейчас» остаётся).
+        box = env.new_box()
+        env.publish('1.1.0')
+        rows, status = env.run(box, '--check-only')
+        first = status.get('setup_path')
+        rows, status = env.run(box, '--check-only', base='http://127.0.0.1:9/')
+        check('U32 после сбоя сети готовый установщик сохранён в статусе', bool(first) and status.get('state') == 'failed' and status.get('setup_path') == first and status.get('setup_sha'), str(status))
 
         # U19. Кэш готов и вышла новая версия: обычное обновление (скачивается новый установщик).
         box = env.new_box()
