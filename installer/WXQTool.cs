@@ -5,7 +5,7 @@
 // резервная копия, атомарная замена файлов, откат по receipt. Ничего не пишет в prime.
 //
 // Собирается штатным csc.exe из .NET Framework 4 (есть в каждой Windows 10/11), C# 5.
-// Команды: find, status, check, backup, unpack, verify, restore, purge, update.
+// Команды: find, status, check, backup, unpack, verify, restore, purge, update, task-register, task-remove.
 // update [--check-only]: автообновление из GitHub Releases (подписанный update.json), см. раздел «автообновление» в конце файла.
 // Результат команды пишется в файл --out строками «ключ=значение» (UTF-8 с BOM).
 using System;
@@ -914,7 +914,7 @@ namespace Egoist.WXQRussian
             Mutex mutex = null;
             try
             {
-                bool readOnly = command == "find" || command == "status";
+                bool readOnly = command == "find" || command == "status" || command == "task-register" || command == "task-remove";
                 // parse-packages только читает два указанных файла: каталог данных, журнал и мьютекс не нужны.
                 bool parseOnly = command == "parse-packages";
                 // Каталог данных (резервные копии, receipt) закрывается от записи обычным пользователям до первой записи в него.
@@ -948,6 +948,8 @@ namespace Egoist.WXQRussian
                     case "purge": Purge(ctx, args.ContainsKey("keep") && args["keep"] == "1"); break;
                     case "parse-packages": ParsePackages(ctx, args); break;
                     case "update": Update(ctx, args, checkOnly); break;
+                    case "task-register": TaskRegister(ctx, args); break;
+                    case "task-remove": TaskRemove(ctx, args); break;
                     default: throw new StopException("usage", "Неизвестная команда: " + command);
                 }
             }
@@ -970,6 +972,8 @@ namespace Egoist.WXQRussian
                 if (mutex != null) { try { mutex.ReleaseMutex(); } catch (ApplicationException) { } }
             }
             ctx.Result["status"] = status;
+            if ((command == "task-register" || command == "task-remove") && status != "ok")
+                Console.WriteLine(command + ": " + (ctx.Result.ContainsKey("message") ? ctx.Result["message"] : status));
             // После отказа SecureDataDir (acl, ссылка) в каталог данных не пишем ничего, в том числе --out, если он указан внутри него.
             if (outFile != null && !dataTrusted && IsUnder(outFile, ctx.Data)) outFile = null;
             if (outFile != null)
@@ -1122,16 +1126,162 @@ namespace Egoist.WXQRussian
 #if TESTBUILD
             pfRoots = new List<string> { Environment.GetEnvironmentVariable("ProgramFiles"), Environment.GetEnvironmentVariable("ProgramFiles(x86)") };
 #endif
+            var found = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (string pf in isolated ? new List<string>() : pfRoots)
             {
                 if (string.IsNullOrEmpty(pf)) continue;
-                string launcher = Path.Combine(pf, "WXQLauncher");
-                if (!Directory.Exists(launcher)) continue;
-                foreach (string dir in Directory.GetDirectories(launcher, "WXQ*"))
-                    if (File.Exists(Path.Combine(dir, "WXQ.exe"))) guesses.Add(Util.NormPath(dir));
+                AddGamesFromRoot(Path.Combine(pf, "WXQLauncher"), found);
             }
-            if (guesses.Count == 1) { Log.Write("игра найдена по стандартной папке: " + guesses[0]); return RequireStructure(guesses[0], true); }
-            throw new StopException("game_not_found", "Не удалось найти установленную игру. Запустите лаунчер Honor of Kings ACE хотя бы один раз и повторите установку. Если игра стоит в нестандартной папке, запустите установщик с параметром /GAMEDIR=\"полный путь к папке WXQ\".");
+            // Другие источники: ключи удаления лаунчера, общие ярлыки, лаунчер на другом диске.
+            if (!isolated)
+            {
+                foreach (string hint in GameHintsFromRegistry()) AddGameFromHint(hint, found);
+                foreach (string hint in GameHintsFromShortcuts()) AddGameFromHint(hint, found);
+                foreach (string hint in GameHintsFromDrives()) AddGameFromHint(hint, found);
+            }
+#if TESTBUILD
+            // Подсказки для тестов: строки так же, как значения реестра (путь, путь в кавычках, путь,0), через «;».
+            string testHints = Environment.GetEnvironmentVariable("WXQ_RU_TEST_HINTS");
+            if (!string.IsNullOrEmpty(testHints))
+                foreach (string hint in testHints.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)) AddGameFromHint(hint, found);
+#endif
+            foreach (string path in found.Values) guesses.Add(path);
+            if (guesses.Count == 1) { Log.Write("игра найдена по стандартным источникам: " + guesses[0]); return RequireStructure(guesses[0], true); }
+            if (guesses.Count > 1)
+                throw new StopException("game_ambiguous", "Найдено несколько папок игры (" + string.Join(", ", guesses.ToArray()) + "), выбрать наугад нельзя. Нажмите «Выбрать папку игры» в окне установщика или запустите установщик с параметром /GAMEDIR=\"полный путь к папке WXQ\".");
+            throw new StopException("game_not_found", "Не удалось найти установленную игру. Запустите лаунчер Honor of Kings ACE хотя бы один раз и повторите установку. Если игра стоит в нестандартной папке, нажмите «Выбрать папку игры» в окне установщика или запустите установщик с параметром /GAMEDIR=\"полный путь к папке WXQ\".");
+        }
+
+        static readonly Regex GameHintName = new Regex("WXQ|王者万象棋", RegexOptions.IgnoreCase);
+
+        // Корень лаунчера: подпапки WXQ* с WXQ.exe внутри.
+        static void AddGamesFromRoot(string launcherRoot, Dictionary<string, string> found)
+        {
+            try
+            {
+                if (!Directory.Exists(launcherRoot)) return;
+                foreach (string dir in Directory.GetDirectories(launcherRoot, "WXQ*"))
+                    if (File.Exists(Path.Combine(dir, "WXQ.exe"))) { string norm = Util.NormPath(dir); found[norm] = norm; }
+            }
+            catch (Exception) { }
+        }
+
+        // Подсказка (значение реестра, цель ярлыка): путь к exe, возможно в кавычках, с «,0» или аргументами, либо папка. Игра - папка с WXQ.exe:
+        // сама, любая WXQ* рядом с exe лаунчера или внутри его папки.
+        static void AddGameFromHint(string hint, Dictionary<string, string> found)
+        {
+            if (string.IsNullOrWhiteSpace(hint)) return;
+            try
+            {
+                string text = hint.Trim();
+                if (text.StartsWith("\"")) { int end = text.IndexOf('"', 1); if (end > 1) text = text.Substring(1, end - 1); }
+                int exe = text.IndexOf(".exe", StringComparison.OrdinalIgnoreCase);
+                if (exe > 0) text = text.Substring(0, exe + 4);
+                else { int comma = text.LastIndexOf(','); if (comma > 3) text = text.Substring(0, comma); }
+                if (!Path.IsPathRooted(text)) return;
+                string dir = Directory.Exists(text) ? text : Path.GetDirectoryName(text);
+                if (string.IsNullOrEmpty(dir)) return;
+                dir = Util.NormPath(dir);
+                if (File.Exists(Path.Combine(dir, "WXQ.exe"))) { found[dir] = dir; return; }
+                AddGamesFromRoot(dir, found);
+                string parent = Directory.GetParent(dir) == null ? null : Directory.GetParent(dir).FullName;
+                if (parent != null) AddGamesFromRoot(parent, found);
+            }
+            catch (Exception) { }
+        }
+
+        // Ключи удаления в HKLM (64 и 32 бита): запись, в имени или путях которой есть WXQ / 王者万象棋.
+        static List<string> GameHintsFromRegistry()
+        {
+            var hints = new List<string>();
+            foreach (var view in new[] { Microsoft.Win32.RegistryView.Registry64, Microsoft.Win32.RegistryView.Registry32 })
+            {
+                try
+                {
+                    using (var hive = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, view))
+                    using (var uninstall = hive.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"))
+                    {
+                        if (uninstall == null) continue;
+                        foreach (string name in uninstall.GetSubKeyNames())
+                        {
+                            try
+                            {
+                                using (var entry = uninstall.OpenSubKey(name))
+                                {
+                                    if (entry == null) continue;
+                                    string display = Convert.ToString(entry.GetValue("DisplayName"), CultureInfo.InvariantCulture) ?? "";
+                                    string location = Convert.ToString(entry.GetValue("InstallLocation"), CultureInfo.InvariantCulture) ?? "";
+                                    string icon = Convert.ToString(entry.GetValue("DisplayIcon"), CultureInfo.InvariantCulture) ?? "";
+                                    string command = Convert.ToString(entry.GetValue("UninstallString"), CultureInfo.InvariantCulture) ?? "";
+                                    if (!GameHintName.IsMatch(name + " " + display + " " + location + " " + icon + " " + command)) continue;
+                                    hints.Add(location); hints.Add(icon); hints.Add(command);
+                                }
+                            }
+                            catch (Exception) { }
+                        }
+                    }
+                }
+                catch (Exception) { }
+            }
+            return hints;
+        }
+
+        // Общие ярлыки (меню «Пуск» для всех, общий рабочий стол): цель, в пути которой есть WXQ / 王者万象棋.
+        static List<string> GameHintsFromShortcuts()
+        {
+            var hints = new List<string>();
+            try
+            {
+                var roots = new List<string>();
+                string programs = Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms);
+                string desktop = Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory);
+                if (!string.IsNullOrEmpty(programs)) roots.Add(programs);
+                if (!string.IsNullOrEmpty(desktop)) roots.Add(desktop);
+                Type type = Type.GetTypeFromProgID("WScript.Shell");
+                if (type == null) return hints;
+                dynamic shell = Activator.CreateInstance(type);
+                foreach (string root in roots)
+                {
+                    if (!Directory.Exists(root)) continue;
+                    string[] links;
+                    try { links = Directory.GetFiles(root, "*.lnk", SearchOption.AllDirectories); } catch (Exception) { continue; }
+                    foreach (string link in links)
+                    {
+                        try
+                        {
+                            string target = shell.CreateShortcut(link).TargetPath as string;
+                            if (!string.IsNullOrEmpty(target) && GameHintName.IsMatch(target)) hints.Add(target);
+                        }
+                        catch (Exception) { }
+                    }
+                }
+            }
+            catch (Exception) { }
+            return hints;
+        }
+
+        // Лаунчер, поставленный на другой фиксированный диск: <диск>:\Program Files\WXQLauncher и подобные.
+        static List<string> GameHintsFromDrives()
+        {
+            var hints = new List<string>();
+            try
+            {
+                foreach (var drive in DriveInfo.GetDrives())
+                {
+                    try
+                    {
+                        if (drive.DriveType != DriveType.Fixed || !drive.IsReady) continue;
+                        foreach (string sub in new[] { @"Program Files\WXQLauncher", @"Program Files (x86)\WXQLauncher", "WXQLauncher", @"Games\WXQLauncher" })
+                        {
+                            string dir = Path.Combine(drive.RootDirectory.FullName, sub);
+                            if (Directory.Exists(dir)) hints.Add(dir);
+                        }
+                    }
+                    catch (Exception) { }
+                }
+            }
+            catch (Exception) { }
+            return hints;
         }
 
         static void Configure(Context ctx, string explicitGame)
@@ -2792,7 +2942,7 @@ namespace Egoist.WXQRussian
         readonly Stopwatch clock = Stopwatch.StartNew();
         long lastWrite = -1000;
         string state = "", code = "", message = "";
-        public string Installed = "", Available = "", NextTry = "", Notes = "";
+        public string Installed = "", Available = "", NextTry = "", Notes = "", GameVersion = "";
         public long BytesDone, BytesTotal;
 
         public UpdateStatus(Context context, string file) { ctx = context; path = file; }
@@ -2817,7 +2967,7 @@ namespace Egoist.WXQRussian
             var data = new Dictionary<string, object>
             {
                 { "state", state }, { "code", code }, { "message", message }, { "installed", Installed }, { "available", Available },
-                { "next_try_utc", NextTry }, { "bytes_done", BytesDone }, { "bytes_total", BytesTotal },
+                { "next_try_utc", NextTry }, { "game_version", GameVersion }, { "bytes_done", BytesDone }, { "bytes_total", BytesTotal },
                 { "updated_utc", DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture) }
             };
             try { Util.WriteJson(path, data); }
@@ -2833,7 +2983,7 @@ namespace Egoist.WXQRussian
         const string UpdMutexName = "Global\\Egoist.WXQRussian.Update";
         const string SetupMutexName = "Global\\Egoist.WXQRussian.Setup";
         static readonly Regex UpdAssetName = new Regex(@"^[A-Za-z0-9][A-Za-z0-9._-]*$");
-        static readonly Regex UpdVersionText = new Regex(@"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$");
+        static readonly Regex UpdVersionText = new Regex(@"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-rc[1-9][0-9]*)?$");
         static readonly Regex UpdSha = new Regex("^[0-9a-f]{64}$");
 
         // Точка входа: один обновляющий процесс на компьютер (отдельный Global-мьютекс). Статус пишется только после его захвата,
@@ -2854,6 +3004,7 @@ namespace Egoist.WXQRussian
                 catch (StopException stop)
                 {
                     if (stop.Code == "network" || stop.Code == "disk_space") status.NextTry = UpdIn(TimeSpan.FromMinutes(5));
+                    else if (stop.Code == "av_blocked") status.NextTry = UpdIn(TimeSpan.FromHours(3));
                     status.Set("failed", stop.Code, stop.Message);
                     throw;
                 }
@@ -2871,25 +3022,391 @@ namespace Egoist.WXQRussian
             }
         }
 
+        // Текущее время UTC. Тестовая сборка может сдвинуть часы (WXQ_RU_TEST_CLOCK_HOURS), чтобы проверить сбитые часы.
+        static DateTime UpdNow()
+        {
+#if TESTBUILD
+            int hours;
+            if (int.TryParse(Environment.GetEnvironmentVariable("WXQ_RU_TEST_CLOCK_HOURS"), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out hours)) return DateTime.UtcNow.AddHours(hours);
+#endif
+            return DateTime.UtcNow;
+        }
+
         static string UpdIn(TimeSpan span)
         {
-            return DateTime.UtcNow.Add(span).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
+            return UpdNow().Add(span).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
         }
+
+        static long UpdMetaNumber(Dictionary<string, object> meta, string key)
+        {
+            object value;
+            if (!meta.TryGetValue(key, out value) || value == null) return 0;
+            try { return Convert.ToInt64(value, CultureInfo.InvariantCulture); }
+            catch (Exception) { return 0; }
+        }
+
+        // ---- отпечаток игры ----
+
+        // Что с игрой относительно нашей последней установки.
+        //   unknown            - сверять не с чем (нет receipt в состоянии applied, игры нет, файл не читается);
+        //   intact             - файлы перевода в кэше игры такие, какими мы их записали;
+        //   pending            - прошлая установка или откат оборвались (receipt applying / partial / restore-*);
+        //   changed_not_ready  - игра обновилась и ещё не пересоздала чистый кэш: надо один раз запустить её до меню;
+        //   changed_ready      - кэш пересоздан: перевод можно пересадить сохранённым установщиком.
+        class UpdProbe
+        {
+            public string Kind = "unknown";
+            public string GameVersion = "";
+            public string Fingerprint { get { return GameVersion; } }
+        }
+
+        static UpdProbe UpdProbeGame(Context ctx, string gameRoot)
+        {
+            var probe = new UpdProbe();
+            try
+            {
+                if (string.IsNullOrEmpty(gameRoot) || !Directory.Exists(gameRoot)) return probe;
+                ctx.Game = Util.NormPath(gameRoot);
+                ctx.Launcher = Directory.GetParent(ctx.Game).FullName;
+                ctx.Cache = Path.Combine(ctx.Game, "QtsDataFolder", "QtsVFSCache", "packages");
+                Dictionary<string, object> newest = null;
+                var rows = new Dictionary<string, Dictionary<string, object>>();   // relative -> самая свежая строка из receipt в состоянии applied
+                foreach (var pair in ListReceipts(ctx))
+                {
+                    if (!SameGame(pair.Value, ctx.Game)) continue;
+                    string st = Util.Str(pair.Value, "status");
+                    if (IsPartialStatus(st)) { probe.Kind = "pending"; return probe; }
+                    if (st != "applied") continue;
+                    if (newest == null) newest = pair.Value;
+                    foreach (var row in Util.Items(pair.Value["operations"]).Cast<Dictionary<string, object>>())
+                    {
+                        string relative = Util.Str(row, "relative");
+                        if (relative != null && RelativeName.IsMatch(relative) && !rows.ContainsKey(relative)) rows[relative] = row;
+                    }
+                }
+                if (newest == null || rows.Count == 0) return probe;
+                var ids = new List<string>();
+                bool ours = true;
+                foreach (var pair in rows)
+                {
+                    string id = RelativeName.Match(pair.Key).Groups[1].Value;
+                    if (!ids.Contains(id)) ids.Add(id);
+                    string before = Util.Str(pair.Value, "before_sha256"), wanted = Util.Str(pair.Value, "candidate_sha256");
+                    if (before == wanted) continue;
+                    string target = Path.Combine(ctx.Cache, id, pair.Key.Substring(pair.Key.LastIndexOf('/') + 1));
+                    if (ours && (wanted == null || !File.Exists(target) || Util.Sha(target) != wanted)) ours = false;
+                }
+                foreach (string id in ids)
+                {
+                    string version = ReadVersion(Path.Combine(ctx.Cache, id, id + ".info"));
+                    if (!string.IsNullOrEmpty(version)) { probe.GameVersion = version; break; }
+                }
+                if (ours && IsTransplantReceipt(newest))
+                {
+                    // Пересадка: файлы совпали, но заголовок пакета обязан нести pkgHash нынешнего prime из журнала игры.
+                    var merged = new Dictionary<string, object> { { "operations", rows.Values.Cast<object>().ToList() } };
+                    foreach (string id in ids)
+                    {
+                        bool owns;
+                        try { owns = ReceiptOwns(ctx, merged, new Pkg { Id = id }); }
+                        catch (StopException) { owns = false; }
+                        if (!owns) { ours = false; break; }
+                    }
+                }
+                if (ours) { probe.Kind = "intact"; return probe; }
+                bool ready = true;
+                foreach (string id in ids)
+                {
+                    string dir = Path.Combine(ctx.Cache, id);
+                    string catalog = Path.Combine(dir, id + ".db"), storage = Path.Combine(dir, id + "_0.db");
+                    if (!File.Exists(Path.Combine(dir, id + ".info")) || !File.Exists(catalog)) { ready = false; break; }
+                    try { ReadSkeleton(ctx, new Pkg { Id = id }, catalog, storage); }
+                    catch (StopException) { ready = false; break; }
+                }
+#if TESTBUILD
+                // Тестовая сборка: готовность кэша задаётся из окружения (разбор настоящих db-файлов проверяют тесты пересадки).
+                string forced = Environment.GetEnvironmentVariable("WXQ_RU_TEST_CACHE_READY");
+                if (forced == "1") ready = true; else if (forced == "0") ready = false;
+#endif
+                probe.Kind = ready ? "changed_ready" : "changed_not_ready";
+            }
+            catch (Exception error)
+            {
+                Log.Write("обновление: отпечаток игры не снят: " + error.Message);
+                probe.Kind = "unknown";
+            }
+            Log.Write("обновление: игра: " + probe.Kind + ", версия " + (probe.GameVersion.Length > 0 ? probe.GameVersion : "?"));
+            return probe;
+        }
+
+        // ---- сохранённый установщик текущей версии ----
+
+        // updates\installed-<sha16>.exe; SHA-256 и размер записаны в update-meta.json (скачан и проверен по подписанному манифесту).
+        static string UpdSavedInstaller(Context ctx, Dictionary<string, object> meta)
+        {
+            try
+            {
+                string sha = Util.Str(meta, "installed_setup_sha");
+                long bytes = UpdMetaNumber(meta, "installed_setup_bytes");
+                if (sha == null || !UpdSha.IsMatch(sha) || bytes < 1) return null;
+                string updates = Path.Combine(ctx.Data, "updates");
+                string path = Path.Combine(updates, "installed-" + sha.Substring(0, 16) + ".exe");
+                if (!File.Exists(path) || Util.IsReparse(updates) || Util.IsReparse(path)) return null;
+                if (new FileInfo(path).Length != bytes || Util.Sha(path) != sha) return null;
+                return path;
+            }
+            catch (Exception) { return null; }
+        }
+
+        // После успеха скачанный установщик не удаляется: он остаётся единственной копией «текущей версии».
+        static void UpdKeepInstalled(Dictionary<string, object> meta, string exe, string sha, long bytes, string version)
+        {
+            try
+            {
+                string updates = Path.GetDirectoryName(exe);
+                string keep = Path.Combine(updates, "installed-" + sha.Substring(0, 16) + ".exe");
+                if (!string.Equals(exe, keep, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (File.Exists(keep)) File.Delete(keep);
+                    File.Move(exe, keep);
+                }
+                foreach (string other in Directory.GetFiles(updates, "installed-*.exe"))
+                    if (!string.Equals(other, keep, StringComparison.OrdinalIgnoreCase)) { try { File.Delete(other); } catch (IOException) { } }
+                meta["installed_setup_sha"] = sha; meta["installed_setup_bytes"] = bytes; meta["installed_setup_version"] = version;
+            }
+            catch (IOException error) { Log.Write("обновление: копия установщика не сохранена: " + error.Message); }
+            catch (UnauthorizedAccessException error) { Log.Write("обновление: копия установщика не сохранена: " + error.Message); }
+        }
+
+        static StopException UpdAvBlocked(string updates)
+        {
+            return new StopException("av_blocked", "Антивирус, похоже, заблокировал или удалил скачанный установщик обновления. Откройте карантин антивируса и восстановите файл или добавьте папку " + updates + " в исключения, затем нажмите «Проверить сейчас».");
+        }
+
+        // Запуск Setup.exe обновления с /UPDATE=1. Исчезнувший файл и отказ запуска (225 - вирус, 5 - доступ, 2/3 - файла нет, 1260 - политика) - av_blocked.
+        static int UpdRunSetup(string exe, string updates, string gameRoot, bool launcherOn)
+        {
+            if (!File.Exists(exe)) throw UpdAvBlocked(updates);
+            string setupLog = Path.Combine(updates, "setup.log");
+            string arguments = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /UPDATE=1 /GAMEDIR=\"" + gameRoot.TrimEnd('\\') + "\" /LOG=\"" + setupLog + "\"";
+            string extra = "";
+#if TESTBUILD
+            extra = Environment.GetEnvironmentVariable("WXQ_RU_TEST_SETUP_ARGS") ?? "";
+#endif
+            // Русский лаунчер: сохраняем выбор пользователя (по умолчанию установщик включает его, а отказавшийся не должен получить его обратно).
+            if (extra.IndexOf("/LAUNCHERRU=", StringComparison.OrdinalIgnoreCase) < 0) arguments += " /LAUNCHERRU=" + (launcherOn ? "1" : "0");
+            if (extra.Length > 0) arguments += " " + extra;
+            Log.Write("обновление: запускаю " + Path.GetFileName(exe) + " " + arguments);
+            var info = new ProcessStartInfo { FileName = exe, Arguments = arguments, UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = updates };
+            Process process;
+            try { process = Process.Start(info); }
+            catch (System.ComponentModel.Win32Exception error)
+            {
+                int native = error.NativeErrorCode;
+                if (native == 225 || native == 5 || native == 2 || native == 3 || native == 1260) throw UpdAvBlocked(updates);
+                throw;
+            }
+            using (process)
+            {
+                if (!process.WaitForExit(90 * 60 * 1000))
+                    throw new StopException("setup_timeout", "Установщик обновления работает дольше 90 минут. Я его не трогаю; проверьте, что он не завис.");
+                Log.Write("обновление: установщик завершился с кодом " + process.ExitCode);
+                return process.ExitCode;
+            }
+        }
+
+        // state.json после установщика: установлен ли перевод, его версия и метка установки.
+        static bool UpdReadState(Context ctx, out string version, out string stamp, out string gameRoot)
+        {
+            version = ""; stamp = ""; gameRoot = null;
+            try
+            {
+                if (!File.Exists(ctx.StateFile)) return false;
+                var s = Util.ReadJson(ctx.StateFile);
+                if (s == null) return false;
+                string flag = Util.Str(s, "installed");
+                version = Util.Str(s, "version") ?? "";
+                stamp = Util.Str(s, "installed_utc") ?? "";
+                gameRoot = Util.Str(s, "game_root");
+                return (flag == "True" || flag == "true") && !string.IsNullOrEmpty(gameRoot);
+            }
+            catch (Exception) { return false; }
+        }
+
+        // Последний код остановки помощника в журнале («остановка [код]: ...»).
+        static string UpdLastStopCode(Context ctx)
+        {
+            try
+            {
+                string log = Path.Combine(ctx.Data, "install.log");
+                if (!File.Exists(log)) return "";
+                foreach (string line in File.ReadAllLines(log, Encoding.UTF8).Reverse().Take(80))
+                {
+                    var match = Regex.Match(line, @"остановка \[([a-z_]+)\]");
+                    if (match.Success) return match.Groups[1].Value;
+                }
+            }
+            catch (Exception) { }
+            return "";
+        }
+
+        // Постоянные причины (не исчезнут сами, пока не изменится игра): версия игры, остатки прежней установки, нет чистого кэша.
+        static bool UpdPermanentCode(string code)
+        {
+            return code == "version" || code == "reinstall" || code == "cache_missing";
+        }
+
+        // Запись о сбое версии: постоянная причина ждёт сутки (и сбрасывается, когда у игры другая версия), временная - три часа.
+        static void UpdRecordFailure(Context ctx, Dictionary<string, object> meta, string key, UpdProbe probe, string code, string text, UpdateStatus status)
+        {
+            TimeSpan span = TimeSpan.FromHours(UpdPermanentCode(code) ? 24 : 3);
+            meta["failed_version"] = key; meta["failed_until_utc"] = UpdIn(span); meta["failed_message"] = text;
+            meta["failed_fp"] = probe.Fingerprint; meta["failed_code"] = code;
+            UpdSaveMeta(ctx, meta);
+            status.NextTry = UpdIn(span);
+        }
+
+        static void UpdClearFailure(Dictionary<string, object> meta)
+        {
+            foreach (string name in new[] { "failed_version", "failed_until_utc", "failed_message", "failed_fp", "failed_code" }) meta.Remove(name);
+        }
+
+        // Запись о сбое действует, пока срок не вышел. Срок дальше 25 часов от нынешнего времени (мы пишем не больше суток) считается истёкшим:
+        // часы уходили вперёд и вернулись, либо метка испорчена.
+        static bool UpdFailureActive(Dictionary<string, object> meta, string key, UpdProbe probe, out DateTime until)
+        {
+            until = DateTime.MinValue;
+            if (Util.Str(meta, "failed_version") != key) return false;
+            string fp = Util.Str(meta, "failed_fp");
+            if (fp != null && fp != probe.Fingerprint) return false;
+            if (!UpdParseTime(Util.Str(meta, "failed_until_utc"), out until)) return false;
+            DateTime now = UpdNow();
+            return until > now && until <= now.AddHours(25);
+        }
+
+        // ---- манифест ----
+
+        class UpdFetched
+        {
+            public UpdateManifest M;
+            public UpdateKey Signer;
+            public byte[] Data, Sig;
+            public string NewEtag;
+            public bool FromCache;
+        }
+
+        // Условный запрос (ETag), подпись, только потом разбор. Подпись свежего ответа не прошла - один повтор через минуту (CDN мог отдать
+        // обрывок или устаревшую пару), подпись кэша не прошла - кэш удаляется и запрос идёт заново. null с noRelease=true: релизов пока нет (404).
+        static UpdFetched UpdFetchManifest(Context ctx, string root, List<UpdateKey> keys, Dictionary<string, object> meta, out bool noRelease)
+        {
+            noRelease = false;
+            string cacheJson = Path.Combine(ctx.Data, "update-cache.json"), cacheSig = Path.Combine(ctx.Data, "update-cache.sig");
+            bool haveCache = File.Exists(cacheJson) && File.Exists(cacheSig);
+            string etag = haveCache ? Util.Str(meta, "etag") : null;
+            int freshTries = 0;
+            while (true)
+            {
+                UpdHttp got;
+                try { got = UpdRetry("update.json", delegate { return UpdGetSmall(root + "update.json", etag, UpdMaxManifest); }); }
+                catch (NetFail fail)
+                {
+                    if (fail.Http == 404) { noRelease = true; return null; }
+                    throw new StopException("network", "Нет связи с сервером обновлений: " + fail.Message);
+                }
+                var result = new UpdFetched();
+                result.FromCache = got.Status == 304;
+                if (result.FromCache)
+                {
+                    if (!File.Exists(cacheJson) || !File.Exists(cacheSig)) { etag = null; meta.Remove("etag"); continue; }
+                    result.Data = File.ReadAllBytes(cacheJson);
+                    result.Sig = File.ReadAllBytes(cacheSig);
+                    Log.Write("обновление: манифест не менялся (304)");
+                }
+                else
+                {
+                    result.Data = got.Body;
+                    UpdHttp sigGot;
+                    try { sigGot = UpdRetry("update.json.sig", delegate { return UpdGetSmall(root + "update.json.sig", null, UpdMaxSig); }); }
+                    catch (NetFail fail) { throw new StopException("network", "Нет связи с сервером обновлений: " + fail.Message); }
+                    result.Sig = sigGot.Body;
+                    result.NewEtag = got.ETag;
+                }
+                byte[] sigBinary;
+                try { sigBinary = Convert.FromBase64String(Encoding.ASCII.GetString(result.Sig).Trim()); }
+                catch (FormatException) { sigBinary = null; }
+                result.Signer = sigBinary == null ? null : UpdVerify(keys, result.Data, sigBinary);
+                if (result.Signer != null)
+                {
+                    result.M = UpdParse(result.Data, result.Signer);
+                    return result;
+                }
+                if (result.FromCache)
+                {
+                    try { File.Delete(cacheJson); File.Delete(cacheSig); } catch (IOException) { }
+                    meta.Remove("etag"); UpdSaveMeta(ctx, meta);
+                    etag = null;
+                    continue;
+                }
+                if (freshTries++ == 0)
+                {
+                    int pause = UpdPauses()[1];
+                    Log.Write("обновление: подпись не прошла проверку, повтор через " + (pause / 1000) + " с");
+                    Thread.Sleep(pause);
+                    continue;
+                }
+                throw new StopException("bad_signature", "Подпись обновления не прошла проверку. Обновление не применено.");
+            }
+        }
+
+        // ---- основной ход ----
 
         static void UpdateRun(Context ctx, Dictionary<string, string> args, bool checkOnly, UpdateStatus status)
         {
             Log.Write("обновление: запуск" + (checkOnly ? " (только проверка)" : ""));
             UpdCleanOld();
-            // 1. Что установлено. Без установленного перевода обновлять нечего.
-            if (!File.Exists(ctx.StateFile)) { status.Set("idle", "not_installed", "Перевод не установлен."); return; }
-            var state = Util.ReadJson(ctx.StateFile);
-            string flag = state == null ? null : Util.Str(state, "installed");
-            string installedVersion = state == null ? "" : (Util.Str(state, "version") ?? "");
-            string gameRoot = state == null ? null : Util.Str(state, "game_root");
-            status.Installed = installedVersion;
-            if ((flag != "True" && flag != "true") || string.IsNullOrEmpty(gameRoot)) { status.Set("idle", "not_installed", "Перевод не установлен."); return; }
+            var meta = UpdLoadMeta(ctx);
+            string updates = Path.Combine(ctx.Data, "updates");
 
-            // 2. Адрес и ключи.
+            // 1. Что установлено. Без установленного перевода обновлять нечего.
+            string installedVersion, installedStamp, gameRoot;
+            bool installed = UpdReadState(ctx, out installedVersion, out installedStamp, out gameRoot);
+            status.Installed = installedVersion;
+            if (!installed)
+            {
+                // Прерванное обновление: откат снял state.json, а новая версия не встала. Возвращаем сохранённую.
+                string inflightGame = Util.Str(meta, "inflight_game");
+                string savedForRecovery = checkOnly || string.IsNullOrEmpty(Util.Str(meta, "inflight_version")) ? null : UpdSavedInstaller(ctx, meta);
+                if (savedForRecovery != null && !string.IsNullOrEmpty(inflightGame) && Directory.Exists(inflightGame))
+                {
+                    Log.Write("обновление: прошлое обновление не завершилось, возвращаю сохранённую версию");
+                    if (UpdRollback(ctx, status, meta, savedForRecovery, inflightGame, updates))
+                    {
+                        string back0, stamp0, game0;
+                        UpdReadState(ctx, out back0, out stamp0, out game0);
+                        status.Installed = back0;
+                        status.Set("done", "reapplied", "Перевод возвращён после прерванного обновления.");
+                        return;
+                    }
+                }
+                status.Set("idle", "not_installed", "Перевод не установлен.");
+                return;
+            }
+
+            // 2. Отпечаток игры (версии из <N>.info, SHA наших файлов из последнего receipt) - до сравнения версий.
+            var probe = UpdProbeGame(ctx, gameRoot);
+            status.GameVersion = probe.GameVersion;
+            if (probe.Kind == "changed_not_ready")
+            {
+                // Игра обновилась, перевод остаётся в силе для старой версии, а новый кэш игра создаёт сама. Ничего не пишем и не качаем.
+                UpdSaveMeta(ctx, meta);
+                status.Set("deferred", "game_changed", "Игра обновилась. Запустите её один раз до меню и закройте — перевод вернётся сам.");
+                Log.Write("обновление: игра обновилась, кэш ещё не пересоздан");
+                return;
+            }
+            bool reapply = probe.Kind == "changed_ready" || probe.Kind == "pending";
+            string savedExe = UpdSavedInstaller(ctx, meta);
+
+            // 3. Адрес и ключи.
             string baseUrl;
             var keys = UpdLoadKeys(out baseUrl);
             string root = baseUrl;
@@ -2899,180 +3416,225 @@ namespace Egoist.WXQRussian
             if (string.IsNullOrEmpty(root) || keys.Count == 0 || !UpdUrlOk(root))
                 throw new StopException("not_configured", "В этой сборке помощника не заданы адрес обновлений или ключи подписи.");
 
-            // 3. Манифест: условный запрос (ETag), подпись, только потом разбор.
-            var meta = UpdLoadMeta(ctx);
-            string cacheJson = Path.Combine(ctx.Data, "update-cache.json"), cacheSig = Path.Combine(ctx.Data, "update-cache.sig");
-            bool haveCache = File.Exists(cacheJson) && File.Exists(cacheSig);
-            string etag = haveCache ? Util.Str(meta, "etag") : null;
-            UpdHttp got;
-            try { got = UpdRetry("update.json", delegate { return UpdGetSmall(root + "update.json", etag, UpdMaxManifest); }); }
-            catch (NetFail fail)
+            // 4. Манифест. Без связи при нужной пересадке хватает сохранённого установщика текущей версии.
+            UpdFetched fetched = null;
+            bool noRelease;
+            try { fetched = UpdFetchManifest(ctx, root, keys, meta, out noRelease); }
+            catch (StopException stop)
             {
-                if (fail.Http == 404) { status.Set("idle", "no_release", "Опубликованных обновлений пока нет."); return; }
-                throw new StopException("network", "Нет связи с сервером обновлений: " + fail.Message);
+                if (!(reapply && savedExe != null && stop.Code == "network")) throw;
+                Log.Write("обновление: нет связи, пересадка пойдёт из сохранённого установщика");
+                noRelease = false;
             }
-            byte[] data, sig;
-            string newEtag = null;
-            bool fromCache = got.Status == 304;
-            if (fromCache)
-            {
-                data = File.ReadAllBytes(cacheJson);
-                sig = File.ReadAllBytes(cacheSig);
-                Log.Write("обновление: манифест не менялся (304)");
-            }
-            else
-            {
-                data = got.Body;
-                UpdHttp sigGot;
-                try { sigGot = UpdRetry("update.json.sig", delegate { return UpdGetSmall(root + "update.json.sig", null, UpdMaxSig); }); }
-                catch (NetFail fail) { throw new StopException("network", "Нет связи с сервером обновлений: " + fail.Message); }
-                sig = sigGot.Body;
-                newEtag = got.ETag;
-            }
-            byte[] sigBinary;
-            try { sigBinary = Convert.FromBase64String(Encoding.ASCII.GetString(sig).Trim()); }
-            catch (FormatException) { sigBinary = null; }
-            UpdateKey signer = sigBinary == null ? null : UpdVerify(keys, data, sigBinary);
-            if (signer == null)
-            {
-                if (fromCache) { try { File.Delete(cacheJson); File.Delete(cacheSig); } catch (IOException) { } meta.Remove("etag"); UpdSaveMeta(ctx, meta); }
-                throw new StopException("bad_signature", "Подпись обновления не прошла проверку. Обновление не применено.");
-            }
-            var m = UpdParse(data, signer);
-            status.Notes = m.Notes;
-            Log.Write("обновление: подпись верна (ключ " + signer.KeyId + "), в манифесте версия " + m.Version + ", установлена " + installedVersion);
+            if (fetched == null && !noRelease && !(reapply && savedExe != null)) throw new StopException("network", "Нет связи с сервером обновлений.");
+            if (fetched == null && noRelease && !(reapply && savedExe != null)) { status.Set("idle", "no_release", "Опубликованных обновлений пока нет."); return; }
 
-            // 4. Можно ли это принять.
-            if (m.MinUpdater > UpdaterVersion)
-                throw new StopException("updater_too_old", "Для этого обновления нужна более новая версия русификатора. Скачайте установщик заново со страницы релизов.");
-            int cmp = UpdCmp(UpdVer(m.Version), UpdVer(installedVersion));
-            if (cmp < 0) throw new StopException("downgrade", "Версия в манифесте (" + m.Version + ") ниже установленной (" + installedVersion + "). Обновление отклонено.");
-            DateTime lastIssued;
-            string lastText = Util.Str(meta, "last_issued_utc");
-            if (cmp > 0 && lastText != null && UpdParseTime(lastText, out lastIssued) && m.Issued < lastIssued)
-                throw new StopException("replay", "Манифест выпущен раньше уже принятого (" + lastText + "). Похоже на подмену старой версией; обновление отклонено.");
-            // Принято (подпись верна, версия не ниже, время не старее): кэш, ETag и метка времени.
-            if (!fromCache)
+            UpdateManifest m = fetched == null ? null : fetched.M;
+            int cmp = 0;
+            bool update = false;
+            if (m != null)
             {
-                UpdWriteAtomic(cacheJson, data);
-                UpdWriteAtomic(cacheSig, sig);
-                if (!string.IsNullOrEmpty(newEtag)) meta["etag"] = newEtag; else meta.Remove("etag");
+                status.Notes = m.Notes;
+                Log.Write("обновление: подпись верна (ключ " + fetched.Signer.KeyId + "), в манифесте версия " + m.Version + ", установлена " + installedVersion);
+                if (m.MinUpdater > UpdaterVersion)
+                    throw new StopException("updater_too_old", "Для этого обновления нужна более новая версия русификатора. Скачайте установщик заново со страницы релизов.");
+                cmp = UpdCmp(UpdVer(m.Version), UpdVer(installedVersion));
+                if (cmp < 0 && !(reapply && savedExe != null))
+                    throw new StopException("downgrade", "Версия в манифесте (" + m.Version + ") ниже установленной (" + installedVersion + "). Обновление отклонено.");
+                DateTime lastIssued;
+                string lastText = Util.Str(meta, "last_issued_utc");
+                if (cmp > 0 && lastText != null && UpdParseTime(lastText, out lastIssued) && m.Issued < lastIssued)
+                    throw new StopException("replay", "Манифест выпущен раньше уже принятого (" + lastText + "). Похоже на подмену старой версией; обновление отклонено.");
+                // Принято (подпись верна, версия не ниже, время не старее): кэш, ETag и метка времени.
+                if (!fetched.FromCache)
+                {
+                    UpdWriteAtomic(Path.Combine(ctx.Data, "update-cache.json"), fetched.Data);
+                    UpdWriteAtomic(Path.Combine(ctx.Data, "update-cache.sig"), fetched.Sig);
+                    if (!string.IsNullOrEmpty(fetched.NewEtag)) meta["etag"] = fetched.NewEtag; else meta.Remove("etag");
+                }
+                if (lastText == null || !UpdParseTime(lastText, out lastIssued) || m.Issued > lastIssued)
+                    meta["last_issued_utc"] = m.Issued.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
+                update = cmp > 0;
             }
-            if (lastText == null || !UpdParseTime(lastText, out lastIssued) || m.Issued > lastIssued)
-                meta["last_issued_utc"] = m.Issued.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
-            if (cmp == 0)
+            if (!update && !reapply)
             {
                 UpdSaveMeta(ctx, meta);
                 status.Set("idle", "up_to_date", "Установлена последняя версия перевода: " + installedVersion + ".");
                 return;
             }
-            status.Available = m.Version;
-            // Прошлый запуск этой версии закончился сбоем установщика: не качаем заново до истечения срока.
+
+            // 5. Цель: новая версия из манифеста либо возврат текущей (пересадка после обновления игры, откат оборванной установки).
+            string targetVersion = update ? m.Version : installedVersion;
+            bool useSaved = !update && savedExe != null;
+            if (!update && !useSaved && m == null)
+                throw new StopException("no_installer", "Для возврата перевода нужен установщик текущей версии, а сохранённой копии нет. Скачайте установщик заново со страницы релизов.");
+            status.Available = update ? m.Version : "";
+            string failKey = update ? m.Version : "reapply:" + installedVersion;
             DateTime until;
-            if (Util.Str(meta, "failed_version") == m.Version && UpdParseTime(Util.Str(meta, "failed_until_utc"), out until) && until > DateTime.UtcNow)
+            if (UpdFailureActive(meta, failKey, probe, out until))
             {
                 UpdSaveMeta(ctx, meta);
                 status.NextTry = until.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
-                status.Set("failed", "retry_later", "Прошлая попытка установить версию " + m.Version + " не удалась: " + (Util.Str(meta, "failed_message") ?? "см. журнал") + " Следующая попытка позже.");
+                status.Set("failed", "retry_later", "Прошлая попытка " + (update ? "установить версию " + m.Version : "вернуть перевод после обновления игры") + " не удалась: " + (Util.Str(meta, "failed_message") ?? "см. журнал") + " Следующая попытка позже.");
                 return;
+            }
+            // Новая версия собрана для более новой игры, чем стоит у пользователя: ждём обновления игры, а текущая версия продолжает работать.
+            if (update && m.GameVersions.Count > 0)
+            {
+                int[] have = UpdGameVer(probe.GameVersion), lowest = null;
+                foreach (string text in m.GameVersions)
+                {
+                    int[] parsed = UpdGameVer(text);
+                    if (parsed != null && (lowest == null || UpdGameCmp(parsed, lowest) < 0)) lowest = parsed;
+                }
+                if (have != null && lowest != null && UpdGameCmp(have, lowest) < 0)
+                {
+                    UpdSaveMeta(ctx, meta);
+                    status.NextTry = UpdIn(TimeSpan.FromHours(6));
+                    status.Set("deferred", "game_old", "Версия " + m.Version + " ждёт обновления игры. Пока работает версия " + installedVersion + ".");
+                    return;
+                }
             }
             UpdSaveMeta(ctx, meta);
             if (checkOnly)
             {
-                status.Set("ready", "", "Доступна версия " + m.Version + ".");
+                if (update) status.Set("ready", "", "Доступна версия " + m.Version + ".");
+                else status.Set("ready", "reapply", "Перевод будет возвращён сохранённым установщиком.");
                 return;
             }
 
-            // 5. Скачивание (с докачкой) и проверка.
-            string updates = Path.Combine(ctx.Data, "updates");
+            // 6. Установщик: сохранённый или скачанный (с докачкой) и проверенный.
             if (Directory.Exists(updates) && Util.IsReparse(updates))
                 throw new StopException("acl", "Папка загрузок обновления является ссылкой (" + updates + "), помощник её не использует.");
             Directory.CreateDirectory(updates);
-            string tag = m.SetupSha.Substring(0, 16);
-            string part = Path.Combine(updates, tag + ".part"), exe = Path.Combine(updates, tag + ".exe");
-            UpdPrune(updates, tag);
-            if (File.Exists(exe) && !UpdFileOk(exe, m)) { Log.Write("обновление: прежняя загрузка повреждена, удаляю"); File.Delete(exe); }
-            if (!File.Exists(exe))
+            string exe;
+            string setupSha = null;
+            long setupBytes = 0;
+            if (useSaved)
             {
-                var needs = new SpaceNeeds();
-                long have = File.Exists(part) ? new FileInfo(part).Length : 0;
-                needs.Add(updates, Math.Max(0, m.SetupBytes - have));
-                needs.Require();
-                status.BytesDone = have; status.BytesTotal = m.SetupBytes;
-                status.Set("downloading", "", "Скачивается версия " + m.Version + ".");
-                UpdDownload(m, part, exe, status);
-                Log.Write("обновление: " + m.SetupName + " скачан, SHA-256 совпал");
+                exe = savedExe;
+                setupSha = Util.Str(meta, "installed_setup_sha");
+                setupBytes = UpdMetaNumber(meta, "installed_setup_bytes");
             }
-            status.BytesDone = m.SetupBytes; status.BytesTotal = m.SetupBytes;
+            else
+            {
+                string tag = m.SetupSha.Substring(0, 16);
+                string part = Path.Combine(updates, tag + ".part");
+                exe = Path.Combine(updates, tag + ".exe");
+                setupSha = m.SetupSha; setupBytes = m.SetupBytes;
+                UpdPrune(updates, tag);
+                if (File.Exists(exe) && !UpdFileOk(exe, m)) { Log.Write("обновление: прежняя загрузка повреждена, удаляю"); File.Delete(exe); }
+                if (!File.Exists(exe))
+                {
+                    var needs = new SpaceNeeds();
+                    long have = File.Exists(part) ? new FileInfo(part).Length : 0;
+                    needs.Add(updates, Math.Max(0, m.SetupBytes - have));
+                    needs.Require();
+                    status.BytesDone = have; status.BytesTotal = m.SetupBytes;
+                    status.Set("downloading", "", "Скачивается версия " + m.Version + ".");
+                    UpdDownload(m, part, exe, status);
+                    Log.Write("обновление: " + m.SetupName + " скачан, SHA-256 совпал");
+                }
+#if TESTBUILD
+                if (Environment.GetEnvironmentVariable("WXQ_RU_TEST_QUARANTINE") == "1") { try { File.Delete(exe); } catch (IOException) { } }
+#endif
+                if (!File.Exists(exe)) throw UpdAvBlocked(updates);
+            }
+            status.BytesDone = setupBytes; status.BytesTotal = setupBytes;
 
-            // 6. Игра или лаунчер запущены, идёт другой установщик или операция — ничего не пишем, ждём.
+            // 7. Игра или лаунчер запущены, идёт другой установщик или операция — ничего не пишем, ждём.
             string gate = UpdBlocker(ctx, gameRoot);
             if (gate != null)
             {
                 status.NextTry = UpdIn(TimeSpan.FromMinutes(30));
+                string what = update ? "Обновление до " + m.Version : "Возврат перевода после обновления игры";
                 status.Set("deferred", gate == "setup" || gate == "busy" ? gate + "_running" : "game_running",
-                    gate == "game" ? "Обновление до " + m.Version + " ждёт закрытия игры и лаунчера."
-                                   : "Обновление до " + m.Version + " подождёт: сейчас идёт другая операция русификатора.");
+                    gate == "game" ? what + " ждёт закрытия игры и лаунчера."
+                                   : what + " подождёт: сейчас идёт другая операция русификатора.");
                 Log.Write("обновление: отложено (" + gate + ")");
                 return;
             }
 
-            // 7. Запуск установщика. Перед запуском: папка и файл не ссылки, владельцы и права как у каталога данных, SHA-256 ещё раз.
+            // 8. Запуск установщика. Перед запуском: папка и файл не ссылки, владельцы и права как у каталога данных, SHA-256 ещё раз.
             if (Util.IsReparse(updates) || Util.IsReparse(exe))
                 throw new StopException("acl", "Скачанный установщик или его папка стали ссылкой; запуск отменён.");
             CheckDataTree(updates);
-            if (!UpdFileOk(exe, m))
+            if (!File.Exists(exe)) throw UpdAvBlocked(updates);
+            bool exeOk;
+            try { exeOk = new FileInfo(exe).Length == setupBytes && Util.Sha(exe) == setupSha; }
+            catch (FileNotFoundException) { throw UpdAvBlocked(updates); }
+            catch (IOException) { exeOk = false; }
+            if (!exeOk)
                 throw new StopException("sha_mismatch", "Скачанный установщик изменился после проверки; запуск отменён.");
-            status.Set("applying", "", "Устанавливается версия " + m.Version + ".");
-            string setupLog = Path.Combine(updates, "setup.log");
-            string arguments = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /GAMEDIR=\"" + gameRoot.TrimEnd('\\') + "\" /LOG=\"" + setupLog + "\"";
-            string extra = "";
-#if TESTBUILD
-            extra = Environment.GetEnvironmentVariable("WXQ_RU_TEST_SETUP_ARGS") ?? "";
-#endif
-            // Русский лаунчер: сохраняем выбор пользователя (по умолчанию установщик включает его, а отказавшийся не должен получить его обратно).
-            if (extra.IndexOf("/LAUNCHERRU=", StringComparison.OrdinalIgnoreCase) < 0) arguments += " /LAUNCHERRU=" + (UpdLauncherInstalled() ? "1" : "0");
-            if (extra.Length > 0) arguments += " " + extra;
-            Log.Write("обновление: запускаю " + Path.GetFileName(exe) + " " + arguments);
-            int exitCode;
-            var info = new ProcessStartInfo { FileName = exe, Arguments = arguments, UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = updates };
-            using (var process = Process.Start(info))
-            {
-                if (!process.WaitForExit(90 * 60 * 1000))
-                    throw new StopException("setup_timeout", "Установщик обновления работает дольше 90 минут. Я его не трогаю; проверьте, что он не завис.");
-                exitCode = process.ExitCode;
-            }
-            Log.Write("обновление: установщик завершился с кодом " + exitCode);
+            status.Set("applying", "", update ? "Устанавливается версия " + m.Version + "." : "Возвращается перевод после обновления игры.");
+            meta["inflight_version"] = targetVersion; meta["inflight_game"] = gameRoot;
+            UpdSaveMeta(ctx, meta);
+            int exitCode = UpdRunSetup(exe, updates, gameRoot, UpdLauncherInstalled());
 
-            // 8. Итог — по state.json: версия должна стать новой.
-            string after = "";
-            try { var s2 = Util.ReadJson(ctx.StateFile); after = s2 == null ? "" : (Util.Str(s2, "version") ?? ""); }
-            catch (Exception) { }
-            if (after.Length > 0 && UpdCmp(UpdVer(after), UpdVer(m.Version)) >= 0 && after != installedVersion)
+            // 9. Итог — по state.json: версия должна стать новой (при возврате - обновиться метка установки).
+            string after, afterStamp, afterGame;
+            bool afterInstalled = UpdReadState(ctx, out after, out afterStamp, out afterGame);
+            bool success = afterInstalled && (update
+                ? after.Length > 0 && UpdCmp(UpdVer(after), UpdVer(m.Version)) >= 0 && after != installedVersion
+                : afterStamp.Length > 0 && afterStamp != installedStamp);
+            if (success)
             {
-                meta.Remove("failed_version"); meta.Remove("failed_until_utc"); meta.Remove("failed_message");
+                UpdClearFailure(meta);
+                meta.Remove("inflight_version"); meta.Remove("inflight_game");
+                UpdKeepInstalled(meta, exe, setupSha, setupBytes, targetVersion);
                 UpdSaveMeta(ctx, meta);
-                try { File.Delete(exe); } catch (IOException) { }
                 status.Installed = after; status.Available = ""; status.NextTry = "";
-                status.Set("done", "", "Перевод обновлён до " + after + ".");
+                status.GameVersion = UpdProbeGame(ctx, gameRoot).GameVersion;
+                status.Set("done", update ? "" : "reapplied", update ? "Перевод обновлён до " + after + "." : "Перевод возвращён после обновления игры.");
                 return;
             }
             string again = UpdBlocker(ctx, gameRoot);
             if (again == "game")
             {
                 status.NextTry = UpdIn(TimeSpan.FromMinutes(30));
-                status.Set("deferred", "game_running", "Обновление до " + m.Version + " ждёт закрытия игры и лаунчера.");
+                status.Set("deferred", "game_running", (update ? "Обновление до " + m.Version : "Возврат перевода") + " ждёт закрытия игры и лаунчера.");
                 return;
             }
             string why = UpdLastStop(ctx);
-            string text = "Установщик завершился с кодом " + exitCode + (why.Length > 0 ? ": " + why : ".");
-            meta["failed_version"] = m.Version;
-            meta["failed_until_utc"] = UpdIn(TimeSpan.FromHours(24));
-            meta["failed_message"] = text;
-            UpdSaveMeta(ctx, meta);
-            try { File.Delete(exe); } catch (IOException) { }
-            status.NextTry = UpdIn(TimeSpan.FromHours(24));
-            throw new StopException("setup_failed", "Обновление до " + m.Version + " не установилось. " + text);
+            string stopCode = UpdLastStopCode(ctx);
+            string text2 = "Установщик завершился с кодом " + exitCode + (why.Length > 0 ? ": " + why : ".");
+            UpdRecordFailure(ctx, meta, failKey, probe, stopCode, text2, status);
+            if (update) { try { File.Delete(exe); } catch (IOException) { } }
+            // Новая версия не встала, а прежний перевод снят откатом: возвращаем сохранённую копию текущей версии.
+            if (!afterInstalled && savedExe != null && !string.Equals(savedExe, exe, StringComparison.OrdinalIgnoreCase))
+            {
+                if (UpdRollback(ctx, status, meta, savedExe, gameRoot, updates))
+                {
+                    string back, backStamp, backGame;
+                    UpdReadState(ctx, out back, out backStamp, out backGame);
+                    status.Installed = back;
+                    throw new StopException("rolled_back", "Версия " + targetVersion + " не установилась, возвращена версия " + back + ". " + text2);
+                }
+            }
+            if (!afterInstalled)
+                throw new StopException("setup_failed", (update ? "Обновление до " + m.Version : "Возврат перевода") + " не удался, перевод сейчас снят, игра в исходном виде. " + text2);
+            throw new StopException("setup_failed", (update ? "Обновление до " + m.Version : "Возврат перевода") + " не установился. " + text2);
+        }
+
+        // Возврат сохранённой версии: её Setup.exe с /UPDATE=1 сам снимет остатки и поставит перевод заново. true - state.json снова «установлен».
+        static bool UpdRollback(Context ctx, UpdateStatus status, Dictionary<string, object> meta, string savedExe, string gameRoot, string updates)
+        {
+            status.Set("applying", "", "Возвращаю прежнюю версию перевода.");
+            try
+            {
+                if (UpdBlocker(ctx, gameRoot) != null) { Log.Write("обновление: возврат версии отложен (игра запущена или идёт другая операция)"); return false; }
+                UpdRunSetup(savedExe, updates, gameRoot, UpdLauncherInstalled());
+            }
+            catch (StopException stop) { Log.Write("обновление: возврат версии не удался: " + stop.Message); return false; }
+            string version, stamp, game;
+            bool ok = UpdReadState(ctx, out version, out stamp, out game);
+            if (ok)
+            {
+                meta.Remove("inflight_version"); meta.Remove("inflight_game");
+                UpdSaveMeta(ctx, meta);
+            }
+            Log.Write("обновление: возврат версии " + (ok ? "выполнен: " + version : "не удался"));
+            return ok;
         }
 
         // Кто мешает запуску установщика: "game" (игра или лаунчер), "setup" (идёт обычный установщик), "busy" (помощник занят другой операцией) или null.
@@ -3081,7 +3643,7 @@ namespace Egoist.WXQRussian
             ctx.Game = gameRoot;
             ctx.Launcher = Directory.GetParent(Util.NormPath(gameRoot)).FullName;
             try { RequireClosed(ctx); }
-            catch (StopException stop) { if (stop.Code == "running") return "game"; throw; }
+            catch (StopException stop) { if (stop.Code == "running") { Log.Write("обновление: " + stop.Message); return "game"; } throw; }
             try
             {
                 using (Mutex.OpenExisting(SetupMutexName)) { return "setup"; }
@@ -3385,22 +3947,46 @@ namespace Egoist.WXQRussian
             return false;
         }
 
+        // Версия перевода: major.minor[.patch][-rcN] -> четыре числа. Четвёртое - номер кандидата: у версии без суффикса оно максимальное,
+        // поэтому 0.6.0-rc2 < 0.6.0 и 0.6.0-rc2 < 0.6.0-rc3.
         static int[] UpdVer(string text)
         {
-            var match = Regex.Match(text ?? "", @"^(\d+)\.(\d+)(?:\.(\d+))?");
-            var parts = new int[3];
-            if (!match.Success) return parts;
+            var match = Regex.Match(text ?? "", @"^(\d+)\.(\d+)(?:\.(\d+))?(?:-rc(\d+))?");
+            var parts = new int[4];
+            if (!match.Success) { parts[3] = int.MaxValue; return parts; }
             for (int i = 0; i < 3; i++)
             {
                 int n;
                 parts[i] = match.Groups[i + 1].Success && int.TryParse(match.Groups[i + 1].Value, NumberStyles.None, CultureInfo.InvariantCulture, out n) ? n : 0;
             }
+            int rc;
+            parts[3] = match.Groups[4].Success && int.TryParse(match.Groups[4].Value, NumberStyles.None, CultureInfo.InvariantCulture, out rc) ? rc : int.MaxValue;
             return parts;
         }
 
         static int UpdCmp(int[] a, int[] b)
         {
-            for (int i = 0; i < 3; i++) if (a[i] != b[i]) return a[i] < b[i] ? -1 : 1;
+            for (int i = 0; i < 4; i++) if (a[i] != b[i]) return a[i] < b[i] ? -1 : 1;
+            return 0;
+        }
+
+        // Версия игры (1.5.0.1): произвольное число числовых полей; недостающие считаются нулями. null - версия не читается.
+        static int[] UpdGameVer(string text)
+        {
+            if (string.IsNullOrEmpty(text) || !Regex.IsMatch(text, @"^\d+(\.\d+){0,5}$")) return null;
+            var parts = new int[6];
+            string[] pieces = text.Split('.');
+            for (int i = 0; i < pieces.Length; i++)
+            {
+                int n;
+                parts[i] = int.TryParse(pieces[i], NumberStyles.None, CultureInfo.InvariantCulture, out n) ? n : 0;
+            }
+            return parts;
+        }
+
+        static int UpdGameCmp(int[] a, int[] b)
+        {
+            for (int i = 0; i < 6; i++) if (a[i] != b[i]) return a[i] < b[i] ? -1 : 1;
             return 0;
         }
 
@@ -3626,13 +4212,129 @@ namespace Egoist.WXQRussian
         {
             foreach (var item in new DirectoryInfo(updates).GetFileSystemInfos())
             {
-                if (item.Name.StartsWith(tag + ".", StringComparison.OrdinalIgnoreCase) || string.Equals(item.Name, "setup.log", StringComparison.OrdinalIgnoreCase)) continue;
+                if (item.Name.StartsWith(tag + ".", StringComparison.OrdinalIgnoreCase) || item.Name.StartsWith("installed-", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(item.Name, "setup.log", StringComparison.OrdinalIgnoreCase)) continue;
                 try
                 {
                     if ((item.Attributes & FileAttributes.Directory) != 0 && (item.Attributes & FileAttributes.ReparsePoint) == 0) Directory.Delete(item.FullName, true);
                     else item.Delete();
                 }
                 catch (Exception error) { Log.Write("обновление: не удалось убрать " + item.Name + ": " + error.Message); }
+            }
+        }
+    }
+
+    // ---- задача планировщика автообновления --------------------------------------------------------------------------------
+    // task-register / task-remove [--name <имя>] [--folder <папка>] [--exe <путь>] [--out <файл>]. Раньше это делал Pascal-скрипт установщика
+    // и падал с пустым сообщением; здесь ошибка печатается с кодом HRESULT. Задача: от SYSTEM, при входе любого пользователя (через 2 минуты)
+    // и каждые 6 часов, ниже обычного приоритета; Users - только чтение и запуск (GRGX), менять и удалять могут администраторы и SYSTEM.
+    static partial class Program
+    {
+        const string TaskDefaultName = "WXQ-Russian Update";
+        const string TaskDefaultFolder = "Egoist";
+        const string TaskSddl = "D:(A;;FA;;;BA)(A;;FA;;;SY)(A;;GRGX;;;BU)";
+
+        static string TaskErrorText(Exception error)
+        {
+            var inner = error;
+            while (inner.InnerException != null && (inner is System.Reflection.TargetInvocationException)) inner = inner.InnerException;
+            int hr = Marshal.GetHRForException(inner);
+            return "0x" + ((uint)hr).ToString("X8", CultureInfo.InvariantCulture) + " " + inner.GetType().Name + ": " + inner.Message;
+        }
+
+        static bool TaskIsMissing(Exception error)
+        {
+            uint hr = (uint)Marshal.GetHRForException(error);
+            return hr == 0x80070002u || hr == 0x80070003u || hr == 0x8004130Eu;   // файл/путь не найден
+        }
+
+        static void TaskRegister(Context ctx, Dictionary<string, string> args)
+        {
+            string name = args.ContainsKey("name") && args["name"].Length > 0 ? args["name"] : TaskDefaultName;
+            string folderName = args.ContainsKey("folder") && args["folder"].Length > 0 ? args["folder"] : TaskDefaultFolder;
+            string exe = args.ContainsKey("exe") && args["exe"].Length > 0 ? Util.NormPath(args["exe"]) : System.Reflection.Assembly.GetExecutingAssembly().Location;
+            if (!File.Exists(exe)) throw new StopException("task-exe", "Для задачи автообновления нет исполняемого файла: " + exe);
+            string workDir = Path.GetDirectoryName(exe);
+            try
+            {
+                Type type = Type.GetTypeFromProgID("Schedule.Service");
+                if (type == null) throw new StopException("task-com", "В системе нет службы планировщика заданий (Schedule.Service).");
+                dynamic service = Activator.CreateInstance(type);
+                service.Connect();
+                dynamic root = service.GetFolder("\\");
+                dynamic folder;
+                try { folder = root.GetFolder(folderName); }
+                catch (Exception) { folder = root.CreateFolder(folderName); }
+                dynamic def = service.NewTask(0);
+                def.RegistrationInfo.Description = "Проверка и установка обновлений русификатора Honor of Kings ACE. Если игра запущена, установка откладывается до её закрытия.";
+                def.Principal.UserId = "SYSTEM";
+                def.Principal.LogonType = 5;    // TASK_LOGON_SERVICE_ACCOUNT
+                def.Principal.RunLevel = 1;     // TASK_RUNLEVEL_HIGHEST
+                dynamic settings = def.Settings;
+                settings.Enabled = true;
+                settings.Hidden = true;
+                settings.Priority = 7;
+                settings.StartWhenAvailable = true;
+                settings.DisallowStartIfOnBatteries = false;
+                settings.StopIfGoingOnBatteries = false;
+                settings.ExecutionTimeLimit = "PT2H";
+                settings.MultipleInstances = 2; // TASK_INSTANCES_IGNORE_NEW
+                dynamic trigger = def.Triggers.Create(9);   // TASK_TRIGGER_LOGON (8 - загрузка системы)
+                trigger.Delay = "PT2M";
+                trigger.Repetition.Interval = "PT6H";
+                trigger.Enabled = true;
+                dynamic action = def.Actions.Create(0);     // TASK_ACTION_EXEC
+                action.Path = exe;
+                action.Arguments = "update";
+                action.WorkingDirectory = workDir;
+                dynamic task = folder.RegisterTaskDefinition(name, def, 6, "SYSTEM", null, 5);   // 6 = создать или обновить
+                task.SetSecurityDescriptor(TaskSddl, 0);
+                ctx.Result["task"] = folderName + "\\" + name;
+                ctx.Result["exe"] = exe;
+                Log.Write("задача автообновления зарегистрирована: " + folderName + "\\" + name + " -> " + exe);
+            }
+            catch (StopException) { throw; }
+            catch (Exception error)
+            {
+                string text = TaskErrorText(error);
+                Log.Write("задача автообновления не создана: " + text);
+                throw new StopException("task-register", "Задача автообновления не создана: " + text);
+            }
+        }
+
+        static void TaskRemove(Context ctx, Dictionary<string, string> args)
+        {
+            string name = args.ContainsKey("name") && args["name"].Length > 0 ? args["name"] : TaskDefaultName;
+            string folderName = args.ContainsKey("folder") && args["folder"].Length > 0 ? args["folder"] : TaskDefaultFolder;
+            try
+            {
+                Type type = Type.GetTypeFromProgID("Schedule.Service");
+                if (type == null) throw new StopException("task-com", "В системе нет службы планировщика заданий (Schedule.Service).");
+                dynamic service = Activator.CreateInstance(type);
+                service.Connect();
+                dynamic root = service.GetFolder("\\");
+                dynamic folder = null;
+                try { folder = root.GetFolder(folderName); }
+                catch (Exception error) { if (!TaskIsMissing(error)) throw; }
+                if (folder != null)
+                {
+                    try { folder.DeleteTask(name, 0); Log.Write("задача автообновления удалена: " + folderName + "\\" + name); }
+                    catch (Exception error)
+                    {
+                        if (!TaskIsMissing(error)) throw;
+                        Log.Write("задачи автообновления уже нет: " + folderName + "\\" + name);
+                    }
+                    try { root.DeleteFolder(folderName, 0); }   // удалится, только если пуста
+                    catch (Exception) { }
+                }
+                ctx.Result["task"] = folderName + "\\" + name;
+            }
+            catch (StopException) { throw; }
+            catch (Exception error)
+            {
+                string text = TaskErrorText(error);
+                Log.Write("задача автообновления не удалена: " + text);
+                throw new StopException("task-remove", "Задача автообновления не удалена: " + text);
             }
         }
     }

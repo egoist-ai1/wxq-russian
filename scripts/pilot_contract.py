@@ -3,7 +3,8 @@
 Старый контракт жёстко знал шесть файлов пакетов 1 и 10 сборки 1.3.0.4. Здесь набор
 пакетов и файлов берётся из манифеста, а совпадение с установкой проверяется по данным
 самой установки: версия `<pkg>.info`, `pkgHash` prime-пакета из QtsVFS.log, override-заголовок,
-SHA prime-файлов и индекса. Ничего не пишет и не запускает.
+SHA prime-файлов и индекса. Ничего не пишет и не запускает. validate_carrier читает оригиналы ресурсов из
+prime установки (только чтение, make_prime_reader): для текстовых ресурсов и текстур rgba32/bc7 нужна игра той же версии.
 """
 from __future__ import annotations
 
@@ -20,6 +21,7 @@ STATUS = 'offline-native-pilot-candidate-not-installed'
 CONTRACT = 'wxq-pilot-carrier/v1'
 SCHEMA_VERSION = 3
 KINDS = ('global-localize', 'lang', 'rgba32-texture', 'bc7-texture', 'raw-replacement', 'lua-script', 'pb-table-text', 'unity-text')
+TEXTURE_KINDS = ('rgba32-texture', 'bc7-texture')  # длина потока сверяется с оригиналом из prime (validate_carrier)
 # Текстовые правки таблиц пакета 1 (kind=pb-table-text) и Unity-файлов пакета 19 (kind=unity-text): оригиналы - только из белого списка пинов,
 # правки перечислены в manifest['table_text_edits'] / manifest['unity_text_edits'] и ПОВТОРНО доказываются кодеком при проверке кандидата.
 TEXT_KINDS = {'pb-table-text': ('1', 'table_text_edits'), 'unity-text': ('19', 'unity_text_edits')}
@@ -257,10 +259,90 @@ BC7_TEXTURE_ALLOWED = {
         'f44b2cd418685246': '97abeb12d5ee9a4320f3a94bee464b0be68c05a8524fd75f033f10e527791c27',  # вывеска 公告 512x512
     },
     '19': {
-        'c9f49510f2f67402': '52ec813ee7a53cf3c47f80b698f9188f38b3d87484689ec0fad3164c203c9b74',  # LobbyAtlas 1024x1024
-        '13c19e4e4486b31c': '51c906dc15084bbf85d986a29945df677627944e66447bfe8bb0d384e4ec8627',  # CareerAtlas 1024x1024
+        'c9f49510f2f67402': '1c48a62a969fdad8b8472729d967c1c3d89648962bd33b886f2c30dc41ec9842',  # LobbyAtlas 1024x1024 (1.6.0.1; на 1.5.0.1 было 52ec813e…)
+        '13c19e4e4486b31c': 'fb5344a1d947ecfdd4444d5aea43b14a8b90eb730332eb0323294ea99bd54bb5',  # CareerAtlas 1024x1024 (1.6.0.1; на 1.5.0.1 было 51c906dc…)
         'd60aedde2d4cbb8c': 'ce081113a99c4258ecc230cb6dbace6af10a596b0bafce67863bd900baea7a9e',  # SeasonAtlas 1024x1024
         'e86df43167ca2143': '34cedad5573ccb44b86114164dc22838b9ea77123dd58e2929199f23dd6b5f08',  # GameCenterAtlas 1024x1024
+        '362253ea729c72f8': '586852f3655629146f32bf57129f09ca2e359525fbf43e46bf9839f3c24b15f2',  # TeamRecommendAtlas 1024x1024 (1.6.0.1)
+        'a4f638ac4ed7627e': '09c3c1e8cf04161b5bc44d3b329785ef6715433132a7b7b3a125d9d7c1695380',  # UI_skill_TaiYi_myj_03 492x360 (1.6.0.1)
+        '10c984e383eb5351': 'c0fd90c49978479147f7afaf1564b2d60363bb1ef2ef14aaef4b73bb8efdc330',  # LordCheeringAtlas 1024x1024 (1.6.0.1)
+        '8ddce9d259b27700': '48805e9c50336ecf12dfad66c1032efb9da1985ac50a11b7780047b1bcab4c15',  # LordAtlas 1024x1024 (1.6.0.1)
+        '6677881457c07686': '95971d68342a64ca631ba00125555393a71292eb26d2b00df0f1bbead5f6c29b',  # TradeAtlas 1024x1024 (1.6.0.1)
+        '0638abc65b434114': '2ca50e12c92522e7dcd84e78def056302ce93fc9e61fb9ce21f9bdc4f11b0752',  # tex-2026-10-17-c-g3 268x20 (1.6.0.1)
+        '0b4da7a85d27e87a': '0d349bbcd342ad42273634916d9d0bb9e7309e5fca2396d3f06aa9ffa6e46a79',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
+        '2e7df9820d2f9ed0': '040746883a16c28b6b07535a9d129905ada3db53e853d9f36f29e796ed7a895c',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
+        '3a90000940f528bb': '8a9a832c9f74a394d7b14e0f645a1940f575173f29e4629189c21730687cfeba',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
+        '4afb2b3933c898cb': 'dd195336dc81c32776b48168ef231b3b70e162373492b6f6d7d5a024d0044058',  # tex-2026-10-17-c-g3 268x20 (1.6.0.1)
+        '675e036b7ee068d9': '8279b7cb72f8c3f5677c3d55f82471a3a0f8807958592df2783cd5e1a7ecf2a4',  # tex-2026-10-17-c-g3 268x20 (1.6.0.1)
+        '8561dd4cf927c3de': 'b84ab8de0a7cb426d88f6d9154f12c6c1f5d6ea55166bc4f8c952f0ef34f0d3f',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
+        '8cc3ecc3d972bc31': '2a3fbc6e76fedc65e3af8d1ef4f3c02fc59e292c6cb544ae386ee192eff4697e',  # tex-2026-10-17-c-g3 492x360 (1.6.0.1)
+        '990a38402bdc48d2': '2cb3197d537f6320da8fef30e8b7f0510986fe9e700224b199046bd916975386',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
+        '9b5a3658d5858bca': '67b61108d68bc07def040ec1b70bb1e51aead1ddbcc8950a3d6566e6d2bec146',  # tex-2026-10-17-c-g3 2048x2048 (1.6.0.1)
+        'bcc158c3874d51b1': 'fea097aec9b7e92159f0f3aefb334cf58c025f2e07eb682b02c71bd7c763347e',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
+        'e140fc4e02b5dd1c': '71773ea59d352afd0b7737a604f70f5d7690a866c292d9ed748e807a8c3cbf2d',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
+        'ff5a9152d69df380': '1b375177f77253e0d8f8e6b1a00be6f716f8d9bd977c704a57a9ac843f136a8c',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
+        '00a250bf2721738d': '08d67b3d2e98204a7a09ab2f34053964712e92b6cf51c87f14fd82672dee93a0',  # tex-2026-10-18-d-g5/g6 192x48 (1.6.0.1)
+        '0929a1bed0af49ac': '5579b4b1b07ee6b8246a821bba1427d4e88c240fb1701b7f92d5d78d8d24f062',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
+        '0e60fa470e15f535': 'e791c927eb837b45032991d5c4a48ff74fce29ca5e95c6c556ae38f0bbaeb512',  # tex-2026-10-18-d-g5/g6 608x220 (1.6.0.1)
+        '110a5947547b14b5': 'e3c9f296fec67544629be5bcf47ddc6bb3dd4707b6ecf1572059bce4d2b02ca8',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
+        '11d0932ec841cabc': 'e3e959f5e402b76e9f8c53dfdb6156e664afbd4ce8c2e421eaadfce30d19fc84',  # tex-2026-10-18-d-g5/g6 280x152 (1.6.0.1)
+        '162bc081eb0a7233': '62aa37119532779c8814ef2ce2161392135f09c3ac4d9197e8d89dd024dcfec4',  # tex-2026-10-18-d-g5/g6 256x128 (1.6.0.1)
+        '1d88bc7eedc9096c': '99a2faf99bb0060a81e1ce91606dda9d50f6e3b5d3f6be1beb0cb4954377b26e',  # tex-2026-10-18-d-g5/g6 92x24 (1.6.0.1)
+        '23c0a61db9d13caf': '72d31faadc1e98cd5471b2a3b0a2a47619f7d2efe5bee47efdf2e0cf5add064f',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
+        '282fcd1c5063120e': 'e888974dd2d1130008ce3dac4d2fd8488d5fdb811e2d778e68151d44f389fb5c',  # tex-2026-10-18-d-g5/g6 548x100 (1.6.0.1)
+        '29649cc23c6f5390': '607462345fb0a423ea96f94f7e08b32411f7abf57915d179c182bdd46d787175',  # tex-2026-10-18-d-g5/g6 456x112 (1.6.0.1)
+        '2c9b18d5d85c4867': '030c69e21e66476369e36c7f34ddd6960b134abf062c728c63d956cd44576564',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
+        '2d1f39c596229f77': '4ec0458313ac564ab1dff2517ff51eb99ede0bec6db69d35dfb02ba9a9b627b9',  # tex-2026-10-18-d-g5/g6 244x180 (1.6.0.1)
+        '3377c5152f7633a7': '82f7f30ea93b5f3c645b3bc06d6f2415b94d1355558f5610e5105bbc9413140c',  # tex-2026-10-18-d-g5/g6 512x128 (1.6.0.1)
+        '35c26d3d85f96dcf': '1d4af083deb562917f012719e9723db27d030f97e4646684e098604806ad4bf3',  # tex-2026-10-18-d-g5/g6 244x180 (1.6.0.1)
+        '398e3fe7a4505b55': 'c4d8816dabca0ffe123e08bbdd971fcf59235a08bee21ec5b6c5377aa576d13f',  # tex-2026-10-18-d-g5/g6 372x112 (1.6.0.1)
+        '3d12ac6eb9820c7c': '15b259bdaaa8ff62bee3f276866ff1348fd73b473d5c463b8d90a7a36b906110',  # tex-2026-10-18-d-g5/g6 712x192 (1.6.0.1)
+        '428deb40a4e123d2': '3bd56bc19ceafc7a2559b392893379acf20220acb01c2dbaf045d9a5e0f27d9a',  # tex-2026-10-18-d-g5/g6 512x256 (1.6.0.1)
+        '4331f55968a9ad6b': 'b0b19cf571f0f0bd9ec9aa2b6694191174ccb225b670c9cee14a35b603e668ce',  # tex-2026-10-18-d-g5/g6 408x160 (1.6.0.1)
+        '49cf906ea757137c': '594f7d1ed0f4e5e3f4652eb3ff92ed9ec9d342357126a449a94b9c730d0da62c',  # tex-2026-10-18-d-g5/g6 436x148 (1.6.0.1)
+        '4ead92f6764c68e4': 'd359331e1b9140dbf6d2ade9d6556149a65c054236e36a7dc2f535b4a15b696a',  # tex-2026-10-18-d-g5/g6 512x128 (1.6.0.1)
+        '53073772f11efae0': '794b8ee47e95b04bd7e1e54c31eb02a1ae8ca799973c43aded89c61d4034cd59',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
+        '5c94ab280a7ae6fa': '686673b1e9cd66cb87158157e01dc60100a03e250605ed7ed2a142d9185bda27',  # tex-2026-10-18-d-g5/g6 132x52 (1.6.0.1)
+        '5c9c293c8b3548ee': '5ff4d99578ad5d9c05604637850a7cb503f21e0e7afa2b18d83cd309aed71c8a',  # tex-2026-10-18-d-g5/g6 548x168 (1.6.0.1)
+        '5d524b5fcd0cc7ad': '7bbd9e2ceae5edbf504dd4e7d88053838f494a54d4b3fc102c46adbd96363d09',  # tex-2026-10-18-d-g5/g6 512x256 (1.6.0.1)
+        '5fd2860db3bc2f3f': '2d872c1122c4a5995cae78731fdb107d690b69c203861a413ecc23af3a30d2f0',  # tex-2026-10-18-d-g5/g6 512x256 (1.6.0.1)
+        '618820e2c2eacf70': 'd5e786f94797659fc25107fb453287333a5bac60658785e31d242c6dab71bc21',  # tex-2026-10-18-d-g5/g6 548x100 (1.6.0.1)
+        '620b5fb681600324': 'bf28d1a15b0840d415e19c87eecf2950267eb5071f5e5af5a9a23358811adee9',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
+        '63d70bcc8083e35e': '4c458ae290ca154ecd473027ddbb9cf150923ca2cb343e86381e1323f4404bbe',  # tex-2026-10-18-d-g5/g6 548x100 (1.6.0.1)
+        '6accc9f784f11545': 'ff4bd64204c79e402123723bf53d1e55ccaded70411e49a12ce3b426d840a92f',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
+        '6c8dd5af43e9de1d': '74af38411a1c4a4eb0f38fe8691af457a9007bdbb54e4cc02ab99002017678a5',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
+        '72a4030a9cc4a4d8': '82b3fae0a1f971e5130449adf83faf633a0a4d42b2b2b2a4520b1d9cab44a0bb',  # tex-2026-10-18-d-g5/g6 840x1176 (1.6.0.1)
+        '73625ad43eee51c6': '32b5f7c3a315ef0a60cfb0ba84d339fab000f0f4d480e647b9ebb8130e4ae7b5',  # tex-2026-10-18-d-g5/g6 100x44 (1.6.0.1)
+        '754830692fb7cc9b': '0bd26534cc3035a3174b3f36aae6665605d4d59c04c258dca28b9eb005b8843c',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
+        '7da46e2cadafc37e': '4e079834ab269704afe3d7d02527f102bc41cd2aa047ce7836d20223ba91e2ba',  # tex-2026-10-18-d-g5/g6 280x152 (1.6.0.1)
+        '89230d112d871523': 'e0170453f2f1eba8d708469ee8eacf5207b49c10cc9716b3b2d1cf06c837fcb0',  # tex-2026-10-18-d-g5/g6 420x588 (1.6.0.1)
+        '93ec389832fc4f8a': 'd25b01861447e7ce4fd2dff534f8532f1d0549e3ef4d72ceb0f5ba7144b595d4',  # tex-2026-10-18-d-g5/g6 564x124 (1.6.0.1)
+        '95012c230c37aa11': '292f548cf278443a9708778ab56c70bcb487a3b1d7dbad3fa470aa3ec5cb2945',  # tex-2026-10-18-d-g5/g6 540x156 (1.6.0.1)
+        '96fae7fe34e61fec': '2d88bba0d67ad6ee96d57553998169b7dd3cb2b20735787cc54112129acf5b1c',  # tex-2026-10-18-d-g5/g6 772x160 (1.6.0.1)
+        '97bc5face9c8f97e': '6fbf27d6636633dee2a3764c2d49826258da5c43d7f7289eb6a0f0b14b7ec3dc',  # tex-2026-10-18-d-g5/g6 436x148 (1.6.0.1)
+        '9a5c2c452afef1f7': '36046669b063a4d595a66b7ba43795cb3a7b9d29c53809281590ec4eb38a6c16',  # tex-2026-10-18-d-g5/g6 548x100 (1.6.0.1)
+        '9c6742f243c37d60': 'a0f121ad8058ed5db26bcb246da6bf2f7af8e77091b469f67d70478ed60f0378',  # tex-2026-10-18-d-g5/g6 512x128 (1.6.0.1)
+        'a425c3e08879a732': '1dc7055fabffd153385daba8fd7026427559472fbcfdbaab24750d11ce9af408',  # tex-2026-10-18-d-g5/g6 512x128 (1.6.0.1)
+        'a52040ed4864429f': 'b003b40ea53ef3955f7950863c35ecadeef66a7d9767e3a57ff845c33abab901',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
+        'a5f5a84967c57a7b': 'd1d57215c85e81ff696adfe9ba26c3f0daf9e4f013f8c1750cbabfda285ac058',  # tex-2026-10-18-d-g5/g6 732x260 (1.6.0.1)
+        'aa5465d8341e3bca': '249eb89868b96e13a07d572ab0ecde7ad72f52ce02c357995b653bad920dbb70',  # tex-2026-10-18-d-g5/g6 620x152 (1.6.0.1)
+        'b02039b4d2a62fe6': 'cdfff724563ae348c45520af1cf559f3bd92fb46d7178836bb1fa5e416c23078',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
+        'b0e95993be660de1': '122d5171508463ae1ae8bde10c8a2401fc8c1bdd49cb14b7d590ece9614d93a4',  # tex-2026-10-18-d-g5/g6 512x1024 (1.6.0.1)
+        'b19bbbb42b6e76e6': '95c354f4627ac492f12a9362b3e3f84eb19517182bbbf717e873293b6c376de7',  # tex-2026-10-18-d-g5/g6 420x588 (1.6.0.1)
+        'b26d9ceeb14aca7c': '1bf23087e85a1b0be592fae320d4892c23b5d4ffa68b1b2b26a09aa35f2b8b7a',  # tex-2026-10-18-d-g5/g6 256x128 (1.6.0.1)
+        'b4a8709346c4c561': '2358132468f460f888708381cddaf7cc984e46c8180f25b145bbcc49422aeb96',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
+        'b53c579132f1bda3': '5fd5d11cfaef5d51f957ba1064d9c8a05164167c9247ed2696bd84ff3355d937',  # tex-2026-10-18-d-g5/g6 540x184 (1.6.0.1)
+        'baa04e16db2ea0c4': '787961f77331223339965ecceac6323efa52a6c95f2b455a6dea49792ad7dcc9',  # tex-2026-10-18-d-g5/g6 600x124 (1.6.0.1)
+        'bb42cc7a1e727de8': '82696c048140770eed4148ff12a90fa8731c4f740d1b29384415d571c13c6061',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
+        'c2c95ade3e79378c': 'a9fb35d1768d5fbef98cf749c8360ce1818ac66a769d2375f43571ad7de12e92',  # tex-2026-10-18-d-g5/g6 540x184 (1.6.0.1)
+        'd2e37a391949ba4b': 'fe3058a650ac8b1ba5e542c31ebc48779eed9aaa6b9ead8ade59028ffc2dfb8c',  # tex-2026-10-18-d-g5/g6 416x100 (1.6.0.1)
+        'd400829093f2e202': '9ab8cb9d126fcbe0e51f800c62dae0284b28a20d376f95625d6328821a1c308a',  # tex-2026-10-18-d-g5/g6 512x256 (1.6.0.1)
+        'dd17d87e0a0fcbec': '391f54bb60aa8a173c5cfde439b22cfcab8417a65de22cc4b894751b9fb32bd9',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
+        'e486fa87569265f5': '61d201f614ac3dcca8d2e972a9ebb47e8b6399129f525be91370c846e4dc35dc',  # tex-2026-10-18-d-g5/g6 540x184 (1.6.0.1)
+        'ea43f5e796e05855': '632cda257b33367491abbbe36ba8451ce70522cccaca5c71eb7357a53ad673f6',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
+        'f10fcc7ca5b1b3ae': '4f684b6dffc6405965f339feed99dc776a8c24d863773574e3e02ca1c5444026',  # tex-2026-10-18-d-g5/g6 776x252 (1.6.0.1)
+        'f2f2bceaa279c9f8': '43222521cd39255e752dbe2825bcc3549c88b582f243a2800ba1eae5f0760710',  # tex-2026-10-18-d-g5/g6 216x172 (1.6.0.1)
+        'fea114cf8e039e3d': 'd0dc706b4108e5538ea8aae50ee8619807239bf071096772eabae5ed8ca1eaa7',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
     },
 }
 # Размер потока оригинала = размер нагрузки (BC7 без mip: 16 байт на блок 4x4, то есть ширина*высота). Совпадает с размерами в комментариях выше.
@@ -271,12 +353,175 @@ BC7_TEXTURE_BYTES = {
         '13c19e4e4486b31c': 1024 * 1024,
         'd60aedde2d4cbb8c': 1024 * 1024,
         'e86df43167ca2143': 1024 * 1024,
+        '362253ea729c72f8': 1048576,  # 1024x1024
+        'a4f638ac4ed7627e': 177120,  # 492x360
+        '10c984e383eb5351': 1048576,  # 1024x1024
+        '8ddce9d259b27700': 1048576,  # 1024x1024
+        '6677881457c07686': 1048576,  # 1024x1024
+        '0638abc65b434114': 5360,  # 268x20
+        '0b4da7a85d27e87a': 1048576,  # 1024x1024
+        '2e7df9820d2f9ed0': 1048576,  # 1024x1024
+        '3a90000940f528bb': 1048576,  # 1024x1024
+        '4afb2b3933c898cb': 5360,  # 268x20
+        '675e036b7ee068d9': 5360,  # 268x20
+        '8561dd4cf927c3de': 1048576,  # 1024x1024
+        '8cc3ecc3d972bc31': 177120,  # 492x360
+        '990a38402bdc48d2': 1048576,  # 1024x1024
+        '9b5a3658d5858bca': 4194304,  # 2048x2048
+        'bcc158c3874d51b1': 1048576,  # 1024x1024
+        'e140fc4e02b5dd1c': 1048576,  # 1024x1024
+        'ff5a9152d69df380': 1048576,  # 1024x1024
+        '00a250bf2721738d': 9216,  # 192x48
+        '0929a1bed0af49ac': 1048576,  # 1024x1024
+        '0e60fa470e15f535': 133760,  # 608x220
+        '110a5947547b14b5': 1048576,  # 1024x1024
+        '11d0932ec841cabc': 42560,  # 280x152
+        '162bc081eb0a7233': 32768,  # 256x128
+        '1d88bc7eedc9096c': 2208,  # 92x24
+        '23c0a61db9d13caf': 1048576,  # 1024x1024
+        '282fcd1c5063120e': 54800,  # 548x100
+        '29649cc23c6f5390': 51072,  # 456x112
+        '2c9b18d5d85c4867': 1048576,  # 1024x1024
+        '2d1f39c596229f77': 43920,  # 244x180
+        '3377c5152f7633a7': 65536,  # 512x128
+        '35c26d3d85f96dcf': 43920,  # 244x180
+        '398e3fe7a4505b55': 41664,  # 372x112
+        '3d12ac6eb9820c7c': 136704,  # 712x192
+        '428deb40a4e123d2': 131072,  # 512x256
+        '4331f55968a9ad6b': 65280,  # 408x160
+        '49cf906ea757137c': 64528,  # 436x148
+        '4ead92f6764c68e4': 65536,  # 512x128
+        '53073772f11efae0': 1048576,  # 1024x1024
+        '5c94ab280a7ae6fa': 6864,  # 132x52
+        '5c9c293c8b3548ee': 92064,  # 548x168
+        '5d524b5fcd0cc7ad': 131072,  # 512x256
+        '5fd2860db3bc2f3f': 131072,  # 512x256
+        '618820e2c2eacf70': 54800,  # 548x100
+        '620b5fb681600324': 1048576,  # 1024x1024
+        '63d70bcc8083e35e': 54800,  # 548x100
+        '6accc9f784f11545': 1048576,  # 1024x1024
+        '6c8dd5af43e9de1d': 1048576,  # 1024x1024
+        '72a4030a9cc4a4d8': 987840,  # 840x1176
+        '73625ad43eee51c6': 4400,  # 100x44
+        '754830692fb7cc9b': 1048576,  # 1024x1024
+        '7da46e2cadafc37e': 42560,  # 280x152
+        '89230d112d871523': 246960,  # 420x588
+        '93ec389832fc4f8a': 69936,  # 564x124
+        '95012c230c37aa11': 84240,  # 540x156
+        '96fae7fe34e61fec': 123520,  # 772x160
+        '97bc5face9c8f97e': 64528,  # 436x148
+        '9a5c2c452afef1f7': 54800,  # 548x100
+        '9c6742f243c37d60': 65536,  # 512x128
+        'a425c3e08879a732': 65536,  # 512x128
+        'a52040ed4864429f': 1048576,  # 1024x1024
+        'a5f5a84967c57a7b': 190320,  # 732x260
+        'aa5465d8341e3bca': 94240,  # 620x152
+        'b02039b4d2a62fe6': 1048576,  # 1024x1024
+        'b0e95993be660de1': 524288,  # 512x1024
+        'b19bbbb42b6e76e6': 246960,  # 420x588
+        'b26d9ceeb14aca7c': 32768,  # 256x128
+        'b4a8709346c4c561': 1048576,  # 1024x1024
+        'b53c579132f1bda3': 99360,  # 540x184
+        'baa04e16db2ea0c4': 74400,  # 600x124
+        'bb42cc7a1e727de8': 1048576,  # 1024x1024
+        'c2c95ade3e79378c': 99360,  # 540x184
+        'd2e37a391949ba4b': 41600,  # 416x100
+        'd400829093f2e202': 131072,  # 512x256
+        'dd17d87e0a0fcbec': 1048576,  # 1024x1024
+        'e486fa87569265f5': 99360,  # 540x184
+        'ea43f5e796e05855': 1048576,  # 1024x1024
+        'f10fcc7ca5b1b3ae': 195552,  # 776x252
+        'f2f2bceaa279c9f8': 37152,  # 216x172
+        'fea114cf8e039e3d': 1048576,  # 1024x1024
     },
 }
 # Пакет 15 (карточные лица 404x564 BC7, 1914 текстур с китайским): пины вынесены в файл, его SHA-256 закреплён здесь; записи сливаются
 # в BC7_TEXTURE_ALLOWED (SHA оригинала) и BC7_TEXTURE_BYTES (длина потока). Пакеты 4 и 19 выше не затрагиваются.
 # Размер текстуры (ширина, высота) там, где она не квадратная; для остальных atlas_text_patch берёт квадрат.
 BC7_TEXTURE_SIZES: dict[str, dict[str, tuple[int, int]]] = {}
+# Пакет 19, кандидаты tex-2026-10-17-c-g2/c-g3 (1.6.0.1): размеры текстур, в том числе неквадратных (268x20, 492x360, 2048x2048).
+BC7_TEXTURE_SIZES['19'] = {
+    '362253ea729c72f8': (1024, 1024),
+    'a4f638ac4ed7627e': (492, 360),
+    '10c984e383eb5351': (1024, 1024),
+    '8ddce9d259b27700': (1024, 1024),
+    '6677881457c07686': (1024, 1024),
+    '0638abc65b434114': (268, 20),
+    '0b4da7a85d27e87a': (1024, 1024),
+    '2e7df9820d2f9ed0': (1024, 1024),
+    '3a90000940f528bb': (1024, 1024),
+    '4afb2b3933c898cb': (268, 20),
+    '675e036b7ee068d9': (268, 20),
+    '8561dd4cf927c3de': (1024, 1024),
+    '8cc3ecc3d972bc31': (492, 360),
+    '990a38402bdc48d2': (1024, 1024),
+    '9b5a3658d5858bca': (2048, 2048),
+    'bcc158c3874d51b1': (1024, 1024),
+    'e140fc4e02b5dd1c': (1024, 1024),
+    'ff5a9152d69df380': (1024, 1024),
+    '00a250bf2721738d': (192, 48),
+    '0929a1bed0af49ac': (1024, 1024),
+    '0e60fa470e15f535': (608, 220),
+    '110a5947547b14b5': (1024, 1024),
+    '11d0932ec841cabc': (280, 152),
+    '162bc081eb0a7233': (256, 128),
+    '1d88bc7eedc9096c': (92, 24),
+    '23c0a61db9d13caf': (1024, 1024),
+    '282fcd1c5063120e': (548, 100),
+    '29649cc23c6f5390': (456, 112),
+    '2c9b18d5d85c4867': (1024, 1024),
+    '2d1f39c596229f77': (244, 180),
+    '3377c5152f7633a7': (512, 128),
+    '35c26d3d85f96dcf': (244, 180),
+    '398e3fe7a4505b55': (372, 112),
+    '3d12ac6eb9820c7c': (712, 192),
+    '428deb40a4e123d2': (512, 256),
+    '4331f55968a9ad6b': (408, 160),
+    '49cf906ea757137c': (436, 148),
+    '4ead92f6764c68e4': (512, 128),
+    '53073772f11efae0': (1024, 1024),
+    '5c94ab280a7ae6fa': (132, 52),
+    '5c9c293c8b3548ee': (548, 168),
+    '5d524b5fcd0cc7ad': (512, 256),
+    '5fd2860db3bc2f3f': (512, 256),
+    '618820e2c2eacf70': (548, 100),
+    '620b5fb681600324': (1024, 1024),
+    '63d70bcc8083e35e': (548, 100),
+    '6accc9f784f11545': (1024, 1024),
+    '6c8dd5af43e9de1d': (1024, 1024),
+    '72a4030a9cc4a4d8': (840, 1176),
+    '73625ad43eee51c6': (100, 44),
+    '754830692fb7cc9b': (1024, 1024),
+    '7da46e2cadafc37e': (280, 152),
+    '89230d112d871523': (420, 588),
+    '93ec389832fc4f8a': (564, 124),
+    '95012c230c37aa11': (540, 156),
+    '96fae7fe34e61fec': (772, 160),
+    '97bc5face9c8f97e': (436, 148),
+    '9a5c2c452afef1f7': (548, 100),
+    '9c6742f243c37d60': (512, 128),
+    'a425c3e08879a732': (512, 128),
+    'a52040ed4864429f': (1024, 1024),
+    'a5f5a84967c57a7b': (732, 260),
+    'aa5465d8341e3bca': (620, 152),
+    'b02039b4d2a62fe6': (1024, 1024),
+    'b0e95993be660de1': (512, 1024),
+    'b19bbbb42b6e76e6': (420, 588),
+    'b26d9ceeb14aca7c': (256, 128),
+    'b4a8709346c4c561': (1024, 1024),
+    'b53c579132f1bda3': (540, 184),
+    'baa04e16db2ea0c4': (600, 124),
+    'bb42cc7a1e727de8': (1024, 1024),
+    'c2c95ade3e79378c': (540, 184),
+    'd2e37a391949ba4b': (416, 100),
+    'd400829093f2e202': (512, 256),
+    'dd17d87e0a0fcbec': (1024, 1024),
+    'e486fa87569265f5': (540, 184),
+    'ea43f5e796e05855': (1024, 1024),
+    'f10fcc7ca5b1b3ae': (776, 252),
+    'f2f2bceaa279c9f8': (216, 172),
+    'fea114cf8e039e3d': (1024, 1024),
+}
 BC7_PINS_PATH = PROJECT / 'localization/profiles/bc7-texture-pins-15-1.5.0.1.json'
 BC7_PINS_SHA256 = '7e39370a7dd730d6b4091c3a58e4b4369ed4695723592746fe077c7b954c5591'
 
@@ -295,6 +540,32 @@ def _merge_bc7_pins() -> None:
 
 
 _merge_bc7_pins()
+
+# Пины SHA оригиналов общего покрытия Lua (пакет 10, v12c): список построен gen_wrap_targets.py по оригиналам prime игры 1.6.0.1.
+# Вливаются при импорте контракта (а не только при импорте build_lua_package), поэтому require_lua_replacements в установщике и validate_carrier
+# принимают эти ресурсы в любом процессе. Файл закреплён SHA-256; уже заданный пин может только совпасть, расхождение - ошибка.
+LUA_COVERAGE_PATH = PROJECT / 'source/game-wordwrap/coverage-targets.json'
+LUA_COVERAGE_SHA256 = 'f87b1274dfd580163e09ae8cf60e2a30ca78008d5e1583d49c5b5dd5c4126f9c'
+
+
+def _merge_lua_coverage_pins() -> None:
+    raw = LUA_COVERAGE_PATH.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != LUA_COVERAGE_SHA256:
+        raise ValueError('Lua coverage pin file differs from the SHA-256 pinned in the contract')
+    data = json.loads(raw.decode('utf-8'))
+    if data.get('package') != '10':
+        raise ValueError('Lua coverage pin file must describe package 10')
+    pins = {data['shared']['id_hex']: data['shared']['sha256']}
+    pins.update({ident: row['sha256'] for ident, row in data['modules'].items()})
+    allowed = LUA_REPLACEMENT_ALLOWED['10']
+    for ident, digest in pins.items():
+        if not re.fullmatch(r'[0-9a-f]{16}', ident) or not re.fullmatch(r'[0-9a-f]{64}', digest):
+            raise ValueError('Lua coverage pin file has a malformed entry')
+        if allowed.setdefault(ident, digest) != digest:
+            raise ValueError(f'Lua coverage pin {ident} differs from the pinned Lua original')
+
+
+_merge_lua_coverage_pins()
 # Каждая нагрузка lua-script начинается с этой строки (помощник переноса и точечные правки сборщика build_lua_package.py).
 LUA_PAYLOAD_MARKER = b'-- ACE_REVIEWED_RU_WORDWRAP_v2'
 PACKAGE_ID = re.compile(r'[1-9][0-9]{0,9}')
@@ -464,6 +735,32 @@ def require_bc7_stream_size(resource: dict, payload: bytes) -> None:
         raise ValueError(f'BC7 texture {resource["package"]}/{resource["id_hex"]} stream is {len(payload)} bytes, original is {expected}')
 
 
+def bc7_stream_length(width: int, height: int) -> int:
+    """Длина потока BC7 без mip: блоки 4x4 по 16 байт."""
+    return ((width + 3) // 4) * ((height + 3) // 4) * 16
+
+
+def require_texture_stream_length(resource: dict, payload: bytes, original: bytes | None) -> None:
+    """Поток текстуры (rgba32/bc7) той же длины, что оригинал в prime: игра читает поток по размеру из заголовка Texture2D.
+
+    Для BC7 оригинал дополнительно сверяется с пином (SHA, закреплённая длина, размер из BC7_TEXTURE_SIZES, если он там есть)."""
+    name = f'{resource["package"]}/{resource["id_hex"]}'
+    if original is None:
+        raise ValueError(f'Texture {name}: the original is missing in prime, stream length cannot be confirmed')
+    if len(payload) != len(original):
+        raise ValueError(f'Texture {name} stream is {len(payload)} bytes, prime original is {len(original)}')
+    if resource['kind'] != 'bc7-texture':
+        return
+    if hashlib.sha256(original).hexdigest() != resource['original_sha256']:
+        raise ValueError(f'BC7 texture {name}: prime original differs from the pin')
+    pinned = BC7_TEXTURE_BYTES.get(resource['package'], {}).get(resource['id_hex'])
+    size = BC7_TEXTURE_SIZES.get(resource['package'], {}).get(resource['id_hex'])
+    if pinned is not None and len(original) != pinned:
+        raise ValueError(f'BC7 texture {name}: prime original is {len(original)} bytes, pinned {pinned}')
+    if size is not None and bc7_stream_length(*size) != len(original):
+        raise ValueError(f'BC7 texture {name}: prime original length does not match size {size[0]}x{size[1]}')
+
+
 @functools.lru_cache(maxsize=1)
 def text_resource_pins() -> dict:
     """{пакет: {id: SHA-256 оригинала}}; файл обязан совпасть с закреплённым в коде SHA-256."""
@@ -559,14 +856,26 @@ def prove_text_resource(kind: str, declaration: dict, original: bytes, payload: 
 
 
 def make_prime_reader(game: Path, container_cls):
-    """Читает ресурс пакета из prime-файлов установки (только чтение): read(package, id_int) -> bytes | None."""
+    """Читает ресурс пакета из prime-файлов установки (только чтение): read(package, id_int) -> bytes | None.
+
+    Индекс контейнера строится один раз на файл и держится открытым (на тысячах текстур пакета 15 повторное открытие занимает часы); read.close() закрывает всё."""
+    opened: dict = {}
+
     def read(package: str, ident: int):
         folder = game / 'WXQ_Data/Package/builtin' / package
         for path in sorted(folder.glob(f'{package}_*.db'), key=lambda p: int(p.stem.rsplit('_', 1)[1])):
-            with container_cls(path) as container:
-                if ident in container.entries:
-                    return container.decode_entry(ident)
+            container = opened.get(path)
+            if container is None:
+                container = opened[path] = container_cls(path)
+            if ident in container.entries:
+                return container.decode_entry(ident)
         return None
+
+    def close() -> None:
+        while opened:
+            opened.popitem()[1].__exit__(None, None, None)
+
+    read.close = close
     return read
 
 
@@ -614,7 +923,8 @@ def check_identity(manifest: dict, cache_root: Path, log_path: Path) -> None:
 def validate_carrier(directory: Path, manifest: dict, container_cls, header_id: int, prime_reader=None) -> None:
     """Сами файлы кандидата: ровно заявленные ресурсы, заголовок, SHA полезной нагрузки.
 
-    prime_reader (см. make_prime_reader) нужен для текстовых ресурсов: оригинал берётся из prime и сверяется с пином, правки доказываются заново."""
+    prime_reader (см. make_prime_reader) нужен для текстовых ресурсов (оригинал берётся из prime и сверяется с пином, правки доказываются заново)
+    и для текстур rgba32/bc7 (длина потока обязана равняться длине оригинала в prime)."""
     for package in candidate_packages(manifest):
         rows = [r for r in manifest['resources'] if r['package'] == package]
         ids = {int(r['id_hex'], 16) for r in rows}
@@ -631,6 +941,10 @@ def validate_carrier(directory: Path, manifest: dict, container_cls, header_id: 
                     raise ValueError('Pilot carrier payload hash mismatch')
                 if row['kind'] == 'bc7-texture':
                     require_bc7_stream_size(row, payload)
+                if row['kind'] in TEXTURE_KINDS:
+                    if prime_reader is None:
+                        raise ValueError('Texture resources need the prime reader to compare the stream length with the original')
+                    require_texture_stream_length(row, payload, prime_reader(package, identity))
                 if row['kind'] in TEXT_KINDS:
                     if prime_reader is None:
                         raise ValueError('Text resources need the prime reader to be re-proved')

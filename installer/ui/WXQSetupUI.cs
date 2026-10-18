@@ -327,7 +327,7 @@ namespace WXQSetup
     static class Proto
     {
         // Единственные команды, которые окно вообще умеет посылать. Пути, адреса и произвольный текст в Inno не передаются.
-        public static readonly string[] Cmds = { "install", "close", "remove", "launch", "options", "back" };
+        public static readonly string[] Cmds = { "install", "close", "remove", "launch", "options", "back", "pickgame" };
         public static readonly string[] Screens = { "welcome", "progress", "done", "fail", "installed", "removed" };
         const int MaxState = 65536;
 
@@ -604,6 +604,7 @@ namespace WXQSetup
         }
 
         // ================= Экран 1: приветствие =================
+        public const string UpdateLimit = "После выхода обновления игры первый запуск будет на китайском: перевод вернётся автоматически после того, как вы один раз запустите игру до главного меню и закроете её. Иначе нельзя — новые хеши файлов игры создаются только самой игрой.";
         FrameworkElement Welcome()
         {
             Grid body, footer; var root = Frame(out body, out footer);
@@ -612,11 +613,22 @@ namespace WXQSetup
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(352) });
             var left = new StackPanel();
             left.Children.Add(Title("Установка перевода", "Игра заговорит по-русски. Интернет не нужен, перед записью делается резервная копия.", 420));
-            var list = new StackPanel { Margin = new Thickness(0, 24, 0, 0) };
-            var lab = Tk.TB("Что ставится", 12, Tk.Muted); lab.Margin = new Thickness(0, 0, 0, 12); list.Children.Add(lab);
+            var list = new StackPanel { Margin = new Thickness(0, 16, 0, 0) };
+            var lab = Tk.TB("Что ставится", 12, Tk.Muted); lab.Margin = new Thickness(0, 0, 0, 10); list.Children.Add(lab);
             list.Children.Add(ItemRow("text", "Тексты игры", null));
             list.Children.Add(ItemRow("image", "Картинки интерфейса", "Кнопки, ранги, вывеска «Новости»"));
             left.Children.Add(list);
+            // Ограничение автообновления: говорим о нём заранее, до первой установки.
+            var upd = new Grid { Margin = new Thickness(0, 14, 0, 0), Width = 424, HorizontalAlignment = HorizontalAlignment.Left };
+            upd.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
+            upd.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            var ui2 = Ico.Make("info", 18, Tk.Gold); ui2.HorizontalAlignment = HorizontalAlignment.Left; ui2.VerticalAlignment = VerticalAlignment.Top; ui2.Margin = new Thickness(0, 1, 0, 0);
+            upd.Children.Add(ui2);
+            var ut = new StackPanel(); SetColumn(ut, 1);
+            ut.Children.Add(Tk.TB("Как работает обновление", 12.5, Tk.Text, Tk.Body, 18, TextWrapping.Wrap));
+            var ub = Tk.TB(UpdateLimit, 11.5, Tk.Muted, Tk.Body, 16, TextWrapping.Wrap); ub.Margin = new Thickness(0, 3, 0, 0); ut.Children.Add(ub);
+            upd.Children.Add(ut);
+            left.Children.Add(upd);
             body.Children.Add(left);
 
             var card = new StackPanel();
@@ -896,7 +908,14 @@ namespace WXQSetup
             body.Children.Add(left);
             var close = new Btn(BK.Secondary, "Закрыть", null, null, 44, 112); close.Click += delegate { Fire("close"); };
             var back = new Btn(BK.Primary, "Назад", "back", null, 44, 132); back.Click += delegate { Fire("back"); };
-            footer.Children.Add(Buttons(close, back));
+            // Игра не найдена или найдено несколько папок: папку можно выбрать вручную. Путь выбирает системный диалог в Setup, окно его не передаёт.
+            bool pick = !rmFail && (S.FailureCode == "game_not_found" || S.FailureCode == "game_ambiguous" || S.FailureCode == "game_missing");
+            if (pick)
+            {
+                var choose = new Btn(BK.Secondary, "Выбрать папку игры", null, null, 44, 208); choose.Click += delegate { Fire("pickgame"); };
+                footer.Children.Add(Buttons(close, choose, back));
+            }
+            else footer.Children.Add(Buttons(close, back));
             return root;
         }
 
@@ -1053,7 +1072,7 @@ namespace WXQSetup
             Tk.Still = true;
             Directory.CreateDirectory(dir);
             string[] names = { "01-welcome", "02-welcome-launcher-on", "03-progress", "04-done", "05-fail", "06-installed", "07-installed-confirm", "08-removed", "09-progress-start", "10-fail-after-write",
-                "11-done-no-launcher", "12-interrupted", "13-progress-remove", "14-fail-remove", "15-welcome-can-remove", "16-welcome-no-launcher-block", "17-removed-note", "18-interrupted-confirm" };
+                "11-done-no-launcher", "12-interrupted", "13-progress-remove", "14-fail-remove", "15-welcome-can-remove", "16-welcome-no-launcher-block", "17-removed-note", "18-interrupted-confirm", "19-fail-pick-game" };
             foreach (string n in names)
             {
                 var v = new MainView();
@@ -1072,6 +1091,7 @@ namespace WXQSetup
                 if (n == "16-welcome-no-launcher-block") v.S.LauncherAvailable = false;
                 if (n == "17-removed-note") { screen = "removed"; v.S.Note = "Резервные копии другой папки игры (2) не тронуты и оставлены на месте."; }
                 if (n == "05-fail") { screen = "fail"; v.S.FailureMessage = "Игра запущена. Закройте её и лаунчер, в том числе значок в области уведомлений, и запустите установку снова."; }
+                if (n == "19-fail-pick-game") { screen = "fail"; v.S.FailureCode = "game_not_found"; v.S.FailureMessage = "Не удалось найти установленную игру. Если она стоит в нестандартной папке, нажмите «Выбрать папку игры»."; }
                 if (n == "10-fail-after-write") { screen = "fail"; v.S.FailedBeforeWrite = false; v.S.FailureMessage = "Не хватает места на диске: нужно ещё около 1,2 ГБ."; }
                 if (n == "06-installed" || n == "07-installed-confirm") screen = "installed";
                 if (n == "07-installed-confirm") typeof(MainView).GetField("confirmRemove", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(v, true);
@@ -1300,7 +1320,7 @@ namespace WXQSetup
             foreach (string c in Proto.Cmds) Check("команда в списке: " + c, Proto.Cmd(1, c, false).EndsWith("}\n") && Proto.Cmd(1, c, false).IndexOf('\n') == Proto.Cmd(1, c, false).Length - 1);
             bool threw = false; try { Proto.Cmd(1, "format", null); } catch (ArgumentException) { threw = true; }
             Check("неизвестная команда не формируется", threw);
-            Check("ровно шесть команд", Proto.Cmds.Length == 6);
+            Check("ровно семь команд (шесть и выбор папки игры)", Proto.Cmds.Length == 7);
 
             string tmp = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "wxq-ui-selftest-" + Guid.NewGuid().ToString("N") + ".jsonl");
             try

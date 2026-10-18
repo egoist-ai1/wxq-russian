@@ -37,15 +37,34 @@ failures: list[str] = []
 SETUP_PAD = 700 * 1024   # размер «установщика»: достаточно, чтобы оборвать загрузку посередине
 
 FAKE_SETUP = r'''
-using System; using System.IO; using System.Threading; using System.Text.RegularExpressions;
-class P { static int Main(string[] a) {
+using System; using System.IO; using System.Threading; using System.Text; using System.Text.RegularExpressions;
+class P {
+  // Версия, зашитая в хвост файла (publish() дописывает "\0<версия>\0..."): так сохранённая копия знает, какая она.
+  static string OwnVersion() {
+    byte[] b = File.ReadAllBytes(System.Reflection.Assembly.GetEntryAssembly().Location);
+    int end = b.Length; while (end > 0 && b[end - 1] == 0) end--;
+    int start = end; while (start > 0 && b[start - 1] != 0) start--;
+    return Encoding.ASCII.GetString(b, start, end - start);
+  }
+  static int Main(string[] a) {
   if (a.Length > 0 && a[0] == "sleep") { Thread.Sleep(120000); return 0; }
   string log = Environment.GetEnvironmentVariable("WXQ_FAKE_LOG");
   if (log != null) File.AppendAllText(log, string.Join(" ", a) + "\n");
-  if (Environment.GetEnvironmentVariable("WXQ_FAKE_FAIL") == "1") return 5;
   string st = Environment.GetEnvironmentVariable("WXQ_FAKE_STATE"), ver = Environment.GetEnvironmentVariable("WXQ_FAKE_VERSION");
+  string own = Environment.GetEnvironmentVariable("WXQ_FAKE_OWN") == "1" ? OwnVersion() : null;
+  if (own != null) ver = own;
+  string stop = Environment.GetEnvironmentVariable("WXQ_FAKE_STOP"), stopLog = Environment.GetEnvironmentVariable("WXQ_FAKE_STOPLOG");
+  if (stop != null && stopLog != null) File.AppendAllText(stopLog, "остановка [" + stop + "]: тест\n", new UTF8Encoding(true));
   string t = File.ReadAllText(st);
+  if (Environment.GetEnvironmentVariable("WXQ_FAKE_FAIL") == "1") return 5;
+  if (own != null && own == Environment.GetEnvironmentVariable("WXQ_FAKE_BAD")) {
+    // Новая версия не встала, а откат снял перевод: state.json больше не «установлен».
+    File.WriteAllText(st, Regex.Replace(t, "\"installed\"\\s*:\\s*true", "\"installed\": false")); return 5; }
   t = Regex.Replace(t, "\"version\"\\s*:\\s*\"[^\"]*\"", "\"version\": \"" + ver + "\"");
+  t = Regex.Replace(t, "\"installed\"\\s*:\\s*false", "\"installed\": true");
+  string stamp = Guid.NewGuid().ToString("N");
+  if (Regex.IsMatch(t, "\"installed_utc\"")) t = Regex.Replace(t, "\"installed_utc\"\\s*:\\s*\"[^\"]*\"", "\"installed_utc\": \"" + stamp + "\"");
+  else t = Regex.Replace(t, "^\\s*\\{", "{\"installed_utc\": \"" + stamp + "\",");
   File.WriteAllText(st, t); return 0; } }
 '''
 
@@ -58,8 +77,11 @@ def check(name: str, condition: bool, detail: str = '') -> bool:
 
 
 def game_is_running() -> bool:
-    done = subprocess.run(['tasklist', '/FO', 'CSV', '/NH'], capture_output=True)
-    return bool(re.search(rb'"(WXQ|HonorofKingsACE|WXQLauncher[^"]*)\.exe"', done.stdout, re.IGNORECASE))
+    # Имена процессов в UTF-8 (у игры есть китайское имя), те же, что ищет помощник в RequireClosed.
+    done = subprocess.run(['powershell', '-NoProfile', '-Command',
+                           '[Console]::OutputEncoding=[Text.Encoding]::UTF8; Get-Process | ForEach-Object { $_.ProcessName }'], capture_output=True)
+    names = done.stdout.decode('utf-8', errors='replace').split()
+    return any(re.fullmatch(r'(WXQ|WXQLauncher.*|HonorofKingsACE|王者万象棋)', name) for name in names)
 
 
 def compile_exe(source: Path, out: Path, *extra: str) -> None:
@@ -93,6 +115,7 @@ class Server:
         self.override: dict[str, int] = {}     # путь -> код ответа
         self.cut_after: int | None = None      # оборвать выдачу setup после стольких байт
         self.cut_times = 0
+        self.bad_sig_times = 0                 # столько первых ответов на update.json.sig отдать испорченными
         outer = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -108,6 +131,9 @@ class Server:
                 if path in outer.override:
                     self.send_response(outer.override[path]); self.send_header('Content-Length', '0'); self.end_headers(); return
                 body = outer.files.get(path)
+                if path == '/update.json.sig' and outer.bad_sig_times > 0 and body is not None:
+                    outer.bad_sig_times -= 1
+                    body = base64.b64encode(b'x' * 384)   # подпись «не оттуда»: CDN отдал обрывок
                 if body is None:
                     self.send_response(404); self.send_header('Content-Length', '0'); self.end_headers(); return
                 etag = '"' + hashlib.sha1(body).hexdigest() + '"'
@@ -174,17 +200,17 @@ class Env:
         state = data / 'state.json'
         state.write_text(json.dumps({'installed': True, 'version': version, 'game_root': str(game)}, indent=1), 'utf-8')
         self.server.files.clear(); self.server.log.clear(); self.server.override.clear()
-        self.server.cut_after = None; self.server.cut_times = 0
+        self.server.cut_after = None; self.server.cut_times = 0; self.server.bad_sig_times = 0
         return {'root': root, 'game': game, 'data': data, 'state': state, 'log': root / 'setup-args.txt'}
 
-    def publish(self, version: str, issued: str = '2026-02-01T00:00:00Z', sign_key=None, tamper_setup: bool = False, min_updater: int = 1) -> bytes:
+    def publish(self, version: str, issued: str = '2026-02-01T00:00:00Z', sign_key=None, tamper_setup: bool = False, min_updater: int = 1, game_versions=None) -> bytes:
         """Кладёт на сервер update.json/.sig и установщик; возвращает байты установщика, обещанные манифестом."""
         exe = self.setup_exe + b'\0' + version.encode('ascii') + b'\0' * 8
         folder = self.work / ('pub-' + version)
         folder.mkdir(exist_ok=True)
         (folder / 'Setup.exe').write_bytes(exe)
         manifest = pr.build_manifest(version, folder / 'Setup.exe', None, [], pr.key_id_of(self.key.public_key()), ['https://example.invalid/'],
-                                     issued_utc=issued, min_updater=min_updater, notes='тест')
+                                     issued_utc=issued, min_updater=min_updater, notes='тест', game_versions=game_versions)
         manifest['base_urls'] = [self.server.url]
         data = pr.manifest_bytes(manifest)
         signature = pr.sig_to_text(pr.sign_bytes(sign_key or self.key, data)).encode('ascii')
@@ -208,11 +234,55 @@ class Env:
                 rows[name] = value
         status_file = box['data'] / 'update-status.json'
         status = json.loads(status_file.read_text('utf-8-sig')) if status_file.is_file() else {}
+        if os.environ.get('WXQ_TEST_DEBUG') and status.get('code') == 'game_running':
+            log = box['data'] / 'install.log'
+            print('DEBUGLOG', log.read_text('utf-8-sig')[-1500:] if log.is_file() else 'no log', flush=True)
         return rows, status
 
     @staticmethod
     def version_of(box: dict) -> str:
         return json.loads(box['state'].read_text('utf-8-sig'))['version']
+
+    @staticmethod
+    def state_of(box: dict) -> dict:
+        return json.loads(box['state'].read_text('utf-8-sig'))
+
+    @staticmethod
+    def meta_of(box: dict) -> dict:
+        path = box['data'] / 'update-meta.json'
+        return json.loads(path.read_text('utf-8-sig')) if path.is_file() else {}
+
+    @staticmethod
+    def add_receipt(box: dict, status: str = 'applied', ours: bool = True, game_version: str = '1.6.0.1') -> None:
+        """Receipt прошлой установки + файлы в кэше игры. ours=False - игра обновилась, файл в кэше уже не наш."""
+        cache = box['game'] / 'QtsDataFolder' / 'QtsVFSCache' / 'packages' / '101'
+        cache.mkdir(parents=True, exist_ok=True)
+        (cache / '101.db').write_bytes(b'db-' + game_version.encode())
+        (cache / '101_0.db').write_bytes(b'storage')
+        (cache / '101.info').write_text(json.dumps({'version': game_version}), 'utf-8')
+        mine = hashlib.sha256((cache / '101.db').read_bytes()).hexdigest()
+        folder = box['data'] / 'backup' / '20261018-000000'
+        folder.mkdir(parents=True, exist_ok=True)
+        receipt = {'status': status, 'game_root': str(box['game']), 'created_utc': '2026-10-18T00:00:00Z',
+                   'operations': [{'relative': 'packages/101/101.db', 'before_sha256': 'ab' * 32, 'candidate_sha256': mine if ours else 'cd' * 32}]}
+        (folder / 'receipt.json').write_text(json.dumps(receipt), 'utf-8')
+
+    def save_installed(self, box: dict, version: str) -> Path:
+        """Сохранённая копия установщика текущей версии (updates\\installed-<sha16>.exe) и её SHA-256 в update-meta.json."""
+        exe = self.setup_exe + b'\0' + version.encode('ascii') + b'\0' * 8
+        sha = hashlib.sha256(exe).hexdigest()
+        updates = box['data'] / 'updates'
+        updates.mkdir(exist_ok=True)
+        path = updates / ('installed-' + sha[:16] + '.exe')
+        path.write_bytes(exe)
+        meta = self.meta_of(box)
+        meta.update({'installed_setup_sha': sha, 'installed_setup_bytes': len(exe), 'installed_setup_version': version})
+        (box['data'] / 'update-meta.json').write_text(json.dumps(meta), 'utf-8')
+        return path
+
+    @staticmethod
+    def setup_lines(box: dict) -> list[str]:
+        return box['log'].read_text('utf-8').splitlines() if box['log'].exists() else []
 
 
 def main() -> int:
@@ -381,6 +451,147 @@ def main() -> int:
         (updates / 'junk.exe').write_bytes(b'junk')
         rows, status = env.run(box)
         check('U15 мусор в updates\\ убран, обновление применено', status.get('state') == 'done' and not (updates / 'junk.exe').exists(), str(rows))
+
+        own = {'WXQ_FAKE_OWN': '1'}
+        ready = {'WXQ_RU_TEST_CACHE_READY': '1'}
+        not_ready = {'WXQ_RU_TEST_CACHE_READY': '0'}
+
+        # U16. Обычное обновление идёт с /UPDATE=1; после успеха остаётся одна копия installed-<sha16>.exe, её SHA-256 в update-meta.json.
+        box = env.new_box()
+        env.publish('1.1.0')
+        rows, status = env.run(box)
+        lines = env.setup_lines(box)
+        kept = list((box['data'] / 'updates').glob('installed-*.exe'))
+        meta = env.meta_of(box)
+        check('U16 /UPDATE=1 в аргументах Setup', status.get('state') == 'done' and len(lines) == 1 and '/UPDATE=1' in lines[0], str(lines))
+        check('U16a одна копия installed-<sha16>.exe, SHA-256 в update-meta.json',
+              len(kept) == 1 and len(list((box['data'] / 'updates').glob('*.exe'))) == 1 and meta.get('installed_setup_sha', '')[:16] in kept[0].name
+              and meta.get('installed_setup_version') == '1.1.0', str(kept) + str(meta))
+
+        # U17. Игра обновилась, кэш ещё не пересоздан: ничего не качаем и не ставим, статус game_changed с понятным текстом.
+        box = env.new_box()
+        env.add_receipt(box, ours=False, game_version='1.7.0.0')
+        env.publish('1.1.0')
+        rows, status = env.run(box, env=not_ready)
+        check('U17 кэш игры не пересоздан: deferred/game_changed, сети нет, Setup не запускался',
+              status.get('state') == 'deferred' and status.get('code') == 'game_changed' and server.count('update.json') == 0 and not box['log'].exists()
+              and 'Запустите её один раз' in status.get('message', '') and status.get('game_version') == '1.7.0.0', str(rows) + str(status))
+
+        # U18. Кэш готов, новой версии нет: сохранённый установщик ставит перевод заново (с /UPDATE=1), с сервера Setup не качается.
+        box = env.new_box()
+        env.add_receipt(box, ours=False)
+        env.save_installed(box, '1.0.0')
+        env.publish('1.0.0')
+        before = env.state_of(box).get('installed_utc')
+        rows, status = env.run(box, env={**ready, **own})
+        lines = env.setup_lines(box)
+        check('U18 кэш готов, новой версии нет: автопересадка (reapplied), /UPDATE=1, Setup с сервера не качался',
+              status.get('state') == 'done' and status.get('code') == 'reapplied' and len(lines) == 1 and '/UPDATE=1' in lines[0]
+              and server.count('Setup.exe') == 0 and env.state_of(box).get('installed_utc') != before, str(rows) + str(status) + str(lines))
+
+        # U18a. То же без связи: хватает сохранённого установщика.
+        box = env.new_box()
+        env.add_receipt(box, ours=False)
+        env.save_installed(box, '1.0.0')
+        rows, status = env.run(box, base='http://127.0.0.1:9/', env={**ready, **own})
+        check('U18a нет связи, кэш готов: пересадка из сохранённого установщика', status.get('state') == 'done' and status.get('code') == 'reapplied', str(rows) + str(status))
+
+        # U19. Кэш готов и вышла новая версия: обычное обновление (скачивается новый установщик).
+        box = env.new_box()
+        env.add_receipt(box, ours=False)
+        env.save_installed(box, '1.0.0')
+        env.publish('1.1.0')
+        rows, status = env.run(box, env=ready)
+        check('U19 кэш готов, есть новая версия: обновление до 1.1.0', status.get('state') == 'done' and status.get('installed') == '1.1.0' and server.count('Setup.exe') == 1 and env.version_of(box) == '1.1.0', str(rows) + str(status))
+
+        # U20. Убитый Setup: receipt в состоянии applying - перевод возвращается сохранённым установщиком.
+        box = env.new_box()
+        env.add_receipt(box, status='applying')
+        env.save_installed(box, '1.0.0')
+        env.publish('1.0.0')
+        rows, status = env.run(box, env=own)
+        lines = env.setup_lines(box)
+        check('U20 прерванная установка (applying): повторная установка с /UPDATE=1', status.get('code') == 'reapplied' and len(lines) == 1 and '/UPDATE=1' in lines[0], str(rows) + str(status) + str(lines))
+
+        # U21. Новая версия падает: откат снял перевод, возвращается сохранённая версия.
+        box = env.new_box()
+        env.publish('1.1.0')
+        rows, status = env.run(box, env=own)
+        env.publish('1.2.0')
+        rows, status = env.run(box, env={**own, 'WXQ_FAKE_BAD': '1.2.0'})
+        lines = env.setup_lines(box)
+        check('U21 новая версия не встала: code=rolled_back, возвращена 1.1.0', rows.get('code') == 'rolled_back' and env.version_of(box) == '1.1.0' and env.state_of(box).get('installed') is True
+              and len(lines) == 3 and '/UPDATE=1' in lines[2], str(rows) + str(lines))
+        check('U21a сообщение называет возвращённую версию', '1.1.0' in rows.get('message', '') and status.get('installed') == '1.1.0', str(rows) + str(status))
+
+        # U22. Антивирус: файл исчез после проверки - av_blocked с понятным текстом, версия прежняя.
+        box = env.new_box()
+        env.publish('1.1.0')
+        rows, status = env.run(box, env={'WXQ_RU_TEST_QUARANTINE': '1'})
+        check('U22 карантин антивируса: code=av_blocked, текст про карантин, версия прежняя',
+              rows.get('code') == 'av_blocked' and 'карантин' in rows.get('message', '') and env.version_of(box) == '1.0.0' and not box['log'].exists(), str(rows))
+
+        # U23. Постоянная и временная ошибки: срок повтора 24 ч и 3 ч.
+        def hours_left(box_: dict) -> float:
+            text = env.meta_of(box_).get('failed_until_utc', '')
+            import datetime as dt
+            until = dt.datetime.strptime(text, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=dt.timezone.utc)
+            return (until - dt.datetime.now(dt.timezone.utc)).total_seconds() / 3600
+
+        box = env.new_box()
+        env.publish('1.1.0')
+        rows, status = env.run(box, env={'WXQ_FAKE_FAIL': '1'})
+        temp_hours = hours_left(box)
+        check('U23 временная ошибка: повтор через ~3 ч', 2.5 < temp_hours < 3.5, str(temp_hours))
+        # U24. Часы ушли на 30 часов назад (или вперёд): запись «не раньше чем» дальше 25 часов от нынешнего времени считается истёкшей.
+        rows, status = env.run(box, env={'WXQ_RU_TEST_CLOCK_HOURS': '-30'})
+        check('U24 часы назад: запись о сбое не держит обновление', status.get('state') == 'done' and env.version_of(box) == '1.1.0', str(rows) + str(status))
+        box = env.new_box()
+        env.publish('1.1.0')
+        rows, status = env.run(box, env={'WXQ_FAKE_FAIL': '1'})
+        rows, status = env.run(box, env={'WXQ_RU_TEST_CLOCK_HOURS': '5'})
+        check('U24a часы вперёд: срок вышел, повторная попытка идёт', status.get('state') == 'done', str(rows) + str(status))
+        box = env.new_box()
+        env.publish('1.1.0')
+        rows, status = env.run(box, env={'WXQ_FAKE_FAIL': '1', 'WXQ_FAKE_STOP': 'version', 'WXQ_FAKE_STOPLOG': str(box['data'] / 'install.log')})
+        perm_hours = hours_left(box)
+        check('U23a постоянная ошибка (version): повтор через ~24 ч', 23 < perm_hours < 25, str(perm_hours) + str(rows))
+
+        # U25. Свежий ответ с плохой подписью: один повтор. Первая подпись испорчена - вторая проходит; обе испорчены - bad_signature после двух запросов.
+        box = env.new_box()
+        env.publish('1.1.0')
+        server.bad_sig_times = 1
+        rows, status = env.run(box)
+        check('U25 плохая подпись один раз: повтор помог, обновление применено', status.get('state') == 'done' and server.count('update.json.sig') == 2, str(rows) + str(status))
+        box = env.new_box()
+        env.publish('1.1.0')
+        server.bad_sig_times = 5
+        rows, status = env.run(box)
+        check('U25a плохая подпись дважды: bad_signature, ровно два запроса подписи', rows.get('code') == 'bad_signature' and server.count('update.json.sig') == 2 and not box['log'].exists(), str(rows))
+
+        # U26. Версии с -rcN: 0.6.0-rc2 < 0.6.0.
+        box = env.new_box('0.6.0-rc2')
+        env.publish('0.6.0')
+        rows, status = env.run(box, env={'WXQ_FAKE_VERSION': '0.6.0'})
+        check('U26 0.6.0-rc2 -> 0.6.0: обновление применено', status.get('state') == 'done' and env.version_of(box) == '0.6.0', str(rows) + str(status))
+        box = env.new_box('0.6.0')
+        env.publish('0.5.9')
+        rows, status = env.run(box)
+        check('U26a 0.6.0 -> 0.5.9: downgrade', rows.get('code') == 'downgrade', str(rows))
+
+        # U27. Новая версия собрана для более новой игры, чем стоит: deferred/game_old, текущая версия работает.
+        box = env.new_box()
+        env.add_receipt(box, ours=True, game_version='1.5.0.1')
+        env.publish('1.1.0', game_versions=['1.6.0.1'])
+        rows, status = env.run(box)
+        check('U27 игра старее, чем нужна версии: deferred/game_old, Setup не запускался', status.get('state') == 'deferred' and status.get('code') == 'game_old' and not box['log'].exists(), str(rows) + str(status))
+
+        # U28. Кэш цел (наш перевод на месте), новой версии нет: ничего не делается.
+        box = env.new_box()
+        env.add_receipt(box, ours=True)
+        env.publish('1.0.0')
+        rows, status = env.run(box)
+        check('U28 перевод цел: up_to_date, Setup не запускался', status.get('code') == 'up_to_date' and not box['log'].exists(), str(rows) + str(status))
     finally:
         server.stop()
         if args.keep:

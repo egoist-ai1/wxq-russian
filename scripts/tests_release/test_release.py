@@ -183,7 +183,7 @@ class ReleaseTests(unittest.TestCase):
                             "--version", "1.2.3", "--setup", str(self.src / "WXQ-Setup-1.2.3.exe"),
                             "--out", str(out), "--base-url", "https://example.invalid/dl/",
                             "--public", str(self.pub_pem), "--repo", "owner/repo"],
-                           env=env, capture_output=True, text=True)
+                           env=dict(env, PYTHONIOENCODING="utf-8"), capture_output=True, text=True, encoding="utf-8", errors="replace")
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertNotIn(PASSWORD.decode(), r.stdout + r.stderr)
         self.assertIn("gh release create v1.2.3 --draft", r.stdout)

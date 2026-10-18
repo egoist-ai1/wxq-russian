@@ -238,6 +238,7 @@ var
   ToggleTitle, ToggleNote: TNewStaticText;
   LauncherOn: Boolean;     // переключатель «Русский лаунчер» (по умолчанию ВКЛЮЧЁН, когда лаунчер есть в сборке; функция новая; /LAUNCHERRU=0 выключает, в том числе в тихом режиме)
   LauncherExe, LauncherBuildText: String;   // оригинальный 王者万象棋.exe, найденный помощником (пусто, пока поиск не выполнялся)
+  UpdateMode, UpdateRestored: Boolean;   // /UPDATE=1 (запуск из автообновления): reinstall и pending снимаются откатом; UpdateRestored - откат был, а установка после него не прошла
   Busy: Boolean;  // идёт работа помощника: нажатия кнопок и закрытие игнорируются
   Mode: Integer;  // 0 приветствие, 1 сбой, 2 готово, 3 удалено
   ShownPermille: Integer;
@@ -2152,7 +2153,36 @@ end;
 
 function UiKnownCmd(Cmd: String): Boolean;
 begin
-  Result := (Cmd = 'install') or (Cmd = 'options') or (Cmd = 'remove') or (Cmd = 'launch') or (Cmd = 'back') or (Cmd = 'close');
+  Result := (Cmd = 'install') or (Cmd = 'options') or (Cmd = 'remove') or (Cmd = 'launch') or (Cmd = 'back') or (Cmd = 'pickgame') or (Cmd = 'close');
+end;
+
+// «Выбрать папку игры» (экран сбоя при game_not_found / game_ambiguous / game_missing). Папку выбирает системный диалог в самом Setup:
+// окно путей не передаёт. Выбранная папка проверяется помощником (find --game: WXQ.exe, WXQ_Data, Package); принятая остаётся в GameParam
+// на повторную попытку, отвергнутая не запоминается, а причина показывается на экране сбоя.
+procedure UiPickGame;
+var
+  Dir, OldParam: String;
+begin
+  Dir := '';
+  if not BrowseForFolder('Выберите папку игры: внутри лаунчера это папка WXQ(1), где лежит WXQ.exe', Dir, False) then Exit;
+  Dir := RemoveBackslashUnlessRoot(Dir);
+  if (Dir = '') or (Pos('"', Dir) > 0) then Exit;
+  OldParam := GameParam;
+  GameParam := ' --game "' + Dir + '"';
+  Log('UI: папка игры выбрана вручную, проверяю');
+  if RunTool('find', '') then
+  begin
+    Log('UI: папка игры принята: ' + Dir);
+    if WizardForm.CurPageID = wpPreparing then WizardForm.BackButton.OnClick(WizardForm.BackButton);
+  end
+  else
+  begin
+    GameParam := OldParam;
+    LastCode := ToolValue('code');
+    LastFailure := FailureText;
+    Log('UI: выбранная папка отвергнута: ' + LastCode);
+    UiInstallFailed(LastFailure);
+  end;
 end;
 
 function UiOnWelcome: Boolean;
@@ -2192,6 +2222,11 @@ begin
       if Page = wpPreparing then WizardForm.BackButton.OnClick(WizardForm.BackButton)
       else if Page = wpWelcome then CurPageChanged(wpWelcome);   // сбой удаления: снова приветствие по свежему состоянию
     end;
+  end
+  else if Cmd = 'pickgame' then
+  begin
+    if (SvScreen = 'fail') and (SvFailKind = 'install') and
+       ((SvFailCode = 'game_not_found') or (SvFailCode = 'game_ambiguous') or (SvFailCode = 'game_missing')) then UiPickGame;
   end
   else if Cmd = 'launch' then
   begin
@@ -2546,6 +2581,8 @@ procedure InitializeWizard;
 begin
   Mode := 0;
   GameParam := '';
+  UpdateMode := ExpandConstant('{param:UPDATE|0}') = '1';
+  UpdateRestored := False;
   LauncherOn := LauncherAvailable and (ExpandConstant('{param:LAUNCHERRU|1}') <> '0');   // по умолчанию включён; /LAUNCHERRU=0 выключает
   LauncherExe := '';
   LauncherBuildText := '';
@@ -2694,8 +2731,33 @@ begin
   SetStep(2, StActive, 'сверяю файлы игры');
   if not RunToolLive('check', '', 2) then
   begin
-    Result := FailStep(2);
-    Exit;
+    // /UPDATE=1 (автообновление): остатки прежней установки (reinstall) и оборванная запись (pending) снимаются откатом, как кнопкой «Удалить перевод»,
+    // затем проверка идёт заново. Любой другой отказ, как и сбой после отката, оставляет игру в исходном виде и сообщает об этом.
+    if UpdateMode and ((ToolValue('code') = 'reinstall') or (ToolValue('code') = 'pending')) then
+    begin
+      Log('Режим обновления: ' + ToolValue('code') + ', возвращаю прежние файлы и проверяю заново');
+      SetStep(2, StActive, 'возвращаю прежние файлы');
+      if not RunToolLive('restore', '', 2) then
+      begin
+        Result := FailStep(2);
+        Exit;
+      end;
+      SetStep(2, StActive, 'сверяю файлы игры');
+      if not RunToolLive('check', '', 2) then
+      begin
+        SetStep(2, StFailed, '');
+        LastCode := ToolValue('code');
+        LastFailure := 'Прежний перевод снят, игра в исходном виде. ' + FailureText;
+        UpdateRestored := True;
+        Result := LastFailure;
+        Exit;
+      end;
+    end
+    else
+    begin
+      Result := FailStep(2);
+      Exit;
+    end;
   end;
   State := ToolValue('state');
   SetStep(2, StDone, 'игра {#GameVersion}');
@@ -2746,65 +2808,41 @@ end;
 // (GRGX): значок в трее просит schtasks /run, а менять или удалять задачу могут лишь администраторы и SYSTEM.
 // Любой сбой здесь не прерывает установку перевода: без задачи просто нет автообновления (в журнале строка).
 
+// Саму регистрацию делает помощник (WXQTool.exe task-register / task-remove): Pascal-скрипт через CreateOleObject падал с пустым сообщением.
+// Установка запускает помощника из защищённой копии (как остальные команды); удаление - установленного {app}\WXQTool.exe.
+
 procedure RegisterUpdateTask;
-var
-  Service, Folder, Def, Trig, Act, Task: Variant;
 begin
-  try
-    Service := CreateOleObject('Schedule.Service');
-    Service.Connect();
-    try
-      Folder := Service.GetFolder('\Egoist');
-    except
-      Folder := Service.GetFolder('\').CreateFolder('Egoist');
-    end;
-    Def := Service.NewTask(0);
-    Def.RegistrationInfo.Description := 'Проверка и установка обновлений русификатора Honor of Kings ACE. Если игра запущена, установка откладывается до её закрытия.';
-    Def.Principal.UserId := 'SYSTEM';
-    Def.Principal.LogonType := 5;
-    Def.Principal.RunLevel := 1;
-    Def.Settings.Enabled := True;
-    Def.Settings.Hidden := True;
-    Def.Settings.Priority := 7;
-    Def.Settings.StartWhenAvailable := True;
-    Def.Settings.DisallowStartIfOnBatteries := False;
-    Def.Settings.StopIfGoingOnBatteries := False;
-    Def.Settings.ExecutionTimeLimit := 'PT2H';
-    Def.Settings.MultipleInstances := 2;
-    Trig := Def.Triggers.Create(9);
-    Trig.Delay := 'PT2M';
-    Trig.Repetition.Interval := 'PT6H';
-    Trig.Enabled := True;
-    Act := Def.Actions.Create(0);
-    Act.Path := ExpandConstant('{app}\{#ToolExe}');
-    Act.Arguments := 'update';
-    Act.WorkingDirectory := ExpandConstant('{app}');
-    Task := Folder.RegisterTaskDefinition('WXQ-Russian Update', Def, 6, 'SYSTEM', Null, 5);
-    Task.SetSecurityDescriptor('D:(A;;FA;;;BA)(A;;FA;;;SY)(A;;GRGX;;;BU)', 0);
-    Log('Задача автообновления зарегистрирована: Egoist\WXQ-Russian Update');
-  except
-    Log('Задача автообновления не создана: ' + GetExceptionMessage);
-  end;
+  if RunTool('task-register', ' --exe "' + ExpandConstant('{app}\{#ToolExe}') + '"') then
+    Log('Задача автообновления зарегистрирована: ' + ToolValue('task'))
+  else
+    Log('Задача автообновления не создана: ' + ToolValue('code') + ' ' + ToolValue('message'));
 end;
 
 procedure RemoveUpdateTask;
 var
-  Service, Folder: Variant;
+  Tool, OutFile, Params: String;
+  Code: Integer;
+  Lines: TArrayOfString;
 begin
-  try
-    Service := CreateOleObject('Schedule.Service');
-    Service.Connect();
-    Folder := Service.GetFolder('\Egoist');
-    try
-      Folder.DeleteTask('WXQ-Russian Update', 0);
-    except
-    end;
-    try
-      Service.GetFolder('\').DeleteFolder('Egoist', 0);   // удалится, только если пуста
-    except
-    end;
-  except
+  Tool := ExpandConstant('{app}\{#ToolExe}');
+  if not FileExists(Tool) then
+  begin
+    Log('Задача автообновления не удалена: помощника нет');
+    Exit;
   end;
+  OutFile := ExpandConstant('{app}') + '\task-out.txt';
+  DeleteFile(OutFile);
+  Params := 'task-remove --out "' + OutFile + '"';
+  if UninstDataDir <> '' then Params := Params + ' --data "' + UninstDataDir + '"';
+  if Exec(Tool, Params, '', SW_HIDE, ewWaitUntilTerminated, Code) then
+  begin
+    Log('Удаление задачи автообновления: код ' + IntToStr(Code));
+    if LoadStringsFromFile(OutFile, Lines) and (GetArrayLength(Lines) > 0) then Log('  ' + Lines[0] + ' ... ' + Lines[GetArrayLength(Lines) - 1]);
+  end
+  else
+    Log('Удаление задачи автообновления: помощник не запустился');
+  DeleteFile(OutFile);
 end;
 
 // Работающие WXQTool.exe (процесс обновления) и WXQTray.exe нельзя перезаписать, но можно переименовать: [Files] положит новые файлы рядом,
@@ -3002,12 +3040,15 @@ var
   KillCode: Integer;
 begin
 #ifdef WithUpdater
+#ifndef TestBuild
+  // Тестовая сборка (песочница) не трогает ни настоящую задачу планировщика, ни работающий значок.
   if CurUninstallStep = usUninstall then
   begin
     RemoveUpdateTask;
     // Значок держит WXQTray.exe открытым: без этого файл не удалится.
     Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM WXQTray.exe', '', SW_HIDE, ewWaitUntilTerminated, KillCode);
   end;
+#endif
 #endif
   if (CurUninstallStep = usUninstall) and (UninstDataDir <> '') then
   begin

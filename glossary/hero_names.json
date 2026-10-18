@@ -2154,8 +2154,8 @@
    "diverges": true,
    "divergence_kind": "different_name",
    "status": "in_policy",
-   "ru_proposal": "Огран",
-   "ru_proposal_source": "canon_decisions.json:heroes_official_en_policy",
+   "ru_proposal": "Да Сымин",
+   "ru_proposal_source": "решение владельца 18.10.2026 (игровое имя Da Siming, глобальное Augran не берём)",
    "sources": {
     "ru_now": "reviewed-hero-names.json",
     "game_en": "build/official-en-ref/2026-10-13/pairs.jsonl.gz",

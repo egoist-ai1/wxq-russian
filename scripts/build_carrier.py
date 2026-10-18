@@ -59,7 +59,7 @@ from localization import lang_waivers  # noqa: E402
 import pilot_contract  # noqa: E402
 import wxq_install  # noqa: E402
 from game_inspect import QtsContainer  # noqa: E402
-from localization import core, fit_rules, latin_allow, markup_exceptions, pb_table_codec, protected_cjk, ru_cli, unity_text_codec  # noqa: E402
+from localization import core, fit_rules, latin_allow, markup_exceptions, pb_table_codec, protected_cjk, ru_cli, token_spacing, unity_text_codec  # noqa: E402
 from localization.global_map_codec import GlobalMapDocument, prove_text_only  # noqa: E402
 from scripts.game_lang_codec import LangDocument, validate_rewrite, validate_text  # noqa: E402
 
@@ -215,6 +215,7 @@ def row_issues(namespace: str, source: str, ru_text: str, slot: dict | None, gly
     proven = is_proven(source, ru_text, ru_game)
     issues = list(core.target_issues(source, ru_game, proofs if proven else set(), (), formatter={}, engine_latin=latin))
     issues = protected_cjk.filter_issues(source, ru_game, issues)  # алиасы эмодзи и коды-пароли остаются китайскими
+    issues += token_spacing.issues(ru_game)  # «1Энергия», «Опыт+2»: между числом/токеном и токеном-словом нужен пробел
     # битая разметка самого исходника (4 текста): закрытый список пар, разметка байт в байт (localization/markup_exceptions.py)
     issues = markup_exceptions.filter_issues(source, ru_text, issues, emitted=ru_game, semantic_proofs=proofs if proven else set(), engine_latin=latin)
     fit = fit_rules.fit_report(source, ru_game, slot or {})

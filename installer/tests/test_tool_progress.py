@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import shutil
 import subprocess
@@ -25,6 +26,46 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent))
 import run_tests as rt  # noqa: E402
+
+# Фикстуры run_tests.py остались от игры 1.5.0.1 (оригинал Lua 1a2363c3ea46b3b1 там 9ac850d6…, в контракте закреплён SHA 1.6.0.1) и не проходят load_candidate.
+# Этот тест проверяет только прогресс помощника, поэтому берёт состав 1.6.0.1 (без диагностического слоя) и копию кэша настоящей игры вместо чистых заготовок 1.5.0.1.
+_B = rt.PROJECT / 'build'
+rt.CANDIDATES = tuple(_B / name for name in ('carrier-2026-10-18-v12-1.6.0.1', 'pilot-2026-10-17-tex3-pkg4-1.6.0.1', 'lua-wrap-2026-10-18-v13-1.6.0.1',
+                                              'pilot-2026-10-18-rc1-pkg15-1.6.0.1', 'pilot-2026-10-18-rc2-pkg19-1.6.0.1'))
+rt.PACKAGES = ('1', '4', '10', '15', '19')
+rt.CAND_BY_PACKAGE = dict(zip(rt.PACKAGES, rt.CANDIDATES))
+
+
+def _build_from_live_cache(self: 'rt.Sandbox', ours: bool = False) -> None:
+    """rt.Sandbox.build без заготовок 1.5.0.1: пакеты берутся копией из кэша настоящей игры (только чтение)."""
+    shutil.rmtree(self.root, ignore_errors=True)
+    game = self.game
+    builtin = game / 'WXQ_Data/Package/builtin'
+    prime = set()
+    for directory in rt.CANDIDATES:
+        prime.update(row['relative'] for row in rt.read_manifest(directory)['source_copies'])
+    for relative in sorted(prime):
+        (builtin / relative).parent.mkdir(parents=True, exist_ok=True)
+        if self.template is not None and (self.template / relative).is_file():
+            os.link(self.template / relative, builtin / relative)
+        else:
+            shutil.copyfile(rt.REAL_GAME / 'WXQ_Data/Package/builtin' / relative, builtin / relative)
+    (game / 'WXQ.exe').write_bytes(b'stub')
+    plugins = game / 'WXQ_Data/Plugins/x86_64'
+    plugins.mkdir(parents=True)
+    for name in ('QtsVFS.dll', 'QtskDB.dll'):
+        shutil.copyfile(rt.REAL_GAME / 'WXQ_Data/Plugins/x86_64' / name, plugins / name)
+    vfs = game / 'QtsDataFolder/QtsVFSCache'
+    (vfs / 'packages/builtin/Globalindex').mkdir(parents=True)
+    shutil.copyfile(rt.REAL_GAME / 'QtsDataFolder/QtsVFSCache/packages/builtin/Globalindex/GlobalIndexPrime.data', vfs / 'packages/builtin/Globalindex/GlobalIndexPrime.data')
+    lines = [l for l in (rt.REAL_GAME / 'QtsDataFolder/QtsVFSCache/QtsVFS.log').read_text('utf-8', errors='replace').splitlines() if 'MountPackage' in l and ', prime,' in l]
+    (vfs / 'QtsVFS.log').write_text('\n'.join(lines) + '\n', 'utf-8')
+    real_cache = rt.REAL_GAME / 'QtsDataFolder/QtsVFSCache/packages'
+    for name in ('0', '10001', '1010000000') + rt.PACKAGES:
+        shutil.copytree(real_cache / name, self.cache / name)
+
+
+rt.Sandbox.build = _build_from_live_cache
 
 KEYS = ['phase', 'done', 'total', 'item', 'index', 'count', 'state']
 results: list[tuple[str, bool, str]] = []

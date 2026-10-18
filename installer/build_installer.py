@@ -119,7 +119,7 @@ def stage_launcher(staging: Path, directory: Path, manifest: dict) -> None:
 
 
 def load_candidate(directory: Path) -> dict:
-    """Проверка кандидата. Возвращает его манифест. Повторяет проверки load_candidate из game_layer_deploy без игры."""
+    """Проверка кандидата. Возвращает его манифест. Повторяет проверки load_candidate из game_layer_deploy; оригиналы prime читаются из игры (только чтение)."""
     import pilot_contract
     from game_inspect import QtsContainer
     directory = directory.resolve(strict=True)
@@ -147,7 +147,18 @@ def load_candidate(directory: Path) -> dict:
         source = (directory / row['relative']).resolve(strict=True)
         if not source.is_relative_to(directory) or sha(source) != row['sha256'] or source.stat().st_size != row['bytes']:
             fail(f'{directory.name}: файл {row["relative"]} не совпадает с манифестом')
-    pilot_contract.validate_carrier(directory, manifest, QtsContainer, HEADER_ID)
+    # Оригиналы из prime нужны всегда: текстовые ресурсы доказываются заново, у текстур длина потока сверяется с оригиналом
+    # (игра читается только на чтение; нет игры нужной версии - отказ).
+    import wxq_install
+    try:
+        game = wxq_install.require_install_structure(GAME_ROOT if GAME_ROOT else wxq_install.detect_active_install(), full=True)
+    except wxq_install.InstallError as error:
+        fail(f'{directory.name}: нет установленной игры, чтобы сверить ресурсы с оригиналами prime ({error}); укажите --game-root')
+    reader = pilot_contract.make_prime_reader(game, QtsContainer)
+    try:
+        pilot_contract.validate_carrier(directory, manifest, QtsContainer, HEADER_ID, prime_reader=reader)
+    except ValueError as error:
+        fail(f'{directory.name}: {error} (оригиналы читаются из игры {game}; нужна та же версия, что у кандидата, при необходимости укажите --game-root)')
     for package in packages:
         if sha(directory / f'packages/{package}/{package}.info') != manifest['official_cache_infos'][package]['sha256']:
             fail(f'{directory.name}: .info пакета {package} отличается от официального')
@@ -614,7 +625,7 @@ def build_tool(staging: Path, test_build: bool = False, update_config: Path | No
         fail(f'не найден csc.exe из .NET Framework 4: {CSC}')
     env = dict(os.environ)
     completed = subprocess.run([str(CSC), '/nologo', '/target:exe', '/platform:x64', '/optimize+', '/codepage:65001',
-                                *(['/define:TESTBUILD'] if test_build else []), '/r:System.Web.Extensions.dll',
+                                *(['/define:TESTBUILD'] if test_build else []), '/r:System.Web.Extensions.dll', '/r:Microsoft.CSharp.dll',
                                 *([f'/resource:{update_config},update-config.json'] if update_config else []),
                                 f'/out:{staging / "WXQTool.exe"}', str(INSTALLER / 'WXQTool.cs')],
                                capture_output=True, env=env)
@@ -748,7 +759,7 @@ def main() -> None:
     parser.add_argument('--launcher-build', type=Path, help='папка build/launcher-ru-*: включить русский лаунчер (активатор и файлы launcher/); без параметра установщик собирается без лаунчера')
     parser.add_argument('--diag', action='store_true', help='метка диагностической сборки (нужен кандидат lua-wrap-* с --diag-log): заголовок окна, подвал и свойства exe; без метки такой кандидат отвергается')
     parser.add_argument('--update-repo', help='владелец/репозиторий GitHub с релизами: включает автообновление (адрес канала и публичные ключи вшиваются в WXQTool.exe, добавляется WXQTray.exe). Без параметра установщик собирается без автообновления')
-    parser.add_argument('--game-root', type=Path, help='папка игры для повторной сборки Lua-нагрузок (по умолчанию — установка лаунчера); игра только читается')
+    parser.add_argument('--game-root', type=Path, help='папка игры (по умолчанию — установка лаунчера): оригиналы prime для проверки кандидатов (длина потока текстур, текстовые ресурсы) и повторной сборки Lua-нагрузок; игра только читается, версия должна совпасть с кандидатами')
     args = parser.parse_args()
     global GAME_ROOT
     GAME_ROOT = args.game_root
