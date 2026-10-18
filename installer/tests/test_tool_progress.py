@@ -30,7 +30,7 @@ import run_tests as rt  # noqa: E402
 # Фикстуры run_tests.py остались от игры 1.5.0.1 (оригинал Lua 1a2363c3ea46b3b1 там 9ac850d6…, в контракте закреплён SHA 1.6.0.1) и не проходят load_candidate.
 # Этот тест проверяет только прогресс помощника, поэтому берёт состав 1.6.0.1 (без диагностического слоя) и копию кэша настоящей игры вместо чистых заготовок 1.5.0.1.
 _B = rt.PROJECT / 'build'
-rt.CANDIDATES = tuple(_B / name for name in ('carrier-2026-10-18-v12-1.6.0.1', 'pilot-2026-10-17-tex3-pkg4-1.6.0.1', 'lua-wrap-2026-10-18-v13-1.6.0.1',
+rt.CANDIDATES = tuple(_B / name for name in ('carrier-2026-10-18-v12-1.6.0.1', 'pilot-2026-10-17-tex3-pkg4-1.6.0.1', 'lua-wrap-2026-10-18-v14-1.6.0.1',
                                               'pilot-2026-10-18-rc1-pkg15-1.6.0.1', 'pilot-2026-10-18-rc2-pkg19-1.6.0.1'))
 rt.PACKAGES = ('1', '4', '10', '15', '19')
 rt.CAND_BY_PACKAGE = dict(zip(rt.PACKAGES, rt.CANDIDATES))
