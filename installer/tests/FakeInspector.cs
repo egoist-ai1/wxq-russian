@@ -3,6 +3,9 @@
 //   FAKE_ROLE   launcher (по умолчанию: окно, inspector открывается по событию Local\WXQFakeInspect-<pid>) | inspector | idle
 //   FAKE_MODE   ok | wrongtitle | two | badws | evalerror | noclose | foreign (launcher: inspector в дочернем процессе)
 //   FAKE_BIND   loopback (по умолчанию) | any
+//   FAKE_IDENTITY ok (по умолчанию) | late-start | wrong-pid | wrong-path | invalid-time | missing-field | exception | invalid-shape | no-response
+//   FAKE_ACTIVATION_READY_DELAY_MS, FAKE_INSPECTOR_DELAY_MS, FAKE_HTTP_DELAY_MS, FAKE_WS_HANDSHAKE_DELAY_MS,
+//   FAKE_IDENTITY_DELAY_MS, FAKE_INSTALL_DELAY_MS — реальные задержки соответствующей границы; FAKE_CLOSE_DELAY_MS — закрытие (обычно 200 мс).
 //   FAKE_PORT   порт inspector;  FAKE_LOG — файл журнала (одна JSON-строка на запрос);  FAKE_IGNORECLOSE=1 — окно не закрывается
 // Собирается штатным csc из .NET Framework 4, C# 5.
 using System;
@@ -35,6 +38,14 @@ static class FakeInspector
     static readonly List<TcpClient> clients = new List<TcpClient>();
     static string Env(string name, string fallback) { return Environment.GetEnvironmentVariable(name) ?? fallback; }
 
+    static void Delay(string name, int fallback = 0)
+    {
+        int delay;
+        if (!int.TryParse(Env(name, fallback.ToString()), out delay) || delay < 0 || delay > 90000)
+            throw new InvalidOperationException("invalid test delay");
+        if (delay > 0) Thread.Sleep(delay);
+    }
+
     static void Log(string method, string expression)
     {
         string file = Env("FAKE_LOG", null);
@@ -54,10 +65,11 @@ static class FakeInspector
         if (role == "inspector") { StartInspector(); Thread.Sleep(Timeout.Infinite); return 0; }
 
         int pid = Process.GetCurrentProcess().Id;
-        var signal = new EventWaitHandle(false, EventResetMode.AutoReset, "Local\\WXQFakeInspect-" + pid);
         var waiter = new Thread(() =>
         {
-            signal.WaitOne();
+            Delay("FAKE_ACTIVATION_READY_DELAY_MS");
+            using (var signal = new EventWaitHandle(false, EventResetMode.AutoReset, "Local\\WXQFakeInspect-" + pid))
+                signal.WaitOne();
             if (Env("FAKE_MODE", "ok") == "foreign")
             {
                 var info = new ProcessStartInfo(Assembly.GetExecutingAssembly().Location) { UseShellExecute = false };
@@ -67,9 +79,9 @@ static class FakeInspector
             }
             else StartInspector();
         }) { IsBackground = true };
-        waiter.Start();
 
         var form = new PassiveForm { Text = "FakeLauncher", StartPosition = FormStartPosition.Manual, Location = new Point(-32000, -32000), Size = new Size(100, 60) };
+        form.Shown += (s, e) => { waiter.Start(); }; // Окно уже есть; готовность inspector может наступить позже.
         if (Env("FAKE_IGNORECLOSE", "") == "1") form.FormClosing += (s, e) => { e.Cancel = true; };
         Application.Run(form);
         return 0;
@@ -77,6 +89,7 @@ static class FakeInspector
 
     static void StartInspector()
     {
+        Delay("FAKE_INSPECTOR_DELAY_MS");
         int port = int.Parse(Env("FAKE_PORT", "9229"));
         listener = new TcpListener(Env("FAKE_BIND", "loopback") == "any" ? IPAddress.Any : IPAddress.Loopback, port);
         listener.ExclusiveAddressUse = true;
@@ -130,6 +143,7 @@ static class FakeInspector
         if (path == "/json/list")
         {
             Log("http", path);
+            Delay("FAKE_HTTP_DELAY_MS");
             string title = mode == "wrongtitle" ? "some-other-target" : "electron/js2c/browser_init";
             string host = mode == "badws" ? "localhost" : "127.0.0.1";
             var items = new List<Dictionary<string, object>>();
@@ -142,6 +156,7 @@ static class FakeInspector
             return;
         }
         if (key == null) return;
+        Delay("FAKE_WS_HANDSHAKE_DELAY_MS");
         string accept = Convert.ToBase64String(SHA1.Create().ComputeHash(Encoding.ASCII.GetBytes(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11")));
         byte[] reply = Encoding.ASCII.GetBytes("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: " + accept + "\r\n\r\n");
         stream.Write(reply, 0, reply.Length);
@@ -159,19 +174,36 @@ static class FakeInspector
             if (method != "Runtime.evaluate") result = new Dictionary<string, object> { { "exceptionDetails", new Dictionary<string, object> { { "text", "unexpected" } } } };
             else if (expression.Contains("process.uptime()"))
             {
+                Delay("FAKE_IDENTITY_DELAY_MS");
                 var me = Process.GetCurrentProcess();
                 double started = (me.StartTime.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds;
-                result = Value(new Dictionary<string, object> { { "pid", me.Id }, { "path", Assembly.GetExecutingAssembly().Location }, { "startedAtApprox", started } });
+                string identityMode = Env("FAKE_IDENTITY", "ok");
+                if (identityMode == "no-response") continue;
+                if (identityMode == "exception")
+                    result = new Dictionary<string, object> { { "exceptionDetails", new Dictionary<string, object> { { "text", "identity failed" } } } };
+                else if (identityMode == "invalid-shape") result = Value(new object[] { me.Id, "not-an-object" });
+                else
+                {
+                    var identity = new Dictionary<string, object> {
+                        { "pid", identityMode == "wrong-pid" ? me.Id + 1 : me.Id },
+                        { "path", identityMode == "wrong-path" ? Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "other.exe") : Assembly.GetExecutingAssembly().Location },
+                        { "startedAtApprox", identityMode == "late-start" ? started + 45000 : started }
+                    };
+                    if (identityMode == "invalid-time") identity["startedAtApprox"] = "bad";
+                    if (identityMode == "missing-field") identity.Remove("path");
+                    result = Value(identity);
+                }
             }
             else if (expression.Contains(".install("))
             {
+                Delay("FAKE_INSTALL_DELAY_MS");
                 if (mode == "evalerror") result = new Dictionary<string, object> { { "exceptionDetails", new Dictionary<string, object> { { "text", "boom" } } } };
                 else { result = Value(true); closeAfter = mode != "noclose"; }
             }
             else { result = Value(null); closeAfter = mode != "noclose"; } // выражение закрытия inspector
             var message = new Dictionary<string, object> { { "id", request["id"] }, { "result", result } };
             WriteFrame(stream, Js.Serialize(message));
-            if (closeAfter) { new Thread(() => { Thread.Sleep(200); StopInspector(); }) { IsBackground = true }.Start(); }
+            if (closeAfter) { new Thread(() => { Delay("FAKE_CLOSE_DELAY_MS", 200); StopInspector(); }) { IsBackground = true }.Start(); }
         }
     }
 

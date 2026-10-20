@@ -258,6 +258,31 @@ type
   end;
 
 type
+  TToolStartupInfo = record
+    Size, Reserved, Desktop, Title: LongWord;
+    X, Y, XSize, YSize, XChars, YChars, Fill, Flags: LongWord;
+    ShowWindow, ReservedSize: Word;
+    ReservedData, StdInput, StdOutput, StdError: LongWord;
+  end;
+  TToolProcessInfo = record
+    ProcessHandle, ThreadHandle, ProcessId, ThreadId: LongWord;
+  end;
+  TToolIoCounters = record
+    ReadCount, WriteCount, OtherCount, ReadBytes, WriteBytes, OtherBytes: Int64;
+  end;
+
+function CreateToolProcess(ApplicationName, CommandLine: String; ProcessSecurity, ThreadSecurity: LongWord;
+  InheritHandles: Boolean; Flags, Environment: LongWord; CurrentDirectory: String;
+  var Startup: TToolStartupInfo; var ProcessInfo: TToolProcessInfo): Boolean;
+  external 'CreateProcessW@kernel32.dll stdcall';
+function WaitToolProcess(Handle, Milliseconds: LongWord): LongWord;
+  external 'WaitForSingleObject@kernel32.dll stdcall';
+function GetToolExitCode(Handle: LongWord; var Code: LongWord): Boolean;
+  external 'GetExitCodeProcess@kernel32.dll stdcall';
+function GetToolIoCounters(Handle: LongWord; var Counters: TToolIoCounters): Boolean;
+  external 'GetProcessIoCounters@kernel32.dll stdcall';
+
+type
   TGuidRec = record
     D1: LongWord;
     D2: Word;
@@ -1628,9 +1653,9 @@ end;
 
 // Помощник просят остановиться файлом-флагом «<файл прогресса>.cancel». Он читает его только между файлами (перед чтением или копированием очередного файла),
 // никогда посреди записи; при остановке во время замены он сам откатывает уже записанное (так же, как при любом сбое замены). Процесс НЕ убиваем:
-// Kill посреди замены файла оставил бы игру в промежуточном состоянии. Ждём его завершения (его Global-мьютекс) до 10 минут и всё это время
+// Kill посреди замены файла оставил бы игру в промежуточном состоянии. Ждём завершения по его дескриптору до 10 минут и всё это время
 // показываем «идёт запись, подождите». True - помощник завершился сам.
-function ToolStopped(ProgFile: String; Step: Integer): Boolean;
+function ToolStopped(ProgFile: String; Step: Integer; ProcessHandle: LongWord): Boolean;
 var
   I: Integer;
   Handle: LongWord;
@@ -1651,13 +1676,13 @@ begin
   end;
   for I := 1 to 15000 do
   begin
-    Handle := OpenMutexW($00100000, False, 'Global\Egoist.WXQRussian.Tool');
+    Handle := WaitToolProcess(ProcessHandle, 0);
     if Handle = 0 then
     begin
       Result := True;
       Break;
     end;
-    CloseHandle(Handle);
+    if Handle = $FFFFFFFF then Break;
     Sleep(40);
     PumpMessages;
     if UiActive and (not UiClosing) and (not UiAliveNow) then UiLost;
@@ -1676,8 +1701,13 @@ end;
 // Запуск помощника с живым прогрессом: окно не зависает, полоса идёт по файлу --progress. Результат — как у RunTool.
 function RunToolLive(Command, Extra: String; Step: Integer): Boolean;
 var
-  Code, Idle, Quiet: Integer;
+  Idle: Integer;
+  ExitCode, WaitCode: LongWord;
+  Startup: TToolStartupInfo;
+  ProcessInfo: TToolProcessInfo;
+  Io: TToolIoCounters;
   OutFile, ProgFile, Params, Last, Cur: String;
+  LastReadBytes, LastWriteBytes: Int64;
   PL: TArrayOfString;
   Finished: Boolean;
 begin
@@ -1695,11 +1725,20 @@ begin
   Params := Command + ' --payload "' + SecDir +
     '" --data "' + GetDataDir('') + '" --out "' + OutFile + '" --progress "' + ProgFile + '"' + GameParam + CloseParam + Extra;
   Log('Tool (live): ' + Command);
-  Result := Exec(ToolPath, Params, '', SW_HIDE, ewNoWait, Code);
+  // В ewNoWait Exec не возвращает дескриптор процесса. Файл --out тоже может
+  // появиться до завершения финальной записи. Ждём именно созданный нами процесс.
+  Startup.Size := 68;
+  Startup.Flags := 1; // STARTF_USESHOWWINDOW
+  Startup.ShowWindow := SW_HIDE;
+  Result := CreateToolProcess(ToolPath, '"' + ToolPath + '" ' + Params, 0, 0, False,
+    $08000000, 0, SecDir, Startup, ProcessInfo); // CREATE_NO_WINDOW
   if not Result then Exit;
+  CloseHandle(ProcessInfo.ThreadHandle);
+  try
   Last := '';
+  LastReadBytes := 0;
+  LastWriteBytes := 0;
   Idle := 0;
-  Quiet := 0;
   Finished := False;
   while not Finished do
   begin
@@ -1722,26 +1761,36 @@ begin
         Inc(Idle);
         if (Idle mod 3) = 0 then SetOverall(ShownPermille);   // время живёт и между записями
       end;
-      if LineValue(PL, 'state') = 'done' then Finished := True;
     end
     else
       Inc(Idle);
-    // Запасной выход: результат уже записан, а прогресс по какой-то причине не дописан.
-    if (not Finished) and FileExists(OutFile) then
+    // Активное чтение/запись на медленном диске не считаем зависанием даже при
+    // задержке файла прогресса. Счётчики относятся только к нашему дескриптору.
+    if GetToolIoCounters(ProcessInfo.ProcessHandle, Io) then
     begin
-      Inc(Quiet);
-      if Quiet > 75 then Finished := True;
+      // Мелкая служебная запись самого progress-файла не продлевает ожидание.
+      if (Io.ReadBytes > LastReadBytes) or (Io.WriteBytes - LastWriteBytes > 65536) then Idle := 0;
+      LastReadBytes := Io.ReadBytes;
+      LastWriteBytes := Io.WriteBytes;
     end;
-    // Помощник завис или исчез: 3 минуты без единого изменения. Его не убивают: просим остановиться между файлами и ждём (ToolStopped).
-    if (not Finished) and (Idle > 4500) then
+    WaitCode := WaitToolProcess(ProcessInfo.ProcessHandle, 0);
+    Finished := WaitCode = 0;
+    if WaitCode = $FFFFFFFF then
     begin
-      Log('Tool ' + Command + ': нет прогресса 3 минуты, прошу помощника остановиться');
-      if not ToolStopped(ProgFile, Step) then
+      Result := False;
+      Exit;
+    end;
+    // Длительная обработка одного файла допустима. Только 15 минут без прогресса
+    // и без дискового обмена приводят к просьбе остановиться между файлами.
+    if (not Finished) and (Idle > 22500) then
+    begin
+      Log('Tool ' + Command + ': нет прогресса и дискового обмена 15 минут, прошу помощника остановиться');
+      if not ToolStopped(ProgFile, Step, ProcessInfo.ProcessHandle) then
       begin
         Log('Tool ' + Command + ': помощник не завершился за 10 минут после просьбы остановиться');
         SetArrayLength(ToolLines, 2);
         ToolLines[0] := 'code=tool_hung';
-        ToolLines[1] := 'message=Помощник установщика не завершил работу. Файлы игры могут быть записаны не полностью. Не запускайте игру: ' +
+        ToolLines[1] := 'message=Установка ещё не завершилась. Файлы игры могут быть записаны не полностью. Не запускайте игру: ' +
           'перезагрузите компьютер, запустите установщик ещё раз и нажмите «Удалить перевод».';
         Result := False;
         Exit;
@@ -1751,8 +1800,27 @@ begin
   end;
   if FileExists(OutFile) then LoadStringsFromFile(OutFile, ToolLines)
   else Result := False;
-  Result := Result and (ToolValue('status') = 'ok');
+  if not GetToolExitCode(ProcessInfo.ProcessHandle, ExitCode) then
+  begin
+    Result := False;
+    SetArrayLength(ToolLines, 3);
+    ToolLines[0] := 'status=error';
+    ToolLines[1] := 'code=tool_process';
+    ToolLines[2] := 'message=Не удалось подтвердить завершение операции. Повторите установку; резервные копии сохранены.';
+  end
+  else if (ExitCode <> 0) and (ToolValue('status') = 'ok') then
+  begin
+    Result := False;
+    SetArrayLength(ToolLines, 3);
+    ToolLines[0] := 'status=error';
+    ToolLines[1] := 'code=tool_exit';
+    ToolLines[2] := 'message=Операция завершилась с ошибкой после записи результата. Повторите установку; резервные копии сохранены.';
+  end;
+  Result := Result and (ExitCode = 0) and (ToolValue('status') = 'ok');
   Log('Tool ' + Command + ' -> ' + ToolValue('status') + ' ' + ToolValue('code'));
+  finally
+    CloseHandle(ProcessInfo.ProcessHandle);
+  end;
 end;
 
 function ShortPath(Path: String): String;
@@ -2287,10 +2355,26 @@ begin
 #endif
 end;
 
+procedure SuApplyStatus(Lines: TArrayOfString);
+var
+  State_: String;
+begin
+  State_ := LineValue(Lines, 'state');
+  if (State_ = 'checking') and (SuAction = 'download') then State_ := 'downloading';
+  if (State_ <> 'checking') and (State_ <> 'current') and (State_ <> 'available') and (State_ <> 'downloading') and
+     (State_ <> 'ready') and (State_ <> 'handoff') and (State_ <> 'failed') then Exit;
+  SuState := State_;
+  SuVersion := LineValue(Lines, 'available');
+  SuMessage := LineValue(Lines, 'message');
+  SuDone := StrToInt64Def(LineValue(Lines, 'bytes_done'), 0);
+  SuTotal := StrToInt64Def(LineValue(Lines, 'bytes_total'), 0);
+  PublishState;
+end;
+
 procedure SuPoll;
 var
   Lines, ResultLines: TArrayOfString;
-  Current, State_, Finished: String;
+  Current, Finished: String;
 begin
   if not SuWaiting then Exit;
   SetArrayLength(Lines, 0);
@@ -2299,15 +2383,7 @@ begin
   if (GetArrayLength(Lines) > 0) and (Current <> SuLast) then
   begin
     SuLast := Current;
-    State_ := LineValue(Lines, 'state');
-    if (State_ = 'checking') and (SuAction = 'download') then State_ := 'downloading';
-    if (State_ = 'checking') or (State_ = 'current') or (State_ = 'available') or (State_ = 'downloading') or
-       (State_ = 'ready') or (State_ = 'handoff') or (State_ = 'failed') then SuState := State_;
-    SuVersion := LineValue(Lines, 'available');
-    SuMessage := LineValue(Lines, 'message');
-    SuDone := StrToInt64Def(LineValue(Lines, 'bytes_done'), 0);
-    SuTotal := StrToInt64Def(LineValue(Lines, 'bytes_total'), 0);
-    PublishState;
+    SuApplyStatus(Lines);
   end;
   SetArrayLength(ResultLines, 0);
   if FileExists(SuOut) then LoadStringsFromFile(SuOut, ResultLines);
@@ -2315,6 +2391,9 @@ begin
   if Finished <> '' then
   begin
     SuWaiting := False;
+    // status.txt может быть занят читателем в момент атомарной замены. Полный
+    // финальный результат содержит тот же снимок и не оставляет плашку «Проверяю».
+    if Finished = 'ok' then SuApplyStatus(ResultLines);
     if Finished <> 'ok' then
     begin
       SuState := 'failed';
@@ -2330,7 +2409,7 @@ begin
     SaveStringToFile(SecDir + '\setup-update.cancel', 'cancel', False);
     SuWaiting := False;
     SuState := 'failed';
-    SuMessage := 'Нет быстрого ответа от сервера. Установка доступна; проверку можно повторить.';
+    SuMessage := 'Проверка пока не завершилась. Установка доступна; проверку можно повторить.';
     PublishState;
   end;
 end;

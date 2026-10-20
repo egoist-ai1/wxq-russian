@@ -32,7 +32,7 @@ HERE = Path(__file__).resolve().parent
 INSTALLER = HERE.parent
 PROJECT = INSTALLER.parent
 sys.path.insert(0, str(INSTALLER))
-LAUNCHER_BUILD = PROJECT / 'build' / 'launcher-ru-2026-10-14-faf8e0c3'
+LAUNCHER_BUILD = PROJECT / 'build' / 'launcher-ru-2026-10-18-b9c46d6d'
 CSC = Path(os.environ.get('SystemRoot', r'C:\Windows')) / 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
 NODE = Path(os.path.expanduser('~')) / '.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe'
 EXE_NAME = '王者万象棋.exe'
@@ -134,6 +134,7 @@ class Rig:
         self.status_dir = self.root / 'status'
         self.log = self.root / 'fake.log'
         self.marker = self.root / 'marker.json'
+        self.processes: list[subprocess.Popen] = []
         self.port = free_port()
         self.game = 'FakeGame' + str(self.port)
         for d in (self.build / 'resources' / 'app.asar.unpacked' / 'node_modules' / '@tencent' / 'native-resource' / 'dist' / 'lib' / 'locales-i18n',
@@ -205,6 +206,7 @@ class Rig:
 
     def spawn_fake(self, **extra: str) -> subprocess.Popen:
         proc = subprocess.Popen([str(self.exe)], env=self.env(**extra), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.processes.append(proc)
         deadline = time.time() + 15
         while time.time() < deadline and not self.rows('start'):
             time.sleep(0.1)
@@ -232,6 +234,8 @@ class Rig:
 
     def cleanup(self) -> None:
         kill_under(self.root)
+        for proc in self.processes:
+            proc.wait(timeout=10)
         self.unlock()
 
 
@@ -280,6 +284,127 @@ class LauncherRU(unittest.TestCase):
         self.assertEqual(len(rig.rows('start')), 1, 'второй лаунчер запускать нельзя')
         self.assertIsNone(proc.poll())
 
+    def test_late_javascript_clock_with_verified_native_process_attaches(self) -> None:
+        """Время JS может отличаться от рождения процесса Windows: PID, путь и владелец порта остаются настоящими."""
+        rig = self.make('identity-late-start')
+        status = rig.run(env=rig.env(FAKE_IDENTITY='late-start', FAKE_IGNORECLOSE='1'))
+        self.check_attached(rig, status)
+
+    def slow_attach(self, name: str, **delays: str) -> None:
+        """Задерживается настоящий ответ стенда; активатор не получает тестового обхода ожиданий."""
+        rig = self.make('slow-' + name)
+        status = rig.run(env=rig.env(**delays))
+        self.check_attached(rig, status)
+        self.assertEqual(len(rig.rows('start')), 1, 'медленный запуск не должен вызывать второй экземпляр')
+
+    def test_slow_activation_readiness_after_window_is_ready(self) -> None:
+        self.slow_attach('activation', FAKE_ACTIVATION_READY_DELAY_MS='7000')
+
+    def test_slow_inspector_listener_readiness(self) -> None:
+        self.slow_attach('inspector', FAKE_INSPECTOR_DELAY_MS='7000')
+
+    def test_slow_identity_response(self) -> None:
+        self.slow_attach('identity', FAKE_IDENTITY_DELAY_MS='4000')
+
+    def test_slow_install_response(self) -> None:
+        self.slow_attach('install', FAKE_INSTALL_DELAY_MS='6000')
+
+    def test_slow_inspector_close(self) -> None:
+        self.slow_attach('close', FAKE_CLOSE_DELAY_MS='4500')
+
+    def test_slow_real_http_and_websocket_responses(self) -> None:
+        self.slow_attach('http-ws', FAKE_HTTP_DELAY_MS='3000', FAKE_WS_HANDSHAKE_DELAY_MS='3000')
+
+    def test_slow_identity_with_wrong_pid_still_refuses(self) -> None:
+        rig = self.make('slow-wrong-pid')
+        proc = rig.spawn_fake(FAKE_IDENTITY='wrong-pid', FAKE_IDENTITY_DELAY_MS='4000')
+        status = rig.run()
+        self.assertEqual((status.get('result'), status.get('code')), ('fallback', 'identity-pid'), status)
+        self.assertFalse([r for r in rig.evaluations() if '.install(' in r['expr']], 'медленный чужой PID не даёт права подключать перевод')
+        self.assertFalse(port_listening(rig.port), 'inspector закрывается после отказа')
+        self.assertIsNone(proc.poll(), 'уже работавший лаунчер сохраняется')
+
+    def identity_refusal(self, mode: str, code: str) -> None:
+        """Поддельный ответ CDP нельзя принять; свой открытый inspector закрывается без остановки уже работавшего лаунчера."""
+        rig = self.make('identity-' + mode)
+        proc = rig.spawn_fake(FAKE_IDENTITY=mode)
+        status = rig.run()
+        rows = rig.evaluations()
+        self.assertFalse([r for r in rows if '.install(' in r['expr']], rows)
+        self.assertFalse(port_listening(rig.port), 'после отказа identity нельзя оставлять свой inspector открытым')
+        self.assertTrue(any('getBuiltinModule("inspector").close()' in r['expr'] for r in rows), rows)
+        self.assertEqual((status.get('result'), status.get('code')), ('fallback', code), status)
+        self.assertIsNone(proc.poll(), 'уже работавший лаунчер нельзя завершать')
+        self.assertEqual(len(rig.rows('start')), 1, 'лишний экземпляр лаунчера не запускается')
+
+    def test_wrong_identity_pid_is_rejected_and_port_closed(self) -> None:
+        self.identity_refusal('wrong-pid', 'identity-pid')
+
+    def test_wrong_identity_path_is_rejected_and_port_closed(self) -> None:
+        self.identity_refusal('wrong-path', 'identity-path')
+
+    def test_invalid_identity_time_is_rejected_and_port_closed(self) -> None:
+        self.identity_refusal('invalid-time', 'identity-time-invalid')
+
+    def test_missing_identity_field_is_rejected_and_port_closed(self) -> None:
+        self.identity_refusal('missing-field', 'identity-shape')
+
+    def test_identity_exception_is_rejected_and_port_closed(self) -> None:
+        self.identity_refusal('exception', 'identity-exception')
+
+    def test_invalid_identity_shape_is_rejected_and_port_closed(self) -> None:
+        self.identity_refusal('invalid-shape', 'identity-shape')
+
+    def test_missing_identity_response_is_rejected_and_port_closed(self) -> None:
+        self.identity_refusal('no-response', 'identity-read')
+
+    def test_native_process_birth_mismatch_is_rejected_without_handle_leak(self) -> None:
+        """Проверяется настоящая привязка Windows через reflection, без дополнительных TESTBUILD обходов в production."""
+        script = WORK / 'native-process-proof.ps1'
+        script.write_text(r'''
+$ErrorActionPreference = 'Stop'
+$assembly = [Reflection.Assembly]::LoadFrom($env:WXQ_NATIVE_PROOF_ASSEMBLY)
+$sessionType = $assembly.GetType('Egoist.WXQLauncherRU.Session', $true)
+$proofType = $assembly.GetType('Egoist.WXQLauncherRU.ProcessProof', $true)
+$session = [Activator]::CreateInstance($sessionType, $true)
+$probeProc = [Diagnostics.Process]::GetCurrentProcess()
+$sessionType.GetField('Proc').SetValue($session, $probeProc)
+$sessionType.GetField('Target').SetValue($session, $probeProc.MainModule.FileName)
+$birth = $probeProc.StartTime.ToUniversalTime().Ticks
+$sessionType.GetField('StartTicks').SetValue($session, $birth)
+$proof = [Activator]::CreateInstance($proofType, [object[]]@($session))
+try {
+    if (-not $proofType.GetMethod('Matches').Invoke($proof, @())) { throw 'native binding did not match' }
+} finally { ([IDisposable]$proof).Dispose() }
+$sessionType.GetField('StartTicks').SetValue($session, [Int64]($birth + 1))
+function AssertRejected {
+    try {
+        $unexpected = [Activator]::CreateInstance($proofType, [object[]]@($session))
+        ([IDisposable]$unexpected).Dispose()
+        throw 'wrong birth was accepted'
+    } catch {
+        $cause = $_.Exception
+        while ($cause.InnerException) { $cause = $cause.InnerException }
+        $field = $cause.GetType().GetField('Code')
+        if (-not $field -or $field.GetValue($cause) -ne 'identity-process') { throw }
+    }
+}
+AssertRejected
+$probeProc.Refresh()
+$before = $probeProc.HandleCount
+1..128 | ForEach-Object { AssertRejected }
+$probeProc.Refresh()
+if ($probeProc.HandleCount -gt $before + 8) { throw 'refused constructors leaked process handles' }
+'native-birth-rejected'
+''', encoding='utf-8')
+        winps = Path(os.environ.get('SystemRoot', r'C:\Windows')) / 'System32/WindowsPowerShell/v1.0/powershell.exe'
+        proc = subprocess.run([str(winps), '-NoProfile', '-NonInteractive', '-Command', script.read_text(encoding='utf-8')],
+                              env=dict(os.environ, WXQ_NATIVE_PROOF_ASSEMBLY=str(BIN / 'test.exe')),
+                              capture_output=True, timeout=30)
+        output = (proc.stdout + proc.stderr).decode('utf-8', 'replace')
+        self.assertEqual(proc.returncode, 0, output)
+        self.assertIn('native-birth-rejected', output)
+
     def test_node_process_debug_mechanics(self) -> None:
         """Настоящая механика process._debugProcess на обычном Node (подписан, проверяется Authenticode)."""
         if not NODE.exists():
@@ -295,6 +420,7 @@ class LauncherRU(unittest.TestCase):
         self.assertEqual(len(thumbprint), 40)
         rig = self.make('node', launcher_src=NODE, thumbprint=thumbprint)
         node = subprocess.Popen([str(rig.exe), f'--inspect-port={rig.port}', '-e', 'setInterval(()=>{},1e3)'], env=rig.env())
+        rig.processes.append(node)
         time.sleep(1.5)
         self.assertFalse(port_listening(rig.port))
         # заголовок цели у обычного Node не «electron/js2c/browser_init»; в тестовой сборке задаём префикс
@@ -434,7 +560,7 @@ class LauncherRU(unittest.TestCase):
         game = BIN / (rig.game + '.exe')
         shutil.copy2(BIN / 'fake.exe', game)
         proc = subprocess.Popen([str(game)], env=rig.env(FAKE_ROLE='idle'))
-        self.addCleanup(proc.kill)
+        rig.processes.append(proc)
         time.sleep(1)
         status = rig.run()
         self.assertEqual((status['result'], status['code']), ('skipped', 'game-running'))
@@ -532,12 +658,13 @@ class LauncherRU(unittest.TestCase):
         for const in re.findall(r"\bread\((\w+)\)", text):
             reads.update(re.findall(rf"const {const} = '([^']+)'", text))
         self.assertTrue({'launcher-ru.json', 'launcher-entry-public-ru.draft.json', 'launcher-layout.css', 'main-logo-title.a73b14e6.png'} <= reads, reads)
-        # единственные обращения к файловой системе: read() из payloadRoot, чтение самого модуля, запись необязательного статуса
-        self.assertEqual(set(re.findall(r'\bfs\.(\w+)\(', text)), {'readFileSync', 'mkdirSync', 'writeFileSync'})
+        # Чтение payloadRoot и самого модуля, необязательные статус и диагностический журнал (размер и дозапись).
+        self.assertEqual(set(re.findall(r'\bfs\.(\w+)\(', text)),
+                         {'readFileSync', 'mkdirSync', 'writeFileSync', 'statSync', 'appendFileSync'})
         self.assertEqual(text.count('fs.readFileSync('), 2)
         self.assertIn('fs.readFileSync(path.join(payloadRoot, name))', text)
         self.assertIn('fs.readFileSync(__filename)', text)
-        self.assertEqual({m for m in re.findall(r"require\('([^']+)'\)", code)}, {'node:fs', 'node:path', 'node:crypto', 'electron'})
+        self.assertEqual({m for m in re.findall(r"require\('([^']+)'\)", code)}, {'node:fs', 'node:path', 'node:crypto', 'node:os', 'electron'})
         self.assertNotIn('child_process', text)
         self.assertIn('payloadRoot || __dirname', text, 'каталог файлов по умолчанию — папка самого модуля')
         missing = sorted(reads - set(bi.LAUNCHER_FILES))

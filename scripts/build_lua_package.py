@@ -41,6 +41,7 @@ for _path in (str(PROJECT), str(PROJECT / 'scripts')):
         sys.path.insert(0, _path)
 
 import build_carrier as bc  # noqa: E402
+import build_header_layout_patch as header_layout  # noqa: E402
 import build_pilot_carrier as bp  # noqa: E402
 import pilot_contract  # noqa: E402
 import wxq_install  # noqa: E402
@@ -339,7 +340,8 @@ def load_coverage(path: Path = COVERAGE_FILE) -> tuple[str | None, dict[str, tup
 
 
 SHARED_ID, COVERAGE, COVERAGE_PINS = load_coverage()
-ALL_IDS = frozenset(TARGETS) | frozenset(COVERAGE) | ({SHARED_ID} if SHARED_ID else frozenset())
+HEADER_TARGETS = frozenset(header_layout.TARGETS)
+ALL_IDS = frozenset(TARGETS) | frozenset(COVERAGE) | HEADER_TARGETS | ({SHARED_ID} if SHARED_ID else frozenset())
 # Пины оригиналов покрытия вливаются в белый список контракта на время процесса (как BC7-пины); постоянная запись - в pilot_contract.py.
 for _rid, _sha in COVERAGE_PINS.items():
     if pilot_contract.LUA_REPLACEMENT_ALLOWED[PACKAGE].setdefault(_rid, _sha) != _sha:
@@ -548,7 +550,13 @@ def read_resources(game: Path, diag: bool, diag_log: bool = False, only: frozens
         original, path = bp.read_original(game, PACKAGE, rid)
         if sha_bytes(original) != pilot_contract.LUA_REPLACEMENT_ALLOWED[PACKAGE][rid]:
             raise LuaPackageError(f'{rid}: оригинал в игре отличается от закреплённого (другая сборка?)')
-        if rid in TARGETS:
+        if rid in HEADER_TARGETS:
+            try:
+                payload, edits = header_layout.patch_resource(original, rid)
+            except header_layout.HeaderLayoutError as error:
+                raise LuaPackageError(str(error)) from error
+            module, fields = header_layout.TARGETS[rid]['module'], ()
+        elif rid in TARGETS:
             own_helper = helper.replace(DIAG_MODULE_PLACEHOLDER, TARGETS[rid][0]).replace(DIAG_RESOURCE_PLACEHOLDER, rid) if diag_log else helper
             payload, edits = patch_lua(original, rid, diag, own_helper)
             module, fields = TARGETS[rid]
@@ -578,6 +586,19 @@ def finalize(output: Path, manifest: dict, resources: list[dict], diag: bool, se
                                          'fields': sum(len(v[1]) for v in COVERAGE.values()), 'inline_targets': len(TARGETS)} if SHARED_ID else None,
                             'targets': [{'id_hex': r['id_hex'], 'module': r['module'], 'fields': r['fields'], 'edits': [e['id'] for e in r['edits']]} for r in resources]}
     manifest['content_sha256'] = helper_sha
+    header_resources = [r for r in resources if r['id_hex'] in HEADER_TARGETS]
+    if header_resources:
+        manifest['header_layout'] = {
+            'helper': str(header_layout.HELPER.relative_to(PROJECT)),
+            'helper_sha256': sha_bytes(header_layout.HELPER.read_bytes()),
+            'metadata': str(header_layout.METADATA.relative_to(PROJECT)),
+            'metadata_sha256': sha_bytes(header_layout.METADATA.read_bytes()),
+            'targets': [{'id_hex': r['id_hex'], 'module': r['module']} for r in header_resources],
+            'trigger': 'native-title-or-left-control-update',
+            'runtime_guard': 'russian-locale-cyrillic-title-common-horizontal-layout-group-existing-layout-element',
+            'native_prefab_hierarchy_verified': False,
+            'in_game_verified': False,
+        }
     manifest['limitations'] = [
         'Игра и лаунчер не запускались: загрузит ли игра/ACE Lua из override пакета 10 и сработает ли подгонка на реальных окнах, не проверено',
         'Перенос работает только при locale-guard: Localize.GetString("TitleSetting") содержит кириллицу (v12; «Настройки» и «Опции» проходят), и только для кириллицы в поле; иначе поле остаётся как есть',
@@ -585,6 +606,7 @@ def finalize(output: Path, manifest: dict, resources: list[dict], diag: bool, se
         'Диагностика отказов: строки «модуль поле причина» в %TEMP%\\ace-ru-wrap.log (до 200 за сессию); работает, только если io/os доступны в Lua игры',
         'Общее покрытие: помощник стоит в чанке UIPrefabClass и выставляет _G._AceRuWrap; порядок загрузки (UIPrefabClass раньше любого UI-модуля) выведен из кода, в игре не проверен; в журнале ace-ru-wrap.log модуль вызывающего у таких полей показан как [C] (вызов через pcall)',
         'Явные LF внутри поля с HorizontalWrapMode.Overflow и сохранение <c>/<size> между строками в Timi mesh не проверены в Unity',
+        'Общая русская шапка: только существующий общий HorizontalLayoutGroup и LayoutElement, preferredWidth после штатного rebuild, не более 16 соседей и 4 уровней родителей; нет подходящей раскладки — штатная геометрия. Иерархия настоящего prefab и итоговый зазор в игре не проверены',
     ] + (['ДИАГНОСТИЧЕСКАЯ сборка: к заголовку окна подсказок настроек и к имени умения в карточке героя дописывается «·»; для релиза пересобрать без --diag-marker'] if diag else []) \
       + (['ДИАГНОСТИЧЕСКАЯ сборка журнала (--diag-log): слой ru-space-wrap-diag.lua пишет %TEMP%\\ace-ru-diag.log (chunk/call/err, только числа и коды); для релиза пересобрать без --diag-log. Игра не запускалась'] if diag_log else [])
     (output / 'manifest.json').write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\n', 'utf-8')

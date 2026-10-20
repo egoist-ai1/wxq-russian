@@ -1,0 +1,52 @@
+{
+  "schema": "wxq-header-layout/v1",
+  "package": "10",
+  "game_version": "1.6.0.1",
+  "helper": "source/game-wordwrap/header-layout.lua",
+  "helper_sha256": "48a4c6c95a6f303ac9917d06a675bd9dc829f905cec93c4448dd8e68d54f7df8",
+  "resources": [
+    {
+      "id_hex": "5c97dddb5dd21ee9",
+      "module": "UIFullScreenViewTemplateBase",
+      "original_sha256": "9494783566062110c52451d11488fe6fcee4956b1bfaccdaddf0dedaba141e60",
+      "hooks": [
+        "ResetTitle",
+        "RebuildUnderSubTitleLayout",
+        "vOnUninitialize"
+      ]
+    },
+    {
+      "id_hex": "1eaf50bae2c25fe8",
+      "module": "UIFullScreenViewTemplate_BackClass",
+      "original_sha256": "08a1d83f0cfc7732ea7539f20f5e813498a451cdb9a5993b92eda2bfd795550a",
+      "hooks": [
+        "vOnInitialize",
+        "RefreshContentVisibility",
+        "RefreshOneContentVisibility",
+        "RefreshDropdownOptions",
+        "RefreshFilter",
+        "RefreshSearchFrame",
+        "RefreshTick",
+        "vOnUninitialize"
+      ]
+    }
+  ],
+  "binding_fields": [
+    "title",
+    "stack",
+    "widgetCommonDropdownStyle1_Skin2_Top",
+    "showFilter",
+    "showSearchFrame",
+    "showTick"
+  ],
+  "guards": [
+    "russian-locale-and-cyrillic-title",
+    "bounded-common-horizontal-layout-group",
+    "existing-layout-element",
+    "available-row-width",
+    "no-direct-anchor-position-writes",
+    "native-font-and-best-fit-preserved",
+    "restore-owned-values-on-uninitialize"
+  ],
+  "qa_limit": "Game prefab hierarchy and live screen remain unverified; only source and native Lua behavioural fixture are verified."
+}

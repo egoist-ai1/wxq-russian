@@ -566,6 +566,34 @@ def _merge_lua_coverage_pins() -> None:
 
 
 _merge_lua_coverage_pins()
+
+# Два общих шаблона шапки: отдельные пины, прежние 1914 ресурса переноса остаются прежними.
+LUA_HEADER_LAYOUT_PATH = PROJECT / 'source/game-wordwrap/header-layout.json'
+LUA_HEADER_LAYOUT_SHA256 = 'e78d3966fb26461d2d94ebcce24871f1ddc5a5de6f241632df6d30c32f54189c'
+
+
+def _merge_lua_header_layout_pins() -> None:
+    raw = LUA_HEADER_LAYOUT_PATH.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != LUA_HEADER_LAYOUT_SHA256:
+        raise ValueError('Lua header layout pin file differs from the SHA-256 pinned in the contract')
+    data = json.loads(raw.decode('utf-8'))
+    if data.get('schema') != 'wxq-header-layout/v1' or data.get('package') != '10':
+        raise ValueError('Lua header layout pin file must describe reviewed package 10 targets')
+    rows = data.get('resources')
+    if not isinstance(rows, list) or len(rows) != 2:
+        raise ValueError('Lua header layout pin file must have exactly two reviewed templates')
+    allowed = LUA_REPLACEMENT_ALLOWED['10']
+    seen = set()
+    for row in rows:
+        ident, digest = row.get('id_hex'), row.get('original_sha256')
+        if not isinstance(ident, str) or not isinstance(digest, str) or not re.fullmatch(r'[0-9a-f]{16}', ident) or not re.fullmatch(r'[0-9a-f]{64}', digest):
+            raise ValueError('Lua header layout pin file has a malformed entry')
+        if ident in seen or allowed.setdefault(ident, digest) != digest:
+            raise ValueError(f'Lua header layout pin {ident} is duplicate or differs from the pinned Lua original')
+        seen.add(ident)
+
+
+_merge_lua_header_layout_pins()
 # Каждая нагрузка lua-script начинается с этой строки (помощник переноса и точечные правки сборщика build_lua_package.py).
 LUA_PAYLOAD_MARKER = b'-- ACE_REVIEWED_RU_WORDWRAP_v2'
 PACKAGE_ID = re.compile(r'[1-9][0-9]{0,9}')

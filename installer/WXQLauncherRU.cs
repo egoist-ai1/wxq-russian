@@ -49,11 +49,15 @@ namespace Egoist.WXQLauncherRU
     static class Opt
     {
         public const string LauncherTitle = "electron/js2c/browser_init";
-        public const int WindowWaitMs = 30000;
-        public const int SettleMs = 1500;
-        public const int InspectorWaitMs = 6000;
-        public const int CloseWaitMs = 4000;
-        public const long MaxIdentityDriftMs = 10000;
+        public const int WindowWaitMs = 120000;
+        public const int ActivationWaitMs = 30000;
+        public const int InspectorWaitMs = 45000;
+        public const int HttpWaitMs = 10000;
+        public const int ConnectWaitMs = 10000;
+        public const int IdentityWaitMs = 20000;
+        public const int InstallWaitMs = 45000;
+        public const int CleanupWaitMs = 5000;
+        public const int CloseWaitMs = 10000;
 #if TESTBUILD
         public static int Port = 9229;
         public static string StatusDirOverride;
@@ -85,6 +89,9 @@ namespace Egoist.WXQLauncherRU
         [DllImport("kernel32.dll", SetLastError = true)] public static extern IntPtr CreateRemoteThread(IntPtr process, IntPtr attrs, UIntPtr stack, IntPtr start, IntPtr param, uint flags, out uint id);
         [DllImport("kernel32.dll")] public static extern uint WaitForSingleObject(IntPtr handle, uint ms);
         [DllImport("kernel32.dll")] public static extern bool CloseHandle(IntPtr handle);
+        [DllImport("kernel32.dll", SetLastError = true)] public static extern uint GetProcessId(IntPtr handle);
+        [DllImport("kernel32.dll", SetLastError = true)] public static extern bool GetProcessTimes(IntPtr handle, out long creation, out long exit, out long kernel, out long user);
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)] public static extern bool QueryFullProcessImageNameW(IntPtr handle, uint flags, StringBuilder path, ref uint size);
         [DllImport("iphlpapi.dll", SetLastError = true)] public static extern int GetExtendedTcpTable(IntPtr table, ref int size, bool sort, int family, int tableClass, int reserved);
         [DllImport("wintrust.dll", CharSet = CharSet.Unicode)] public static extern int WinVerifyTrust(IntPtr hwnd, ref Guid action, ref WinTrustData data);
 
@@ -253,6 +260,59 @@ namespace Egoist.WXQLauncherRU
         public DateTime StartUtc;
         public string AclState;                       // null — права в порядке, иначе код
         public bool AclChecked;
+    }
+
+    // Дескриптор привязывает проверку ко времени жизни конкретного процесса Windows.
+    // У Node отсчёт uptime начинается при инициализации Node, а не при создании процесса ОС.
+    sealed class ProcessProof : IDisposable
+    {
+        IntPtr handle;
+        readonly int pid;
+        readonly long creation;
+        readonly string image;
+
+        public ProcessProof(Session session)
+        {
+            pid = session.Proc.Id;
+            image = session.Target;
+            handle = Native.OpenProcess(0x00101000, false, pid); // QUERY_LIMITED_INFORMATION | SYNCHRONIZE
+            try
+            {
+                long exit, kernel, user;
+                if (handle == IntPtr.Zero || Native.GetProcessId(handle) != (uint)pid ||
+                    !Native.GetProcessTimes(handle, out creation, out exit, out kernel, out user) ||
+                    DateTime.FromFileTimeUtc(creation).Ticks != session.StartTicks || !Matches())
+                    throw new Refusal("identity-process");
+            }
+            catch (Exception)
+            {
+                Dispose();
+                throw new Refusal("identity-process");
+            }
+        }
+
+        public bool Matches()
+        {
+            try
+            {
+                long start, exit, kernel, user;
+                if (handle == IntPtr.Zero || Native.WaitForSingleObject(handle, 0) != 258 ||
+                    Native.GetProcessId(handle) != (uint)pid ||
+                    !Native.GetProcessTimes(handle, out start, out exit, out kernel, out user) || start != creation) return false;
+                var path = new StringBuilder(32768);
+                uint size = (uint)path.Capacity;
+                return Native.QueryFullProcessImageNameW(handle, 0, path, ref size) &&
+                    string.Equals(Path.GetFullPath(path.ToString()), image, StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception) { return false; }
+        }
+
+        public void Dispose()
+        {
+            if (handle == IntPtr.Zero) return;
+            Native.CloseHandle(handle);
+            handle = IntPtr.Zero;
+        }
     }
 
     static class Program
@@ -528,7 +588,6 @@ namespace Egoist.WXQLauncherRU
                 s.Proc = Launch(s);
                 s.Owned = true;
                 if (!WaitWindow(s.Proc, Opt.WindowWaitMs)) throw new Refusal("no-window");
-                Thread.Sleep(Opt.SettleMs);
                 if (s.Proc.HasExited) throw new Refusal("launcher-exited");
             }
             s.StartUtc = s.Proc.StartTime.ToUniversalTime();
@@ -536,36 +595,87 @@ namespace Egoist.WXQLauncherRU
 
             if (Tcp.Listeners(Opt.Port).Count > 0) throw new Refusal("port-busy");
             s.Activated = true;
-            if (!Activate(s.Proc.Id)) throw new Refusal("activate-failed");
+            // Окно может появиться раньше, чем Node подготовит обработчик инспектора.
+            // Повторяем лишь неуспешную попытку; после создания потока Activate возвращает true.
+            using (var activationProof = new ProcessProof(s))
+            {
+                var activationWait = Stopwatch.StartNew();
+                while (true)
+                {
+                    if (!activationProof.Matches()) throw new Refusal("identity-process");
+                    if (Activate(s.Proc.Id)) break;
+                    if (activationWait.ElapsedMilliseconds >= Opt.ActivationWaitMs) throw new Refusal("activate-failed");
+                    Thread.Sleep(200);
+                }
+            }
 
             // Окно порта: от открытия до закрытия inspector.
-            var deadline = DateTime.UtcNow.AddMilliseconds(Opt.InspectorWaitMs);
+            var inspectorWait = Stopwatch.StartNew();
             while (Tcp.Listeners(Opt.Port).Count == 0)
             {
-                if (DateTime.UtcNow > deadline) throw new Refusal("inspector-timeout");
-                Thread.Sleep(50);
+                if (s.Proc.HasExited) throw new Refusal("launcher-exited");
+                if (inspectorWait.ElapsedMilliseconds >= Opt.InspectorWaitMs) throw new Refusal("inspector-timeout");
+                Thread.Sleep(150);
             }
             if (!Tcp.OwnedExactly(s.Proc.Id, Opt.Port)) throw new Refusal("port-owner");
 
             Uri endpoint = ReadInspectorTarget(Opt.Port);
             if (!Tcp.OwnedExactly(s.Proc.Id, Opt.Port)) throw new Refusal("port-owner");
+            using (var proof = new ProcessProof(s))
             using (var cdp = Cdp.Connect(endpoint))
             {
-                CheckIdentity(cdp, s);
-                if (!Tcp.OwnedExactly(s.Proc.Id, Opt.Port)) throw new Refusal("port-owner");
-                Dictionary<string, object> reply = null;
-                try { reply = cdp.Evaluate(InstallExpression(runtimePath, runtimeSha, dictionaryPath, dictionarySha), 5000); }
-                catch (Exception) { }
-                if (reply == null || reply.ContainsKey("exceptionDetails"))
+                try
                 {
-                    try { cdp.Evaluate(CloseExpression, 2000); } catch (Exception) { }
-                    throw new Refusal("install-failed");
+                    CheckIdentity(cdp, s, proof);
+                    if (!proof.Matches()) throw new Refusal("identity-process");
+                    if (!Tcp.OwnedExactly(s.Proc.Id, Opt.Port)) throw new Refusal("port-owner");
+                    Dictionary<string, object> reply = null;
+                    try { reply = cdp.Evaluate(InstallExpression(runtimePath, runtimeSha, dictionaryPath, dictionarySha), Opt.InstallWaitMs); }
+                    catch (Exception) { }
+                    if (reply == null || reply.ContainsKey("exceptionDetails")) throw new Refusal("install-failed");
+                }
+                catch (Exception)
+                {
+                    // Отказ identity тоже должен закрывать инспектор. Перевод не выполняется;
+                    // команду закрытия отправляем лишь тому же живому процессу и его единственному loopback-порту.
+                    CloseAfterRefusal(cdp, endpoint, s, proof);
+                    throw;
                 }
             }
         }
 
         const string IdentityExpression = "({pid:process.pid,path:process.execPath,startedAtApprox:Date.now()-process.uptime()*1000})";
         const string CloseExpression = "setTimeout(()=>process.getBuiltinModule(\"inspector\").close(),200);void 0";
+
+        static bool CanCloseInspector(Session s, ProcessProof proof)
+        {
+            try { return proof.Matches() && Tcp.OwnedExactly(s.Proc.Id, Opt.Port); }
+            catch (Exception) { return false; }
+        }
+
+        static void CloseAfterRefusal(Cdp cdp, Uri endpoint, Session s, ProcessProof proof)
+        {
+            if (!CanCloseInspector(s, proof)) return;
+            try
+            {
+                var reply = cdp.Evaluate(CloseExpression, Opt.CleanupWaitMs);
+                if (reply != null && !reply.ContainsKey("exceptionDetails")) return;
+            }
+            catch (Exception) { }
+            // Таймаут ReceiveAsync может прервать WebSocket. Единственная повторная попытка
+            // использует новый транспорт, но только прежний endpoint того же процесса.
+            if (!CanCloseInspector(s, proof)) return;
+            try
+            {
+                Uri current = ReadInspectorTarget(Opt.Port);
+                if (!string.Equals(current.AbsoluteUri, endpoint.AbsoluteUri, StringComparison.Ordinal) || !CanCloseInspector(s, proof)) return;
+                using (var cleanup = Cdp.Connect(current))
+                {
+                    if (CanCloseInspector(s, proof)) cleanup.Evaluate(CloseExpression, Opt.CleanupWaitMs);
+                }
+            }
+            catch (Exception) { }
+        }
 
         static string InstallExpression(string module, string moduleSha, string dictionary, string dictionarySha)
         {
@@ -691,8 +801,8 @@ namespace Egoist.WXQLauncherRU
 
         static bool WaitWindow(Process process, int ms)
         {
-            var deadline = DateTime.UtcNow.AddMilliseconds(ms);
-            while (DateTime.UtcNow < deadline)
+            var wait = Stopwatch.StartNew();
+            while (wait.ElapsedMilliseconds < ms)
             {
                 process.Refresh();
                 if (process.HasExited) return false;
@@ -756,7 +866,7 @@ namespace Egoist.WXQLauncherRU
             try
             {
                 var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:" + port.ToString(CultureInfo.InvariantCulture) + "/json/list");
-                request.Proxy = null; request.AllowAutoRedirect = false; request.Timeout = 2000; request.ReadWriteTimeout = 2000;
+                request.Proxy = null; request.AllowAutoRedirect = false; request.Timeout = Opt.HttpWaitMs; request.ReadWriteTimeout = Opt.HttpWaitMs;
                 using (var response = (HttpWebResponse)request.GetResponse())
                 using (var stream = response.GetResponseStream())
                 {
@@ -782,24 +892,35 @@ namespace Egoist.WXQLauncherRU
             catch (Exception) { throw new Refusal("target-list"); }
         }
 
-        static void CheckIdentity(Cdp cdp, Session s)
+        static void CheckIdentity(Cdp cdp, Session s, ProcessProof proof)
         {
+            if (!proof.Matches()) throw new Refusal("identity-process");
+            if (!Tcp.OwnedExactly(s.Proc.Id, Opt.Port)) throw new Refusal("identity-port");
             Dictionary<string, object> reply;
-            try { reply = cdp.Evaluate(IdentityExpression, 3000); }
-            catch (Exception) { throw new Refusal("identity"); }
+            try { reply = cdp.Evaluate(IdentityExpression, Opt.IdentityWaitMs); }
+            catch (Exception) { throw new Refusal("identity-read"); }
             try
             {
-                if (reply.ContainsKey("exceptionDetails")) throw new Refusal("identity");
+                if (reply == null) throw new Refusal("identity-shape");
+                if (reply.ContainsKey("exceptionDetails")) throw new Refusal("identity-exception");
                 var value = (Dictionary<string, object>)((Dictionary<string, object>)reply["result"])["value"];
+                if (value == null || !value.ContainsKey("pid") || !(value["pid"] is int) ||
+                    !value.ContainsKey("path") || !(value["path"] is string) ||
+                    string.IsNullOrEmpty((string)value["path"]) || !value.ContainsKey("startedAtApprox")) throw new Refusal("identity-shape");
+                if ((int)value["pid"] != s.Proc.Id) throw new Refusal("identity-pid");
+                if (!Path.IsPathRooted((string)value["path"]) ||
+                    !string.Equals(Path.GetFullPath((string)value["path"]), s.Target, StringComparison.OrdinalIgnoreCase)) throw new Refusal("identity-path");
+                object rawTime = value["startedAtApprox"];
+                if (!(rawTime is int || rawTime is long || rawTime is double || rawTime is decimal)) throw new Refusal("identity-time-invalid");
                 double started = Convert.ToDouble(value["startedAtApprox"], CultureInfo.InvariantCulture);
-                double expected = (s.StartUtc - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds;
-                bool same = Convert.ToInt32(value["pid"], CultureInfo.InvariantCulture) == s.Proc.Id &&
-                    string.Equals(Path.GetFullPath((string)value["path"]), s.Target, StringComparison.OrdinalIgnoreCase) &&
-                    Math.Abs(started - expected) <= Opt.MaxIdentityDriftMs;
-                if (!same) throw new Refusal("identity");
+                if (double.IsNaN(started) || double.IsInfinity(started) || started < 0) throw new Refusal("identity-time-invalid");
+                // Эта JS-оценка не является временем создания процесса Windows: возможны поздняя
+                // инициализация Node и коррекция часов. Время жизни сверяется точным GetProcessTimes.
+                if (!proof.Matches()) throw new Refusal("identity-process");
+                if (!Tcp.OwnedExactly(s.Proc.Id, Opt.Port)) throw new Refusal("identity-port");
             }
             catch (Refusal) { throw; }
-            catch (Exception) { throw new Refusal("identity"); }
+            catch (Exception) { throw new Refusal("identity-shape"); }
         }
 
         // Порт должен закрыться за 4 с. Иначе свой процесс просим закрыться (CloseMainWindow, без Kill: он мог начать автообновление),
@@ -808,13 +929,13 @@ namespace Egoist.WXQLauncherRU
         {
             if (s.Proc == null) return null;
             int pid = s.Proc.Id;
-            var deadline = DateTime.UtcNow.AddMilliseconds(Opt.CloseWaitMs);
+            var wait = Stopwatch.StartNew();
             while (true)
             {
                 bool open = false;
                 foreach (Listener l in Tcp.Listeners(Opt.Port)) if (l.Pid == pid) open = true;
                 if (!open) return null;
-                if (DateTime.UtcNow > deadline) break;
+                if (wait.ElapsedMilliseconds >= Opt.CloseWaitMs) break;
                 Thread.Sleep(150);
             }
             if (!s.Owned) return "port-open-left";
@@ -876,7 +997,7 @@ namespace Egoist.WXQLauncherRU
             try
             {
                 cdp.socket.Options.Proxy = null;
-                using (var cts = new CancellationTokenSource(2000)) cdp.socket.ConnectAsync(endpoint, cts.Token).Wait();
+                using (var cts = new CancellationTokenSource(Opt.ConnectWaitMs)) cdp.socket.ConnectAsync(endpoint, cts.Token).Wait();
                 return cdp;
             }
             catch (Exception) { cdp.Dispose(); throw new Refusal("ws-failed"); }

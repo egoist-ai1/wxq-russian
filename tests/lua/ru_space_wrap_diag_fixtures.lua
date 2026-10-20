@@ -90,7 +90,7 @@ local TAIL = " mode=%S+ src=%S+ fit=%S+ grp=%S+ le=%S+ anchY=%S+ cap=%S+ rbv=%S+
 
 -- 1. Загрузка чанка: session, env, sink, chunk; файл только дополняется (режим "a"); папка TEMP; имя файла ace-ru-diag.log.
 reset()
-setEnv("C:\\Tmp", "C:\\Tmp2", "C:\\Users\\X\\AppData\\Local")
+setEnv("C:\\Tmp", "C:\\Tmp2", "%USERPROFILE%\\AppData\\Local")
 local stub, log = makeIo()
 io = stub
 local wrap = loadChunk()

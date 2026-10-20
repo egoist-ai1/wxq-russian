@@ -1456,9 +1456,20 @@ namespace Egoist.WXQRussian
             if (outFile != null)
             {
                 var lines = ctx.Result.Select(p => p.Key + "=" + (p.Value ?? "").Replace("\r", " ").Replace("\n", " ")).ToArray();
-                try { File.WriteAllLines(outFile, lines, new UTF8Encoding(true)); } catch (IOException) { code = 3; }
+                // Мастер может читать результат параллельно: публикуем целый снимок одной заменой.
+                try { WriteSetupStatus(outFile, Encoding.UTF8.GetBytes("\uFEFF" + string.Join("\n", lines) + "\n")); } catch (IOException) { code = 3; }
             }
-            Progress.Finish();   // последним, после --out: увидев state=done, окно уже может читать результат
+#if TESTBUILD
+            // Стенд медленного диска: уже записанный --out не означает завершение процесса.
+            if (command == Environment.GetEnvironmentVariable("WXQ_RU_TEST_FINAL_DELAY_COMMAND"))
+            {
+                int delay;
+                if (int.TryParse(Environment.GetEnvironmentVariable("WXQ_RU_TEST_FINAL_DELAY_MS"), out delay) && delay >= 0 && delay <= 60000) Thread.Sleep(delay);
+                int lateExit;
+                if (int.TryParse(Environment.GetEnvironmentVariable("WXQ_RU_TEST_FINAL_EXIT_CODE"), out lateExit) && lateExit > 0 && lateExit < 256) code = lateExit;
+            }
+#endif
+            Progress.Finish();   // после --out; мастер дополнительно ждёт завершения нашего процесса
             Log.Write("команда " + command + " -> " + status);
             return code;
         }
@@ -3637,14 +3648,14 @@ namespace Egoist.WXQRussian
         void Write()
         {
             lastWrite = clock.ElapsedMilliseconds;
-            ctx.Result["state"] = state; ctx.Result["code"] = code; ctx.Result["message"] = message;
-            ctx.Result["installed"] = Installed; ctx.Result["available"] = Available; ctx.Result["next_try_utc"] = NextTry;
             var data = new Dictionary<string, object>
             {
                 { "state", state }, { "code", code }, { "message", message }, { "installed", Installed }, { "available", Available },
                 { "next_try_utc", NextTry }, { "game_version", GameVersion }, { "setup_path", SetupPath }, { "setup_sha", SetupSha }, { "setup_bytes", SetupBytes }, { "bytes_done", BytesDone }, { "bytes_total", BytesTotal },
                 { "updated_utc", DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture) }
             };
+            // Финальный --out служит снимком состояния даже при временно занятом status.txt.
+            foreach (var item in data) ctx.Result[item.Key] = Convert.ToString(item.Value, CultureInfo.InvariantCulture);
             try { Util.WriteJson(path, data); }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
@@ -3716,7 +3727,7 @@ namespace Egoist.WXQRussian
                 SetupNetworkDeadline = DateTime.UtcNow.AddSeconds(8);
                 if (SetupFastNetwork)
                 {
-                    var deadline = new Thread(delegate() { Thread.Sleep(8500); status.Set("failed", "network", "Нет быстрого ответа от сервера. Проверку можно повторить."); Environment.Exit(2); });
+                    var deadline = new Thread(delegate() { Thread.Sleep(8500); status.Set("failed", "check_timeout", "Проверка пока не завершилась. Установка доступна; проверку можно повторить."); Environment.Exit(2); });
                     deadline.IsBackground = true; deadline.Start();
                 }
                 string baseUrl;
@@ -3816,7 +3827,9 @@ namespace Egoist.WXQRussian
             var child = Process.Start(new ProcessStartInfo(staged, command) { UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = updates });
             if (child == null) throw new StopException("handoff", "Не удалось подготовить перезапуск. Старое окно остаётся открытым.");
             var clock = Stopwatch.StartNew();
-            while (clock.ElapsedMilliseconds < 7000 && !File.Exists(ready) && !child.HasExited) Thread.Sleep(50);
+            // Подготовка включает чтение и SHA-256 полного EXE. На загруженном HDD
+            // семь секунд не отличают корректную проверку от зависания.
+            while (clock.ElapsedMilliseconds < 120000 && !File.Exists(ready) && !child.HasExited) Thread.Sleep(150);
             if (!File.Exists(ready) || File.ReadAllText(ready, Encoding.UTF8) != ticket || child.HasExited)
                 throw new StopException("handoff", "Не удалось подготовить перезапуск. Повторите обновление.");
             status.Available = m.Version;
@@ -3838,7 +3851,7 @@ namespace Egoist.WXQRussian
             var m = SetupCached(ctx, out exe);
             string ready = Path.Combine(ctx.Data, "updates", "handoff-" + ticket + ".ready");
             File.WriteAllText(ready, ticket, new UTF8Encoding(false));
-            if (!parent.WaitForExit(30000)) throw new StopException("handoff", "Прежнее окно не закрылось. Обновление остановлено.");
+            if (!parent.WaitForExit(180000)) throw new StopException("handoff", "Прежнее окно не закрылось. Обновление остановлено.");
             File.Delete(ready);
             // Inno держит глобальный SetupMutex до завершения старого мастера, включая его внешнюю оболочку.
             var clock = Stopwatch.StartNew();
@@ -3847,7 +3860,7 @@ namespace Egoist.WXQRussian
                 bool exists = false;
                 try { using (var old = Mutex.OpenExisting(SetupMutexName)) { exists = true; } } catch (WaitHandleCannotBeOpenedException) { }
                 if (!exists) break;
-                if (clock.ElapsedMilliseconds > 10000) throw new StopException("busy", "Другое окно установщика ещё работает. Откройте русификатор заново.");
+                if (clock.ElapsedMilliseconds > 60000) throw new StopException("busy", "Другое окно установщика ещё работает. Откройте русификатор заново.");
                 Thread.Sleep(100);
             }
             m = SetupCached(ctx, out exe);   // повторная проверка подписи и SHA непосредственно перед запуском
