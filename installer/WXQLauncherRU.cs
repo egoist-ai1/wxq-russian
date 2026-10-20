@@ -58,7 +58,7 @@ namespace Egoist.WXQLauncherRU
         public static int Port = 9229;
         public static string StatusDirOverride;
         public static int Flag = -1;                 // -1: читать реестр
-        public static bool NoSignature, SignalActivation, IgnoreOwner;
+        public static bool NoSignature, SignalActivation, IgnoreOwner, StandardUser, Elevated;
         public static string TitlePrefix = LauncherTitle, GameName = "WXQ", TrustRoot, ExpectedFile;
 #else
         public const int Port = 9229;
@@ -70,7 +70,7 @@ namespace Egoist.WXQLauncherRU
 #if TESTBUILD
                 if (StatusDirOverride != null) return StatusDirOverride;
 #endif
-                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Egoist", "WXQ-Russian");
+                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Egoist", "WXQ-Russian");
             }
         }
     }
@@ -341,6 +341,8 @@ namespace Egoist.WXQLauncherRU
                 case "--test-no-signature": Opt.NoSignature = true; break;
                 case "--test-signal-activation": Opt.SignalActivation = true; break;
                 case "--test-ignore-owner": Opt.IgnoreOwner = true; break;
+                case "--test-standard-user": Opt.StandardUser = true; break;
+                case "--test-elevated": Opt.Elevated = true; break;
                 case "--test-title": Opt.TitlePrefix = value; break;
                 case "--test-game": Opt.GameName = value; break;
                 case "--test-trust-root": Opt.TrustRoot = value; break;
@@ -416,6 +418,28 @@ namespace Egoist.WXQLauncherRU
         // Цель внутри Program Files (или Program Files (x86)); ни один каталог на пути и сам exe не ссылки (junction, symlink).
         static bool UnderTrustedRoot(string target)
         {
+            // При обычном пользовательском запуске допустим любой локальный каталог.
+            // Повышенный процесс по-прежнему не запускает цель из пользовательской папки.
+            bool elevated = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+#if TESTBUILD
+            if (Opt.StandardUser) elevated = false;
+            if (Opt.Elevated) elevated = true;
+#endif
+            try
+            {
+                string full = Path.GetFullPath(target);
+                string drive = Path.GetPathRoot(full);
+                if (full.StartsWith("\\\\", StringComparison.Ordinal) || drive == null || drive.Length != 3 || drive[1] != ':') return false;
+                string cursor = drive;
+                if (IsReparse(cursor)) return false;
+                foreach (string part in full.Substring(drive.Length).Split('\\'))
+                {
+                    cursor = Path.Combine(cursor, part);
+                    if (IsReparse(cursor)) return false;
+                }
+                if (!elevated) return true;
+            }
+            catch (Exception) { return false; }
             var roots = new List<string>();
 #if TESTBUILD
             if (Opt.TrustRoot != null) roots.Add(Opt.TrustRoot);

@@ -2,6 +2,7 @@
 //
 // Что делает:
 //   * показывает состояние обновления из update-status.json (пишет только помощник WXQTool.exe update --check-only, от SYSTEM);
+//   * тихо показывает в меню состояние перевода лаунчера из launcher-status.json текущего пользователя;
 //   * проверка идёт только когда человек зашёл в русификатор: открыл окно значка, нажал «Проверить обновление» или запустил лаунчер
 //     (появление процесса WXQLauncher*, не чаще раза в 12 часов). Таймеров, проверок при входе в Windows и при закрытии игры нет.
 //     Проверка = schtasks /run задачи «Egoist\WXQ-Russian Update» (право запуска у обычных пользователей выдано дескриптором безопасности задачи);
@@ -55,16 +56,20 @@ namespace Egoist.WXQ
     class TrayApp : IDisposable
     {
         const string TaskName = "Egoist\\WXQ-Russian Update";
+        const int LauncherStatusMaxBytes = 16 * 1024;
+        const string LauncherStatusUnknown = "Лаунчер: состояние ещё не получено";
         static readonly Regex LauncherProcess = new Regex("^WXQLauncher", RegexOptions.IgnoreCase);
         static readonly TimeSpan LauncherCheckEvery = TimeSpan.FromHours(12);
 
         readonly NotifyIcon icon = new NotifyIcon();
         ToolStripMenuItem updateItem;
         readonly ToolStripMenuItem statusItem =new ToolStripMenuItem("Обновление: проверка не выполнялась") { Enabled = false };
+        readonly ToolStripMenuItem launcherStatusItem = new ToolStripMenuItem(LauncherStatusUnknown) { Enabled = false };
         readonly System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
         readonly string self = Application.ExecutablePath;
         readonly DateTime selfStamp;
         readonly string statusFile;
+        readonly string launcherStatusFile;
         const string ReleasesUrl = "https://github.com/egoist-ai1/wxq-russian/releases";
         // Ограничение, о котором владелец просил сказать прямо (то же слово в слово в установщике, README и CHANGELOG).
         public const string VisitText = "Русификатор проверяет обновления, когда вы заходите в него: открываете значок в трее, нажимаете «Проверить» или запускаете игру через ярлык; постоянных проверок в фоне нет.";
@@ -82,9 +87,11 @@ namespace Egoist.WXQ
         {
             selfStamp = File.GetLastWriteTimeUtc(self);
             statusFile = Path.Combine(DataDir(), "update-status.json");
+            launcherStatusFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Egoist", "WXQ-Russian", "launcher-status.json");
             CleanOld();
             var menu = new ContextMenuStrip();
             menu.Items.Add(statusItem);
+            menu.Items.Add(launcherStatusItem);
             menu.Items.Add(new ToolStripSeparator());
             var show = new ToolStripMenuItem("Состояние…");
             show.Click += delegate { ShowStatus(); };
@@ -239,6 +246,45 @@ namespace Egoist.WXQ
             catch (Exception) { return null; }
         }
 
+        // Файл пишет активатор без повышения прав. Читаем ограниченный снимок; в меню попадают только фиксированные тексты по result/code.
+        static string ReadLauncherStatus(string path)
+        {
+            try
+            {
+                byte[] bytes;
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1))
+                {
+                    long size = stream.Length;
+                    if (size <= 0 || size > LauncherStatusMaxBytes) return LauncherStatusUnknown;
+                    bytes = new byte[(int)size];
+                    int offset = 0;
+                    while (offset < bytes.Length)
+                    {
+                        int read = stream.Read(bytes, offset, bytes.Length - offset);
+                        if (read == 0) return LauncherStatusUnknown;
+                        offset += read;
+                    }
+                    if (stream.Length != size) return LauncherStatusUnknown;
+                }
+                string text = new System.Text.UTF8Encoding(false, true).GetString(bytes).TrimStart('\uFEFF');
+                var parser = new JavaScriptSerializer { MaxJsonLength = LauncherStatusMaxBytes, RecursionLimit = 8 };
+                var status = parser.DeserializeObject(text) as Dictionary<string, object>;
+                if (status == null) return LauncherStatusUnknown;
+                object value;
+                string result = status.TryGetValue("result", out value) ? value as string : null;
+                if (result == "ok") return "Лаунчер: перевод подключён";
+                if (result != "fallback" && result != "skipped") return LauncherStatusUnknown;
+                string code = status.TryGetValue("code", out value) ? value as string : null;
+                if (code == "profile-unknown" || (code != null && code.StartsWith("hash-", StringComparison.Ordinal)))
+                    return "Лаунчер: обновилась версия лаунчера, перевод пока не подключён";
+                if (code == "game-running") return "Лаунчер: закройте игру перед запуском лаунчера";
+                if (code == "untrusted-target" || code == "acl") return "Лаунчер: путь или права доступа не поддерживаются";
+                if (code == "port-busy") return "Лаунчер: закройте и снова откройте лаунчер";
+                return "Лаунчер: перевод не подключён, запустите лаунчер через ярлык Honor of Kings ACE (RU)";
+            }
+            catch (Exception) { return LauncherStatusUnknown; }
+        }
+
         void Tick()
         {
             // Заменили ли exe новой версией (установщик переименовал запущенный файл в .old и положил новый на то же место).
@@ -257,6 +303,7 @@ namespace Egoist.WXQ
             bool launcher = LauncherRunning();
             if (launcher && !launcherWasRunning && DateTime.UtcNow - LastCheck() >= LauncherCheckEvery) RequestRun(false);
             launcherWasRunning = launcher;
+            launcherStatusItem.Text = ReadLauncherStatus(launcherStatusFile);
             var status = ReadStatus();
             string state = Text(status, "state");
             bool canUpdate = HasInstaller(status);

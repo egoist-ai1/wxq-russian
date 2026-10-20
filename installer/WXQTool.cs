@@ -542,6 +542,25 @@ namespace Egoist.WXQRussian
             }
             return values;
         }
+
+        // Заголовок меняется в проверенном пустом шаблоне; старые записи и их байты в новый каталог не переносятся.
+        public static byte[] HeaderOnly(byte[] header)
+        {
+            byte[] bytes;
+            using (var stream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("cache-template.db"))
+            {
+                if (stream == null) throw new StopException("payload", "В установщике нет шаблона очистки кэша. Скачайте установщик заново.");
+                using (var memory = new MemoryStream()) { stream.CopyTo(memory); bytes = memory.ToArray(); }
+            }
+            var template = Parse(bytes);
+            const ulong id = 0xe12bade797f29f55UL;
+            if (header.Length != 120 || template.Invalid != 0 || template.Records.Count != 1 ||
+                !template.Records.ContainsKey(id) || template.RawValues(id).Count != 1 || template.RawValues(id)[0].Length != 120)
+                throw new StopException("payload", "Шаблон очистки кэша повреждён. В игру ничего не записано.");
+            Buffer.BlockCopy(header, 0, bytes, (int)template.Records[id][0] + 28, header.Length);
+            if (!Parse(bytes).RawValues(id)[0].SequenceEqual(header)) throw new FormatException("clean header");
+            return bytes;
+        }
     }
 
     // Raw LZ4 block (порт lz4_block_decode из game_inspect.py): строгие границы входа и выхода, любое нарушение - FormatException.
@@ -872,8 +891,10 @@ namespace Egoist.WXQRussian
         public FileRow Row;
         public string Relative, Target, Source, BeforeSha;
         public bool BeforeExists;
+        public byte[] SourceBytes;
         public string Candidate { get { return Row.Sha; } }
-        public bool Unchanged { get { return BeforeExists && BeforeSha == Row.Sha; } }
+        public bool Remove { get { return Row.Sha == null; } }
+        public bool Unchanged { get { return Remove ? !BeforeExists : BeforeExists && BeforeSha == Row.Sha; } }
     }
 
     // Нужное место по томам (запас 10 %). Не хватает - StopException("disk_space"): всё проверяется до первой записи, в игру ничего не записано.
@@ -1334,8 +1355,8 @@ namespace Egoist.WXQRussian
     {
         const ulong HeaderId = 0xe12bade797f29f55UL;
         const int HeaderBytes = 120;
-        static readonly Regex PackageId = new Regex(@"^[1-9][0-9]{0,9}$");
-        static readonly Regex RelativeName = new Regex(@"^packages/([1-9][0-9]{0,9})/(\1\.db|\1_0\.db|\1\.info)$");
+        static readonly Regex PackageId = new Regex(@"^(0|[1-9][0-9]{0,9})$");
+        static readonly Regex RelativeName = new Regex(@"^packages/(0|[1-9][0-9]{0,9})/(\1\.db|\1_[0-9]{1,10}\.db|\1\.info)$", RegexOptions.IgnoreCase);
         static readonly Regex MountLine = new Regex(@"MountPackage (\d+), prime, \d+ => succeed! .*?pkgHash:(\d+) basePkgHash:(\d+)");
 
         static string CloseMode = "none";
@@ -1648,11 +1669,12 @@ namespace Egoist.WXQRussian
         static List<string> GameHintsFromRegistry()
         {
             var hints = new List<string>();
+            foreach (var hiveKind in new[] { Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryHive.CurrentUser })
             foreach (var view in new[] { Microsoft.Win32.RegistryView.Registry64, Microsoft.Win32.RegistryView.Registry32 })
             {
                 try
                 {
-                    using (var hive = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, view))
+                    using (var hive = Microsoft.Win32.RegistryKey.OpenBaseKey(hiveKind, view))
                     using (var uninstall = hive.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"))
                     {
                         if (uninstall == null) continue;
@@ -1691,6 +1713,10 @@ namespace Egoist.WXQRussian
                 string desktop = Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory);
                 if (!string.IsNullOrEmpty(programs)) roots.Add(programs);
                 if (!string.IsNullOrEmpty(desktop)) roots.Add(desktop);
+                string userPrograms = Environment.GetFolderPath(Environment.SpecialFolder.Programs);
+                string userDesktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+                if (!string.IsNullOrEmpty(userPrograms)) roots.Add(userPrograms);
+                if (!string.IsNullOrEmpty(userDesktop)) roots.Add(userDesktop);
                 Type type = Type.GetTypeFromProgID("WScript.Shell");
                 if (type == null) return hints;
                 dynamic shell = Activator.CreateInstance(type);
@@ -1754,16 +1780,16 @@ namespace Egoist.WXQRussian
             // Ярлык из родителя папки игры открывается кнопкой «Запустить игру»: берём его только если игра внутри Program Files без ссылок
             // (как оригинальный лаунчер, LauncherPathTrusted), иначе подложенный в чужой папке ярлык не используется.
             string lnk = null;
-            if (LauncherPathTrusted(ctx.Game))
+            if (LauncherTrustRoots().Any(root => !string.IsNullOrEmpty(root) && ctx.Game.StartsWith(Util.NormPath(root) + "\\", StringComparison.OrdinalIgnoreCase)) && LauncherPathTrusted(ctx.Game))
                 lnk = Directory.GetFiles(ctx.Launcher, "*.lnk").OrderBy(x => x, StringComparer.OrdinalIgnoreCase).FirstOrDefault(x => LauncherPathTrusted(x));
             ctx.Result["launcher_lnk"] = lnk ?? "";
             FindLauncherExe(ctx);
             Log.Write("игра: " + ctx.Game);
         }
 
-        // Корни, где допустим оригинальный лаунчер для русского активатора: Program Files и Program Files (x86).
-        // Активатор запускает цель с правами администратора, поэтому цель не должна лежать там, где пишет обычный пользователь
-        // (путь игры берётся и из профилей Windows). В тестовой сборке корень задаёт WXQ_RU_TRUST_ROOT.
+        // Доверенные корни для поиска обычного ярлыка .lnk рядом с игрой.
+        // EXE русского активатора проверяется отдельно: допустим локальный путь без reparse-точек.
+        // В тестовой сборке корень задаёт WXQ_RU_TRUST_ROOT.
         static List<string> LauncherTrustRoots()
         {
             var roots = new List<string>();
@@ -1777,23 +1803,42 @@ namespace Egoist.WXQRussian
             return roots;
         }
 
-        // exe внутри доверенного корня, и ни он, ни каталоги на пути от корня не ссылки (junction, symlink).
+        // Локальный путь без reparse-точек; запуск отдельно проверяет активатор с учётом прав процесса.
         static bool LauncherPathTrusted(string exe)
         {
-            foreach (string root in LauncherTrustRoots())
+            try
             {
-                if (string.IsNullOrEmpty(root)) continue;
-                string prefix = Path.GetFullPath(root).TrimEnd('\\') + "\\";
-                if (!exe.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
-                string current = prefix.TrimEnd('\\');
-                foreach (string part in exe.Substring(prefix.Length).Split('\\'))
+                string full = Util.NormPath(exe), root = Path.GetPathRoot(full);
+                if (full.StartsWith("\\\\", StringComparison.Ordinal) || root == null || root.Length != 3 || root[1] != ':') return false;
+                string current = root;
+                if (Util.IsReparse(current)) return false;
+                foreach (string part in full.Substring(root.Length).Split('\\'))
                 {
-                    current = current + "\\" + part;
+                    current = Path.Combine(current, part);
                     if (Util.IsReparse(current)) return false;
                 }
                 return true;
             }
-            return false;
+            catch (Exception) { return false; }
+        }
+
+        static void AddLauncherHint(string hint, HashSet<string> roots)
+        {
+            if (string.IsNullOrWhiteSpace(hint)) return;
+            try
+            {
+                string text = hint.Trim();
+                if (text.StartsWith("\"")) { int end = text.IndexOf('"', 1); if (end > 1) text = text.Substring(1, end - 1); }
+                int exe = text.IndexOf(".exe", StringComparison.OrdinalIgnoreCase);
+                if (exe >= 0) text = text.Substring(0, exe + 4);
+                if (!Path.IsPathRooted(text)) return;
+                string dir = Directory.Exists(text) ? text : Path.GetDirectoryName(text);
+                if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return;
+                roots.Add(Util.NormPath(dir));
+                var parent = Directory.GetParent(dir);
+                if (parent != null) roots.Add(Util.NormPath(parent.FullName));
+            }
+            catch (Exception) { }
         }
 
         // Оригинальный exe лаунчера для русского активатора: по списку сборок launcher-profiles.json (в payload), путь строго внутри папки лаунчера
@@ -1803,13 +1848,26 @@ namespace Egoist.WXQRussian
         {
             ctx.Result["launcher_exe"] = "";
             ctx.Result["launcher_build"] = "";
+            ctx.Result["launcher_reason"] = "profile-not-found";
             string profiles = Path.Combine(ctx.Payload ?? "", "launcher-profiles.json");
             if (ctx.Payload == null || !File.Exists(profiles)) return;
             try
             {
-                string root = Util.NormPath(ctx.Launcher).TrimEnd('\\') + "\\";
+                var roots = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { Util.NormPath(ctx.Launcher) };
+                bool isolated = false;
+#if TESTBUILD
+                isolated = Environment.GetEnvironmentVariable("WXQ_RU_USERS_ROOT") != null;
+                string hints = Environment.GetEnvironmentVariable("WXQ_RU_TEST_HINTS");
+                if (!string.IsNullOrEmpty(hints)) foreach (string hint in hints.Split(';')) AddLauncherHint(hint, roots);
+#endif
+                if (!isolated)
+                {
+                    foreach (string pf in LauncherTrustRoots()) if (!string.IsNullOrEmpty(pf)) AddLauncherHint(Path.Combine(pf, "WXQLauncher"), roots);
+                    foreach (string hint in GameHintsFromRegistry().Concat(GameHintsFromShortcuts()).Concat(GameHintsFromDrives())) AddLauncherHint(hint, roots);
+                }
                 var data = Util.ReadJson(profiles);
                 if (data == null || Util.Num(data, "schema") != 1) return;
+                var matches = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 foreach (object item in Util.Items(data["builds"]))
                 {
                     var row = item as Dictionary<string, object>;
@@ -1817,13 +1875,21 @@ namespace Egoist.WXQRussian
                     if (string.IsNullOrEmpty(rel)) continue;
                     rel = rel.Replace('/', '\\').Trim('\\');
                     if (rel.Length == 0 || rel.Contains("..") || Path.IsPathRooted(rel) || !rel.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) continue;
-                    string exe = Path.GetFullPath(Path.Combine(ctx.Launcher, rel));
-                    if (!exe.StartsWith(root, StringComparison.OrdinalIgnoreCase) || !File.Exists(exe) || !LauncherPathTrusted(exe)) continue;
-                    ctx.Result["launcher_exe"] = exe;
-                    ctx.Result["launcher_build"] = Util.Str(row, "build") ?? "";
-                    Log.Write("оригинальный лаунчер: " + exe);
-                    return;
+                    foreach (string directory in roots)
+                    {
+                        string exe = Path.GetFullPath(Path.Combine(directory, rel));
+                        if (!exe.StartsWith(directory.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase) || !File.Exists(exe)) continue;
+                        if (!LauncherPathTrusted(exe)) { ctx.Result["launcher_reason"] = "unsafe-path"; continue; }
+                        matches[exe] = Util.Str(row, "build") ?? "";
+                    }
                 }
+                if (matches.Count > 1) { ctx.Result["launcher_reason"] = "ambiguous"; return; }
+                if (matches.Count == 0) return;
+                var match = matches.First();
+                ctx.Result["launcher_exe"] = match.Key;
+                ctx.Result["launcher_build"] = match.Value;
+                ctx.Result["launcher_reason"] = "found";
+                Log.Write("оригинальный лаунчер: " + match.Key);
             }
             catch (Exception error) { Log.Write("список сборок лаунчера не прочитан: " + error.Message); }
         }
@@ -2201,30 +2267,87 @@ namespace Egoist.WXQRussian
         static List<Op> PlanOverride(Context ctx, out string state)
         {
             var ops = new List<Op>();
-            CheckForeignPackages(ctx);
-            return PlanOwnPackages(ctx, ops, out state);
+            PlanOtherPackages(ctx, ops);
+            PlanOwnPackages(ctx, ops, out state);
+            if (state == "same" && ops.Any(o => !o.Unchanged)) state = "update";
+            return ops;
         }
 
-        // Чужие записи в override (официальный горячий патч) у пакетов, которых нет в установщике: любая неизвестная правка — остановка.
-        static void CheckForeignPackages(Context ctx)
+        static byte[] CacheHeader(Context ctx, string id, string catalog, byte[] expected)
+        {
+            RequireNoLinks(ctx, catalog);
+            try
+            {
+                if (new FileInfo(catalog).Length > 64L * 1024 * 1024) throw new FormatException("size");
+                var table = Catalog.Parse(File.ReadAllBytes(catalog));
+                var values = table.RawValues(HeaderId);
+                if (table.Invalid != 0 || values.Count != 1 || values[0].Length != HeaderBytes) throw new FormatException("header");
+                var header = values[0];
+                if (BitConverter.ToInt32(header, 0) != 12 || Encoding.ASCII.GetString(header, 4, 12) != "QTSF_PACKAGE")
+                    throw new FormatException("package signature");
+                if (expected != null && !header.SequenceEqual(expected)) throw new FormatException("different build or official update");
+                if (HeaderHash(header, 80) != HeaderHash(header, 88)) throw new FormatException("official update");
+                return header;
+            }
+            catch (FormatException)
+            {
+                throw new StopException("foreign", "Кэш пакета " + id + " повреждён или содержит официальное обновление для другой сборки. Его нельзя заменить старым переводом. Выполните штатную проверку файлов игры и повторите установку. Ничего не изменено.");
+            }
+        }
+
+        static Op CacheOp(Context ctx, Pkg p, string name, byte[] bytes)
+        {
+            string relative = "packages/" + p.Id + "/" + name;
+            string target = TargetPath(ctx, relative);
+            bool exists = File.Exists(target);
+            return new Op { Package = p, Relative = relative, Target = target, SourceBytes = bytes,
+                Row = new FileRow { Name = name, Sha = bytes == null ? null : Sha256Of(bytes), Bytes = bytes == null ? 0 : bytes.Length },
+                BeforeExists = exists, BeforeSha = exists ? Util.Sha(target) : null };
+        }
+
+        // Только файлы данных данного numeric-пакета: не .info, логи, пользовательские файлы или соседние каталоги.
+        static IEnumerable<string> CacheStorages(Context ctx, string id)
+        {
+            string dir = Path.Combine(ctx.Cache, id);
+            RequireNoLinks(ctx, dir);
+            if (!Directory.Exists(dir)) return new string[0];
+            var pattern = new Regex("^" + Regex.Escape(id) + @"_[0-9]{1,10}\.db$", RegexOptions.IgnoreCase);
+            var files = Directory.GetFiles(dir).Where(f => pattern.IsMatch(Path.GetFileName(f))).OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList();
+            foreach (string file in files) RequireNoLinks(ctx, file);
+            return files;
+        }
+
+        // Старые переводы могут оставлять ресурсы и в пакетах, которых уже нет в новом payload.
+        // Официальную delta отличаем по заголовку и журналу: сбрасывать её под видом перевода нельзя.
+        static void PlanOtherPackages(Context ctx, List<Op> ops)
         {
             var own = new HashSet<string>(ctx.M.Pkgs.Select(p => p.Id));
-            // Чужие записи в override (официальный горячий патч): любая неизвестная правка пакета — остановка.
             foreach (string dir in Directory.GetDirectories(ctx.Cache))
             {
                 string id = Path.GetFileName(dir);
                 if (!PackageId.IsMatch(id) || own.Contains(id)) continue;
+                RequireNoLinks(ctx, dir);
                 string catalog = Path.Combine(dir, id + ".db"), storage = Path.Combine(dir, id + "_0.db");
-                if (!File.Exists(catalog)) continue;
-                if (ctx.M.IsKnown("packages/" + id + "/" + id + ".db", Util.Sha(catalog)))
+                var storages = CacheStorages(ctx, id).ToList();
+                if (!File.Exists(catalog))
                 {
-                    if (File.Exists(storage) && !ctx.M.IsKnown("packages/" + id + "/" + id + "_0.db", Util.Sha(storage)))
-                        throw new StopException("foreign", "В кэше игры у пакета " + id + " есть данные, которые записал не наш перевод. Установщик их не трогает и ничего не меняет.");
+                    if (storages.Count != 0) throw new StopException("foreign", "У пакета " + id + " отсутствует каталог ресурсов. Выполните штатную проверку игры. Ничего не изменено.");
                     continue;
                 }
-                string reason = ForeignReason(catalog, storage, null);
-                if (reason != null)
-                    throw new StopException("foreign", "В кэше игры у пакета " + id + " есть чужие или неизвестные данные (" + reason + "), например от официального обновления ресурсов. Установщик их не трогает и ничего не меняет.");
+                byte[] header = CacheHeader(ctx, id, catalog, null);
+                var table = Catalog.Parse(File.ReadAllBytes(catalog));
+                if (table.Records.Count == 1 && storages.Count == 0) continue;
+                var p = new Pkg { Id = id };
+                string info = TargetPath(ctx, "packages/" + id + "/" + id + ".info");
+                if (ReadVersion(info) != ctx.M.GameVersion && !TransplantMode(ctx))
+                    throw new StopException("foreign", "Версия соседнего пакета " + id + " не совпала с игрой. Выполните штатную проверку файлов игры. Ничего не изменено.");
+                string prime = Path.Combine(ctx.Game, "WXQ_Data", "Package", "builtin", id, id + "_0.db");
+                RequireNoLinks(ctx, prime);
+                if (!File.Exists(prime) || HeaderHash(header, 80) != RequireLogHash(ctx, p, null))
+                    throw new StopException("foreign", "Не подтверждён оригинал соседнего пакета " + id + ". Выполните штатную проверку файлов игры. Ничего не изменено.");
+                ops.Add(CacheOp(ctx, p, id + ".db", Catalog.HeaderOnly(header)));
+                foreach (string file in storages) ops.Add(CacheOp(ctx, p, Path.GetFileName(file), null));
+                Log.Write("предусмотрена очистка прежнего перевода: пакет " + id + ", записей " + (table.Records.Count - 1));
             }
         }
 
@@ -2235,6 +2358,8 @@ namespace Egoist.WXQRussian
             {
                 string dir = Path.Combine(ctx.Cache, p.Id);
                 string catalog = Path.Combine(dir, p.Id + ".db"), storage = Path.Combine(dir, p.Id + "_0.db"), info = Path.Combine(dir, p.Id + ".info");
+                RequireNoLinks(ctx, info);
+                RequireNoLinks(ctx, catalog);
                 if (!File.Exists(info) || !File.Exists(catalog))
                     throw new StopException("cache_missing", "Игра ещё не создала кэш ресурсов для пакета " + p.Id + ". Запустите игру один раз, дойдите до меню, закройте её и повторите установку.");
                 string version = ReadVersion(info);
@@ -2244,18 +2369,15 @@ namespace Egoist.WXQRussian
                     throw new StopException("version", "Служебный файл версии пакета " + p.Id + " отличается от ожидаемого. Скорее всего, игра обновилась. Ничего не изменено.");
                 string catalogSha = Util.Sha(catalog);
                 bool ours = ctx.M.IsKnown("packages/" + p.Id + "/" + p.Id + ".db", catalogSha);
-                if (ours)
-                {
-                    if (File.Exists(storage) && !ctx.M.IsKnown("packages/" + p.Id + "/" + p.Id + "_0.db", Util.Sha(storage)))
-                        throw new StopException("foreign", "В кэше игры у пакета " + p.Id + " файл данных записан не нашим переводом. Установщик его не трогает и ничего не меняет.");
-                    anyOurs = true;
-                }
-                else
-                {
-                    string reason = ForeignReason(catalog, storage, Util.FromHex(p.HeaderHex));
-                    if (reason != null)
-                        throw new StopException("foreign", "В кэше игры у пакета " + p.Id + " есть чужие или неизвестные данные (" + reason + "). Установщик их не трогает и ничего не меняет.");
-                }
+                CacheHeader(ctx, p.Id, catalog, Util.FromHex(p.HeaderHex));
+                if (ours) anyOurs = true;
+                var payloadNames = new HashSet<string>(p.Files.Select(f => f.Name), StringComparer.OrdinalIgnoreCase);
+                foreach (string file in CacheStorages(ctx, p.Id))
+                    if (!payloadNames.Contains(Path.GetFileName(file)))
+                    {
+                        ops.Add(CacheOp(ctx, p, Path.GetFileName(file), null));
+                        allSame = false;
+                    }
                 foreach (var f in p.Files)
                 {
                     string relative = "packages/" + p.Id + "/" + f.Name;
@@ -2531,11 +2653,10 @@ namespace Egoist.WXQRussian
         // Скелет: ровно заголовок QTSF_PACKAGE (120 байт), без файла данных, pkgHash == basePkgHash == хеш prime из журнала игры.
         static byte[] ReadSkeleton(Context ctx, Pkg p, string catalog, string storage)
         {
-            string reason = ForeignReason(catalog, storage, null);
-            if (reason != null)
-                throw new StopException("cache_missing", "Кэш ресурсов пакета " + p.Id + " не похож на чистый, только что созданный игрой после обновления (" + reason + "). " + RefreshHint);
-            byte[] header = Catalog.Parse(File.ReadAllBytes(catalog)).RawValues(HeaderId)[0];
-            string logged = RequireLogHash(ctx, p, catalog);
+            byte[] header = CacheHeader(ctx, p.Id, catalog, null);
+            // Старый перевод мог быть записан позже журнала; актуальность подтверждается датами prime, а не датой overlay.
+            bool clean = ForeignReason(catalog, storage, null) == null && !CacheStorages(ctx, p.Id).Any();
+            string logged = RequireLogHash(ctx, p, clean ? catalog : null);
             if (HeaderHash(header, 80) != logged || HeaderHash(header, 88) != logged)
                 throw new StopException("cache_missing", "Заголовок кэша пакета " + p.Id + " не соответствует установленной версии игры (pkgHash не совпал с журналом). " + RefreshHint);
             return header;
@@ -2589,10 +2710,15 @@ namespace Egoist.WXQRussian
                 string relative = Util.Str(row, "relative");
                 if (relative == null || !relative.StartsWith(prefix, StringComparison.Ordinal)) continue;
                 string target = TargetPath(ctx, relative);
-                if (!File.Exists(target) || Util.Sha(target) != Util.Str(row, "candidate_sha256")) return false;
+                if ((File.Exists(target) ? Util.Sha(target) : null) != Util.Str(row, "candidate_sha256")) return false;
                 count++;
             }
             if (count == 0) return false;
+            var expectedStorages = new HashSet<string>(Util.Items(receipt["operations"]).Cast<Dictionary<string, object>>()
+                .Where(r => (Util.Str(r, "relative") ?? "").StartsWith(prefix, StringComparison.Ordinal) && Util.Str(r, "candidate_sha256") != null)
+                .Select(r => Util.Str(r, "relative")), StringComparer.OrdinalIgnoreCase);
+            foreach (string file in CacheStorages(ctx, id))
+                if (!expectedStorages.Contains(prefix + Path.GetFileName(file))) return false;
             string reinstall = "Перевод установлен пересадкой, но версия игры с тех пор изменилась (заголовок пакета " + id + " не соответствует журналу игры). Нажмите «Удалить перевод» и повторите установку. Ничего не изменено.";
             byte[] header;
             try { header = Catalog.Parse(File.ReadAllBytes(TargetPath(ctx, prefix + id + ".db"))).RawValues(HeaderId)[0]; }
@@ -2604,10 +2730,12 @@ namespace Egoist.WXQRussian
 
         static List<TransplantItem> PlanTransplant(Context ctx, out string state)
         {
-            CheckForeignPackages(ctx);
+            var cleanup = new List<Op>();
+            PlanOtherPackages(ctx, cleanup);
             var applied = FindAppliedTransplant(ctx);
             var items = new List<TransplantItem>();
-            int ours = 0;
+            bool same = applied != null && Util.Str(applied, "version") == ctx.M.Version && Util.Str(applied, "built") == ctx.M.Built && cleanup.Count == 0;
+            var skippedBefore = new HashSet<string>(applied == null ? new string[0] : Util.Items(applied.ContainsKey("skipped_packages") ? applied["skipped_packages"] : new List<object>()).Select(x => Convert.ToString(x)));
             foreach (var p in ctx.M.Pkgs)
             {
                 string dir = Path.Combine(ctx.Cache, p.Id);
@@ -2615,24 +2743,14 @@ namespace Egoist.WXQRussian
                 if (!File.Exists(info) || !File.Exists(catalog))
                     throw new StopException("cache_missing", "Игра ещё не создала кэш ресурсов для пакета " + p.Id + ". " + RefreshHint);
                 RequireNoLinks(ctx, catalog);
-                if (applied != null && ReceiptOwns(ctx, applied, p)) { ours++; continue; }
-                // Остаток прежней установки быстрым путём (файлы нашей сборки для другой версии игры): их нельзя принять ни за скелет, ни за чужие.
-                if (ctx.M.IsKnown("packages/" + p.Id + "/" + p.Id + ".db", Util.Sha(catalog)) ||
-                    (File.Exists(storage) && ctx.M.IsKnown("packages/" + p.Id + "/" + p.Id + "_0.db", Util.Sha(storage))))
-                    throw new StopException("reinstall", "В кэше пакета " + p.Id + " остались файлы прежней установки перевода (для другой версии игры). Нажмите «Удалить перевод» и повторите установку. Ничего не изменено.");
-                items.Add(new TransplantItem { Package = p, Catalog = catalog, Storage = storage, Header = ReadSkeleton(ctx, p, catalog, storage), CatalogSha = Util.Sha(catalog) });
+                bool owned = applied != null && ReceiptOwns(ctx, applied, p);
+                bool cleanSkipped = skippedBefore.Contains(p.Id) && ForeignReason(catalog, storage, null) == null && !CacheStorages(ctx, p.Id).Any();
+                if (!owned && !cleanSkipped) same = false;
+                items.Add(new TransplantItem { Package = p, Catalog = catalog, Storage = storage,
+                    Header = owned ? CacheHeader(ctx, p.Id, catalog, null) : ReadSkeleton(ctx, p, catalog, storage), CatalogSha = Util.Sha(catalog) });
             }
-            if (ours > 0 && (Util.Str(applied, "version") != ctx.M.Version || Util.Str(applied, "built") != ctx.M.Built))
-                throw new StopException("reinstall", "Перевод уже установлен другой версией установщика. Нажмите «Удалить перевод» и повторите установку. Ничего не изменено.");
-            if (ours > 0)
-            {
-                // Частичное владение: допустимо только если остальные пакеты и при прошлой установке не имели подходящих ресурсов.
-                var skippedBefore = new HashSet<string>(Util.Items(applied.ContainsKey("skipped_packages") ? applied["skipped_packages"] : new List<object>()).Select(x => Convert.ToString(x)));
-                if (items.Any(i => !skippedBefore.Contains(i.Package.Id)))
-                    throw new StopException("reinstall", "Перевод установлен не во всех пакетах этой сборки (часть кэша игры другая). Нажмите «Удалить перевод» и повторите установку. Ничего не изменено.");
-            }
-            state = ours > 0 ? "same" : "fresh";
-            return items;
+            state = same ? "same" : "fresh";
+            return same ? new List<TransplantItem>() : items;
         }
 
         class BuildResult
@@ -2732,9 +2850,9 @@ namespace Egoist.WXQRussian
             string dbPath = Path.Combine(builtDir, p.Id + ".db"), storagePath = Path.Combine(builtDir, p.Id + "_0.db");
             Util.RequireNotLink(dbPath);
             Util.RequireNotLink(storagePath);
-            Util.Copy(item.Catalog, dbPath, true);
+            File.WriteAllBytes(dbPath, Catalog.HeaderOnly(item.Header));
             Util.FlushToDisk(dbPath);
-            if (Util.Sha(dbPath) != item.CatalogSha) throw BadBuild(p.Id, "скелет изменился при копировании");
+            if (Util.Sha(item.Catalog) != item.CatalogSha) throw BadBuild(p.Id, "кэш изменился во время подготовки");
             Sdk.Load(sdkCopy);
             try { Sdk.Insert(builtDir, p.Id, matched); }
             catch (IOException error) { throw new StopException("sdk", "Библиотека игры не смогла собрать пакет " + p.Id + " (" + error.Message + "). В игру ничего не записано."); }
@@ -2792,10 +2910,24 @@ namespace Egoist.WXQRussian
             };
         }
 
+        static void BackupCacheOp(Context ctx, string labelDir, Op op)
+        {
+            RequireNoLinks(ctx, op.Target);
+            if (!op.BeforeExists || op.Unchanged) return;
+            string backup = Path.Combine(labelDir, op.Relative.Replace('/', '\\'));
+            Directory.CreateDirectory(Path.GetDirectoryName(backup));
+            Util.Copy(op.Target, backup, false);
+            Util.FlushToDisk(backup);
+            if (Util.Sha(backup) != op.BeforeSha || Util.Sha(op.Target) != op.BeforeSha)
+                throw new StopException("backup", "Кэш изменился во время резервного копирования. Ничего не изменено, повторите установку.");
+        }
+
         static void BackupTransplant(Context ctx)
         {
             string state;
             var items = PlanTransplant(ctx, out state);
+            var cleanup = new List<Op>();
+            PlanOtherPackages(ctx, cleanup);
             var needs = new SpaceNeeds();
             long dataNeed = 1048576, cacheNeed = 0;
             foreach (var item in items)
@@ -2803,7 +2935,9 @@ namespace Egoist.WXQRussian
                 long a = item.Package.File(item.Package.Id + ".db").Bytes, b = item.Package.File(item.Package.Id + "_0.db").Bytes;
                 dataNeed += 2 * Math.Max(0, Plan.Size(item.Catalog)) + a + b;   // копия скелета и собранные файлы (верхняя оценка)
                 cacheNeed = Math.Max(cacheNeed, Math.Max(a, b));
+                foreach (string storage in CacheStorages(ctx, item.Package.Id)) dataNeed += Math.Max(0, Plan.Size(storage));
             }
+            foreach (var op in cleanup) { dataNeed += Math.Max(0, Plan.Size(op.Target)) + op.Row.Bytes; cacheNeed = Math.Max(cacheNeed, op.Row.Bytes); }
             needs.Add(ctx.Data, dataNeed);
             needs.Add(ctx.Cache, cacheNeed);
             needs.Require();
@@ -2823,7 +2957,25 @@ namespace Egoist.WXQRussian
                     string id = item.Package.Id;
                     var built = BuildTransplant(ctx, item, Path.Combine(labelDir, "built", id), sdk);
                     skipped[id] = built.Skipped.Cast<object>().ToList();
-                    if (built.Applied.Count == 0) { skippedPackages.Add(id); continue; }
+                    if (built.Applied.Count == 0)
+                    {
+                        skippedPackages.Add(id);
+                        // Старый перевод в несовместимом пакете тоже снимается: останется проверенный оригинальный base header.
+                        var reset = CacheOp(ctx, item.Package, id + ".db", Catalog.HeaderOnly(item.Header));
+                        string clean = Path.Combine(labelDir, "built", id, id + ".db");
+                        Directory.CreateDirectory(Path.GetDirectoryName(clean));
+                        File.WriteAllBytes(clean, reset.SourceBytes);
+                        Util.FlushToDisk(clean);
+                        BackupCacheOp(ctx, labelDir, reset);
+                        rows.Add(TransplantRow(reset.Relative, reset.Target, reset.BeforeExists, reset.BeforeSha, reset.Candidate));
+                        foreach (string storage in CacheStorages(ctx, id))
+                        {
+                            var remove = CacheOp(ctx, item.Package, Path.GetFileName(storage), null);
+                            BackupCacheOp(ctx, labelDir, remove);
+                            rows.Add(TransplantRow(remove.Relative, remove.Target, remove.BeforeExists, remove.BeforeSha, null));
+                        }
+                        continue;
+                    }
                     applied[id] = built.Applied.Cast<object>().ToList();
                     string catalogRelative = "packages/" + id + "/" + id + ".db", storageRelative = "packages/" + id + "/" + id + "_0.db";
                     string catalogTarget = TargetPath(ctx, catalogRelative), storageTarget = TargetPath(ctx, storageRelative);
@@ -2834,10 +2986,31 @@ namespace Egoist.WXQRussian
                     if (Util.Sha(backup) != item.CatalogSha || Util.Sha(catalogTarget) != item.CatalogSha)
                         throw new StopException("backup", "Файл игры изменился во время создания резервной копии. Ничего не изменено, повторите установку.");
                     rows.Add(TransplantRow(catalogRelative, catalogTarget, true, item.CatalogSha, built.CatalogSha));
-                    rows.Add(TransplantRow(storageRelative, storageTarget, false, null, built.StorageSha));
+                    Op previousStorage = null;
+                    foreach (string storage in CacheStorages(ctx, id))
+                    {
+                        string relative = "packages/" + id + "/" + Path.GetFileName(storage);
+                        var op = CacheOp(ctx, item.Package, Path.GetFileName(storage), null);
+                        BackupCacheOp(ctx, labelDir, op);
+                        if (!string.Equals(relative, storageRelative, StringComparison.OrdinalIgnoreCase)) rows.Add(TransplantRow(relative, storage, true, op.BeforeSha, null));
+                        else previousStorage = op;
+                    }
+                    rows.Add(TransplantRow(storageRelative, storageTarget, previousStorage != null, previousStorage == null ? null : previousStorage.BeforeSha, built.StorageSha));
                 }
-                if (rows.Count == 0)
+                if (applied.Count == 0)
                     throw new StopException("no_match", "В установленной версии игры нет ни одного ресурса, к которому подходит этот перевод (игра изменила все переводимые файлы). Ничего не изменено.");
+                foreach (var op in cleanup)
+                {
+                    BackupCacheOp(ctx, labelDir, op);
+                    if (!op.Remove)
+                    {
+                        string built = Path.Combine(labelDir, "built", op.Package.Id, op.Row.Name);
+                        Directory.CreateDirectory(Path.GetDirectoryName(built));
+                        File.WriteAllBytes(built, op.SourceBytes);
+                        Util.FlushToDisk(built);
+                    }
+                    rows.Add(TransplantRow(op.Relative, op.Target, op.BeforeExists, op.BeforeSha, op.Candidate));
+                }
                 var receipt = new Dictionary<string, object>
                 {
                     { "schema", 1 }, { "status", "prepared" }, { "label", label }, { "product", ctx.M.Product }, { "version", ctx.M.Version }, { "built", ctx.M.Built },
@@ -2880,18 +3053,36 @@ namespace Egoist.WXQRussian
                 if (match == null || !match.Success || relative.EndsWith(".info", StringComparison.Ordinal))
                     throw new StopException("restore", "В резервной копии недопустимое имя файла: " + relative);
                 string id = match.Groups[1].Value;
-                var pkg = ctx.M.Pkgs.FirstOrDefault(x => x.Id == id);
-                if (pkg == null) throw new StopException("restore", "Резервная копия относится к пакету, которого нет в этом установщике: " + id);
+                var pkg = ctx.M.Pkgs.FirstOrDefault(x => x.Id == id) ?? new Pkg { Id = id };
                 string name = relative.Substring(relative.LastIndexOf('/') + 1);
                 string source = Path.Combine(ctx.BackupRoot, Util.Str(receipt, "label") ?? "", "built", id, name);
-                if (!File.Exists(source) || Util.IsReparse(source))
+                bool remove = Util.Str(row, "candidate_sha256") == null;
+                if (!remove && (!File.Exists(source) || Util.IsReparse(source)))
                     throw new StopException("restore", "Собранный файл " + relative + " не найден в резервной копии. Повторите установку.");
-                var op = new Op { Package = pkg, Row = new FileRow { Name = name, Sha = Util.Str(row, "candidate_sha256"), Bytes = new FileInfo(source).Length }, Relative = relative, Target = TargetPath(ctx, relative), Source = source };
+                var op = new Op { Package = pkg, Row = new FileRow { Name = name, Sha = Util.Str(row, "candidate_sha256"), Bytes = remove ? 0 : new FileInfo(source).Length }, Relative = relative, Target = TargetPath(ctx, relative), Source = source };
                 op.BeforeExists = File.Exists(op.Target);
                 op.BeforeSha = op.BeforeExists ? Util.Sha(op.Target) : null;
                 ops.Add(op);
             }
             return ops;
+        }
+
+        static void CheckTransplantShape(Context ctx, Dictionary<string, object> receipt, bool installed)
+        {
+            var rows = Util.Items(receipt["operations"]).Cast<Dictionary<string, object>>().ToDictionary(r => Util.Str(r, "relative"), StringComparer.OrdinalIgnoreCase);
+            var ids = new HashSet<string>(ctx.M.Pkgs.Select(p => p.Id));
+            foreach (string relative in rows.Keys) ids.Add(RelativeName.Match(relative).Groups[1].Value);
+            foreach (string id in ids)
+                foreach (string file in CacheStorages(ctx, id))
+                {
+                    string relative = "packages/" + id + "/" + Path.GetFileName(file);
+                    if (!rows.ContainsKey(relative) || (installed && Util.Str(rows[relative], "candidate_sha256") == null))
+                        throw new StopException(installed ? "verify" : "changed", "В кэше пакета " + id + " появился остаточный файл " + Path.GetFileName(file) + ". Повторите установку.");
+                }
+            var cleanup = new List<Op>();
+            PlanOtherPackages(ctx, cleanup);
+            if (cleanup.Any(o => installed || !rows.ContainsKey(o.Relative)))
+                throw new StopException(installed ? "verify" : "changed", "Состав соседних пакетов изменился после подготовки установки. Повторите установку.");
         }
 
         static void VerifyTransplant(Context ctx, string label)
@@ -2905,10 +3096,11 @@ namespace Egoist.WXQRussian
             else receipt = FindAppliedTransplant(ctx);
             if (receipt == null || !IsTransplantReceipt(receipt))
                 throw new StopException("verify", "Не найдена запись об установке пересадкой. Выполните удаление перевода и повторите.");
+            CheckTransplantShape(ctx, receipt, true);
             foreach (var row in Util.Items(receipt["operations"]).Cast<Dictionary<string, object>>())
             {
                 string target = TargetPath(ctx, Util.Str(row, "relative"));
-                if (!File.Exists(target) || Util.Sha(target) != Util.Str(row, "candidate_sha256"))
+                if ((File.Exists(target) ? Util.Sha(target) : null) != Util.Str(row, "candidate_sha256"))
                     throw new StopException("verify", "После установки файл " + Util.Str(row, "relative") + " не совпал с эталоном. Выполните удаление перевода и повторите.");
             }
             var appliedAll = (Dictionary<string, object>)receipt["applied_resources"];
@@ -3095,8 +3287,11 @@ namespace Egoist.WXQRussian
             string state;
             bool transplant = IsTransplantReceipt(receipt);
             if (transplant != TransplantMode(ctx)) throw new StopException("changed", "Версия игры изменилась после создания резервной копии. Ничего не заменено, повторите установку.");
+            if (transplant) CheckTransplantShape(ctx, receipt, false);
             var ops = transplant ? TransplantOps(ctx, receipt, label) : PlanOverride(ctx, out state);
-            var recorded = Util.Items(receipt["operations"]).Cast<Dictionary<string, object>>().ToDictionary(r => Util.Str(r, "relative"));
+            var recorded = Util.Items(receipt["operations"]).Cast<Dictionary<string, object>>().ToDictionary(r => Util.Str(r, "relative"), StringComparer.OrdinalIgnoreCase);
+            if (ops.Count != recorded.Count || ops.Any(o => !recorded.ContainsKey(o.Relative)))
+                throw new StopException("changed", "Состав кэша изменился после резервного копирования. Ничего не заменено, повторите установку.");
             foreach (var op in ops)
             {
                 var r = recorded[op.Relative];
@@ -3114,11 +3309,22 @@ namespace Egoist.WXQRussian
                 {
                     if (op.Unchanged) continue;
                     RequireClosed(ctx);
+                    RequireNoLinks(ctx, op.Target);
+                    if (op.Remove)
+                    {
+                        string current = File.Exists(op.Target) ? Util.Sha(op.Target) : null;
+                        if (current != op.BeforeSha) throw new IOException("файл кэша изменился во время очистки");
+                        if (current != null) File.Delete(op.Target);
+                        if (File.Exists(op.Target)) throw new IOException("остаточный файл кэша не удалён");
+                        Log.Write("очищен " + op.Relative);
+                        continue;
+                    }
                     string stage = op.Target + ".ru-stage-" + label;
                     try
                     {
                         Util.RequireNotLink(stage);
-                        Util.Copy(op.Source, stage, true);
+                        if (op.SourceBytes != null) File.WriteAllBytes(stage, op.SourceBytes);
+                        else Util.Copy(op.Source, stage, true);
                         Util.FlushToDisk(stage);
                         if (Util.Sha(stage) != op.Candidate) throw new IOException("подготовленный файл не совпал с эталоном");
                         string now = File.Exists(op.Target) ? Util.Sha(op.Target) : null;
@@ -3185,6 +3391,14 @@ namespace Egoist.WXQRussian
             string state;
             PlanOverride(ctx, out state);
             if (state != "same") throw new StopException("verify", "Итоговая проверка кэша игры не прошла. Выполните удаление перевода и повторите.");
+            if (!string.IsNullOrEmpty(label))
+                foreach (var row in Util.Items(Util.ReadJson(ReceiptPath(ctx, label))["operations"]).Cast<Dictionary<string, object>>())
+                {
+                    string target = TargetPath(ctx, Util.Str(row, "relative"));
+                    string actual = File.Exists(target) ? Util.Sha(target) : null;
+                    if (actual != Util.Str(row, "candidate_sha256"))
+                        throw new StopException("verify", "Проверка очистки кэша не прошла: " + Util.Str(row, "relative") + ". Выполните откат и повторите установку.");
+                }
             var stateFile = new Dictionary<string, object>
             {
                 { "installed", true }, { "version", ctx.M.Version }, { "built", ctx.M.Built }, { "game_version", ctx.M.GameVersion },
@@ -3208,10 +3422,23 @@ namespace Egoist.WXQRussian
                 throw new StopException("restore", "Резервная копия относится к другой папке игры (" + gameRoot + ").");
             var rows = Util.Items(receipt["operations"]).Cast<Dictionary<string, object>>().ToList();
             var work = new List<Dictionary<string, object>>();
+            // Каталог и все его хранилища составляют один пакет. После официального обновления нельзя
+            // вернуть удалённые старые _1/_2 к новому каталогу, даже если самих _1/_2 сейчас нет.
+            var changedPackages = new HashSet<string>();
             foreach (var row in rows)
             {
                 string relative = Util.Str(row, "relative");
                 string destination = TargetPath(ctx, relative);
+                string current = File.Exists(destination) ? Util.Sha(destination) : null;
+                string before = Util.Str(row, "before_sha256"), candidate = Util.Str(row, "candidate_sha256");
+                if (current != null && current != before && current != candidate)
+                    changedPackages.Add(RelativeName.Match(relative).Groups[1].Value);
+            }
+            foreach (var row in rows)
+            {
+                string relative = Util.Str(row, "relative");
+                string destination = TargetPath(ctx, relative);
+                if (changedPackages.Contains(RelativeName.Match(relative).Groups[1].Value)) { SkipForeign(ctx, relative); continue; }
                 if (!Util.SamePath(Util.Str(row, "target"), destination)) throw new StopException("restore", "Путь в резервной копии не совпадает с папкой игры: " + relative);
                 bool beforeExists = Convert.ToBoolean(row["before_exists"]);
                 string before = Util.Str(row, "before_sha256"), candidate = Util.Str(row, "candidate_sha256");
@@ -3551,7 +3778,7 @@ namespace Egoist.WXQRussian
                     string before = Util.Str(pair.Value, "before_sha256"), wanted = Util.Str(pair.Value, "candidate_sha256");
                     if (before == wanted) continue;
                     string target = Path.Combine(ctx.Cache, id, pair.Key.Substring(pair.Key.LastIndexOf('/') + 1));
-                    if (ours && (wanted == null || !File.Exists(target) || Util.Sha(target) != wanted)) ours = false;
+                    if (ours && (File.Exists(target) ? Util.Sha(target) : null) != wanted) ours = false;
                 }
                 foreach (string id in ids)
                 {
@@ -4099,7 +4326,7 @@ namespace Egoist.WXQRussian
                 }
             }
             if (!afterInstalled)
-                throw new StopException("setup_failed", (update ? "Обновление до " + m.Version : "Возврат перевода") + " не удался, перевод сейчас снят, игра в исходном виде. " + text2);
+                throw new StopException("setup_failed", (update ? "Обновление до " + m.Version : "Возврат перевода") + " не удался, перевод сейчас снят, восстановлено состояние до его установки. " + text2);
             throw new StopException("setup_failed", (update ? "Обновление до " + m.Version : "Возврат перевода") + " не установился. " + text2);
         }
 

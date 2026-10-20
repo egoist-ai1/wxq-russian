@@ -1,0 +1,19 @@
+{
+  "UpdateTimeMinute": "{0} мин",
+  "UIEmbattleScore": "{0} очк.",
+  "SupernovaLordChooseTipsBuffDes1": "{0} очк.",
+  "PvpRoomTipExpandKingScore": "{0} очк.",
+  "GameSeasonRankScore": "{0} очк.",
+  "CommonChineseRankScore": "{0} очк.",
+  "UITRAttributeLabel_1": "Ключевой",
+  "EmbattleCoreType_1": "Ключевой герой",
+  "TheApexArena": "Дуэль асов",
+  "SimpleRankLevel6": "Алмаз",
+  "ShopBuy_Common_Tail": " на покупку {0}",
+  "XianTiaoDraw_RedeemSingleConfirmTipFront": "Использовать ",
+  "XianTiaoDraw_RedeemSingleConfirmTip": " для обмена на {0}?",
+  "UICommonSelfGiftPackConfirmPopDesc1": "Потратить ",
+  "UICommonSelfGiftPackConfirmPopDesc2": " на покупку {0}?",
+  "ShopBuy_Common": "Потратить ",
+  "settingGamePlay": "Функции"
+}

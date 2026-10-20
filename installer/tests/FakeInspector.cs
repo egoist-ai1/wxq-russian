@@ -21,6 +21,14 @@ using System.Windows.Forms;
 
 static class FakeInspector
 {
+    sealed class PassiveForm : Form
+    {
+        protected override bool ShowWithoutActivation { get { return true; } }
+        protected override CreateParams CreateParams
+        {
+            get { var p = base.CreateParams; p.ExStyle |= 0x08000000; return p; }
+        }
+    }
     static readonly JavaScriptSerializer Js = new JavaScriptSerializer();
     static readonly object LogLock = new object();
     static TcpListener listener;
@@ -61,7 +69,7 @@ static class FakeInspector
         }) { IsBackground = true };
         waiter.Start();
 
-        var form = new Form { Text = "FakeLauncher", StartPosition = FormStartPosition.Manual, Location = new Point(-32000, -32000), Size = new Size(100, 60) };
+        var form = new PassiveForm { Text = "FakeLauncher", StartPosition = FormStartPosition.Manual, Location = new Point(-32000, -32000), Size = new Size(100, 60) };
         if (Env("FAKE_IGNORECLOSE", "") == "1") form.FormClosing += (s, e) => { e.Cancel = true; };
         Application.Run(form);
         return 0;

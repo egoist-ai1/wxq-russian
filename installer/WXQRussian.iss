@@ -151,7 +151,7 @@ Filename: "{app}\WXQTray.exe"; Flags: nowait runasoriginaluser skipifsilent
 
 #ifdef WithLauncher
 [Icons]
-; Значок берём у оригинального лаунчера. Манифест активатора сам запрашивает права администратора.
+; Значок берём у оригинального лаунчера. Активатор запускается от обычного пользователя (asInvoker).
 Name: "{code:DesktopDir}\Honor of Kings ACE (RU)"; Filename: "{app}\launcher\WXQLauncherRU.exe"; WorkingDir: "{app}\launcher"; IconFilename: "{code:OriginalLauncherExe}"; Comment: "Оригинальный лаунчер с русским переводом"; Check: LauncherWanted
 Name: "{code:StartDir}\Honor of Kings ACE (RU)"; Filename: "{app}\launcher\WXQLauncherRU.exe"; WorkingDir: "{app}\launcher"; IconFilename: "{code:OriginalLauncherExe}"; Comment: "Оригинальный лаунчер с русским переводом"; Check: LauncherWanted
 
@@ -237,7 +237,7 @@ var
   ToggleImage: TBitmapImage;
   ToggleTitle, ToggleNote: TNewStaticText;
   LauncherOn: Boolean;     // переключатель «Русский лаунчер» (по умолчанию ВКЛЮЧЁН, когда лаунчер есть в сборке; функция новая; /LAUNCHERRU=0 выключает, в том числе в тихом режиме)
-  LauncherExe, LauncherBuildText: String;   // оригинальный 王者万象棋.exe, найденный помощником (пусто, пока поиск не выполнялся)
+  LauncherExe, LauncherBuildText, LauncherFindReason: String;   // оригинальный 王者万象棋.exe и результат поиска
   UpdateMode, UpdateRestored: Boolean;   // /UPDATE=1 (запуск из автообновления): reinstall и pending снимаются откатом; UpdateRestored - откат был, а установка после него не прошла
   Busy: Boolean;  // идёт работа помощника: нажатия кнопок и закрытие игнорируются
   Mode: Integer;  // 0 приветствие, 1 сбой, 2 готово, 3 удалено
@@ -1064,15 +1064,11 @@ begin
   Result := ExpandConstant('{autoprograms}\Egoist');
 end;
 
-// Цель активатора только в Program Files. В тестовой сборке проверку целиком делает помощник (WXQ_RU_TRUST_ROOT): тесты кладут «лаунчер» во временную папку.
+// Активатор работает от обычного пользователя. Разрешён локальный exe; ссылки дополнительно отвергает помощник и активатор.
 function LauncherTargetTrusted(Exe: String): Boolean;
 begin
-#ifdef TestBuild
-  Result := True;
-#else
-  Result := (Pos(Lowercase(ExpandConstant('{commonpf64}')) + '\', Lowercase(Exe)) = 1) or
-            (Pos(Lowercase(ExpandConstant('{commonpf32}')) + '\', Lowercase(Exe)) = 1);
-#endif
+  Result := (Length(Exe) > 3) and (Copy(Exe, 2, 2) = ':\') and
+    (CompareText(ExtractFileExt(Exe), '.exe') = 0) and FileExists(Exe);
 end;
 
 function OriginalLauncherExe(Param: String): String;
@@ -1607,7 +1603,7 @@ begin
   begin
     ClosingShown := False;
     if Step >= 1 then StepDetail[Step].Caption := PreClosingCaption
-    else DetailLabel.Caption := 'Возвращаю исходные файлы по резервным копиям.';
+    else DetailLabel.Caption := 'Восстанавливаю файлы по резервным копиям.';
   end;
   if (Step >= 1) and (Item <> '') then StepDetail[Step].Caption := Item;
   UiLiveHook(Step, Lines);
@@ -1777,10 +1773,10 @@ function InfoWhatIs: String;
 begin
 #ifdef WithLauncher
   Result := 'Ставится: тексты игры и картинки интерфейса (кнопки, ранги, вывеска «Новости»). ' +
-    'Часть картинок и экран загрузки остаются на китайском: их нельзя заменить, не рискуя игрой.';
+    'Некоторые изображения и ранние экраны игры ещё могут оставаться на китайском.';
 #else
   Result := 'Ставится: тексты игры и картинки интерфейса (кнопки, ранги, вывеска «Новости»).' + NL +
-    'Не входит: лаунчер остаётся на китайском; часть картинок и экран загрузки тоже остаются на китайском, их нельзя заменить, не рискуя игрой.';
+    'Лаунчер остаётся на китайском. Некоторые изображения и ранние экраны игры ещё могут оставаться на китайском.';
 #endif
 end;
 
@@ -1807,17 +1803,17 @@ end;
 function InfoInstalled: String;
 begin
 #ifdef WithLauncher
-  Result := '«Переустановить» запишет файлы перевода заново, «Удалить перевод» вернёт исходные файлы игры. ' +
+  Result := '«Переустановить» запишет файлы перевода заново, «Удалить перевод» восстановит файлы до установки перевода. ' +
     'Игру и лаунчер перед этим закройте.' + NL + NL + InfoWhatIs;
 #else
-  Result := '«Переустановить» запишет файлы перевода заново, «Удалить перевод» вернёт исходные файлы игры. ' +
+  Result := '«Переустановить» запишет файлы перевода заново, «Удалить перевод» восстановит файлы до установки перевода. ' +
     'Игру и лаунчер перед этим закройте.' + NL + NL + InfoWhatIs + NL + NL + InfoAfterUpdate;
 #endif
 end;
 
 function InfoInterrupted: String;
 begin
-  Result := 'Прошлая установка или удаление не завершились. «Удалить перевод» вернёт исходные файлы игры по резервным копиям ' +
+  Result := 'Прошлая установка или удаление не завершились. «Удалить перевод» восстановит файлы до установки перевода по резервным копиям ' +
     '(в том числе если запись успела пройти только частично). После этого перевод можно установить заново.' + NL + NL +
     'Игру и лаунчер перед этим закройте, в том числе значок в области уведомлений.';
 end;
@@ -1831,28 +1827,29 @@ end;
 function LauncherOffReason: String;
 begin
   if not LauncherOn then Result := 'вы выключили его в начале установки'
-  else Result := 'оригинальный лаунчер не найден в Program Files';
+  else if LauncherFindReason = 'ambiguous' then Result := 'найдено несколько установок лаунчера'
+  else if LauncherFindReason = 'unsafe-path' then Result := 'путь лаунчера содержит ссылку или сетевой каталог'
+  else Result := 'подходящая версия оригинального лаунчера не найдена; нужен профиль этой сборки';
 end;
 
 function InfoFinished(HasLauncher: Boolean): String;
 begin
   if LauncherWanted then
   begin
-    Result := 'Переведена игра и лаунчер. Русский лаунчер запускается ярлыком «Honor of Kings ACE (RU)»: он открывает оригинальный ' +
-      'лаунчер без изменения его файлов и подключает перевод; Windows спросит разрешение администратора. ' +
+    Result := 'Переведена игра, перевод лаунчера подготовлен. Русский лаунчер запускается ярлыком «Honor of Kings ACE (RU)»: он открывает оригинальный ' +
+      'лаунчер без изменения его файлов и подключает перевод от обычного пользователя. ' +
       'Русский лаунчер включён по умолчанию; функция новая и не проверена в игре с защитой ACE. Если подключить перевод ' +
       'не получится, откроется обычный лаунчер на китайском. Оригинальный ярлык лаунчера остаётся прежним. ' +
       'Чтобы убрать русский лаунчер, нажмите «Удалить перевод» и поставьте перевод заново с выключенным переключателем (в тихом режиме: /LAUNCHERRU=0).' +
-      NL + NL + 'Часть картинок и экран загрузки остаются на китайском: их нельзя заменить, не рискуя игрой. Удалить перевод: «Установка и удаление программ». После обновления игры запустите её один раз, затем установите перевод заново; новое останется китайским.';
+      NL + NL + 'Некоторые изображения и ранние экраны игры ещё могут оставаться на китайском. Удалить перевод: «Установка и удаление программ». После обновления игры запустите её один раз, затем установите перевод заново; новое останется китайским.';
     Exit;
   end;
 #ifdef WithLauncher
   Result := 'Переведена игра. Русский лаунчер не установлен (' + LauncherOffReason + '): лаунчер остаётся на китайском.' + NL + NL +
-    'Часть картинок и экран загрузки остаются на китайском: их нельзя заменить, не рискуя игрой.' + NL + NL;
+    'Некоторые изображения и ранние экраны игры ещё могут оставаться на китайском.' + NL + NL;
 #else
-  Result := 'Переведена игра. Лаунчер остаётся на китайском: его перевод работает только через подключение к памяти ' +
-    'процесса лаунчера, это требует прав администратора и не проверено с защитой ACE, поэтому в установщик не входит.' +
-    NL + NL + 'Часть картинок и экран загрузки остаются на китайском: их нельзя заменить, не рискуя игрой.' + NL + NL;
+  Result := 'Переведена игра. Перевод лаунчера в эту сборку не включён.' +
+    NL + NL + 'Некоторые изображения и ранние экраны игры ещё могут оставаться на китайском.' + NL + NL;
 #endif
   if HasLauncher then
     Result := Result + 'Кнопка «Запустить игру» открывает оригинальный лаунчер. '
@@ -1975,7 +1972,7 @@ begin
     ResetSteps;
     StartTick := GetTickCount;
     ShowBarOnly;
-    StateLabel.Caption := 'Возвращаю исходные файлы';
+    StateLabel.Caption := 'Восстанавливаю файлы';
     DetailLabel.Caption := 'Игра и лаунчер должны быть закрыты.';
     Busy := True;
     RemoveMode := True;
@@ -2144,6 +2141,7 @@ begin
     SvScreen := 'done';
     SvState := 'finished';
     SvStep := 6;
+    if LauncherAvailable and LauncherOn and not LauncherWanted then SvNote := 'Лаунчер не переведён: ' + LauncherOffReason + '.';
     ShownPermille := 1000;
   end
   else
@@ -2759,15 +2757,16 @@ begin
   LauncherLnk := ToolValue('launcher_lnk');
   LauncherExe := ToolValue('launcher_exe');
   LauncherBuildText := ToolValue('launcher_build');
-  // Вторая проверка поверх помощника: цель активатора, который запускается с правами администратора, только в Program Files.
+  LauncherFindReason := ToolValue('launcher_reason');
+  // Вторая проверка локального пути поверх помощника.
   if (LauncherExe <> '') and not LauncherTargetTrusted(LauncherExe) then
   begin
-    Log('Оригинальный лаунчер вне Program Files, русский лаунчер не ставится: ' + LauncherExe);
+    Log('Недопустимый локальный путь лаунчера: ' + LauncherExe);
     LauncherExe := '';
     LauncherBuildText := '';
   end;
   if LauncherAvailable and LauncherOn and (LauncherExe = '') then
-    Log('Русский лаунчер не ставится: оригинальный лаунчер не найден в Program Files рядом с игрой');
+    Log('Русский лаунчер не ставится: ' + LauncherOffReason);
   GameParam := ' --game "' + FoundGame + '"';
   SetStep(1, StDone, ShortPath(FoundGame));
 
@@ -2790,7 +2789,7 @@ begin
       begin
         SetStep(2, StFailed, '');
         LastCode := ToolValue('code');
-        LastFailure := 'Прежний перевод снят, игра в исходном виде. ' + FailureText;
+        LastFailure := 'Прежний перевод снят, восстановлено состояние до его установки. ' + FailureText;
         UpdateRestored := True;
         Result := LastFailure;
         Exit;

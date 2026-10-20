@@ -680,7 +680,7 @@ namespace WXQSetup
             var ai = Ico.Make("alert", 20, Tk.Danger); ai.Margin = new Thickness(0, 0, 10, 0); qrow.Children.Add(ai);
             qrow.Children.Add(Tk.TB("Удалить перевод?", 15, Tk.Text));
             q.Children.Add(qrow);
-            var qs = Tk.TB("Файлы игры вернутся к исходным. Запущенные игру и лаунчер установщик закроет сам.", 12.5, Tk.Muted, Tk.Body, 18); qs.Margin = new Thickness(30, 4, 0, 0); q.Children.Add(qs);
+            var qs = Tk.TB("Вернётся состояние файлов до установки перевода. Запущенные игру и лаунчер установщик закроет сам.", 12.5, Tk.Muted, Tk.Body, 18); qs.Margin = new Thickness(30, 4, 0, 0); q.Children.Add(qs);
             t.Children.Add(q);
             var no = new Btn(BK.Secondary, "Отмена", null, null, 44, 112); no.Click += delegate { confirmRemove = false; Show(back); };
             var yes = new Btn(BK.Danger, "Удалить", "trash", null, 44, 148); yes.Click += delegate { confirmRemove = false; Fire("remove"); };
@@ -720,7 +720,7 @@ namespace WXQSetup
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(340) });
             var left = new StackPanel();
             bool removing = S.Op == "remove";
-            left.Children.Add(Tk.TB(removing ? "Возвращаю исходные файлы" : "Устанавливаю перевод", 22, Tk.Text, Tk.Display, 28));
+            left.Children.Add(Tk.TB(removing ? "Восстанавливаю файлы" : "Устанавливаю перевод", 22, Tk.Text, Tk.Display, 28));
             var pctRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 14, 0, 0) };
             pctText = Tk.TB("0", 88, Tk.Text, Tk.Body, 96);
             Typography.SetNumeralAlignment(pctText, FontNumeralAlignment.Tabular);
@@ -801,8 +801,8 @@ namespace WXQSetup
             }
             if (s.Op == "remove")
             {
-                lead = "Возвращаю исходные файлы игры по резервным копиям.";
-                more = "Файлы перевода заменяются сохранёнными оригиналами, затем запись о переводе снимается из «Установки и удаления программ». Копии не трогаются, пока откат не закончится. Если игра или лаунчер запущены, установщик закроет их сам; если откат прервётся, нажмите «Удалить перевод» ещё раз: он продолжится.";
+                lead = "Восстанавливаю файлы по резервным копиям.";
+                more = "Возвращаются сохранённые перед установкой файлы, затем запись о переводе снимается из «Установки и удаления программ». Копии не трогаются, пока откат не закончится. Если игра или лаунчер запущены, установщик закроет их сам; если откат прервётся, нажмите «Удалить перевод» ещё раз: он продолжится.";
                 return;
             }
             switch (s.Step)
@@ -817,7 +817,7 @@ namespace WXQSetup
                     return;
                 case 3:
                     lead = "Сохраняю копии файлов игры, которые будут заменены.";
-                    more = "Копии лежат в папке данных русификатора (ProgramData\\Egoist\\WXQ-Russian\\backup) вместе с отметкой о каждом файле. По ним «Удалить перевод» вернёт игру в исходный вид, даже если установка прервётся. Если места на диске мало, установщик скажет об этом до записи.";
+                    more = "Копии лежат в папке данных русификатора (ProgramData\\Egoist\\WXQ-Russian\\backup) вместе с отметкой о каждом файле. По ним «Удалить перевод» восстановит состояние до установки перевода, даже если установка прервётся. Если места на диске мало, установщик скажет об этом до записи.";
                     return;
                 case 4:
                     lead = "Записываю перевод в файлы игры: тексты, картинки интерфейса, перенос слов.";
@@ -929,10 +929,11 @@ namespace WXQSetup
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(352) });
             var left = new StackPanel();
             left.Children.Add(StatusIcon("check", Tk.Success));
-            const string ImagesNote = "Часть картинок и экран загрузки остаются на китайском: их нельзя заменить, не рискуя игрой.";
+            const string ImagesNote = "Некоторые изображения и ранние экраны игры ещё могут оставаться на китайском.";
             string lede = S.LauncherInstalled
-                ? "Игра и лаунчер переведены. " + ImagesNote
+                ? "Игра переведена, перевод лаунчера подготовлен. " + ImagesNote
                 : "Игра переведена, лаунчер остаётся на китайском. " + ImagesNote;
+            if (!string.IsNullOrEmpty(S.Note)) lede += " " + S.Note;
             left.Children.Add(Title("Перевод установлен", lede, 420));
             var com = new StackPanel { Margin = new Thickness(0, 28, 0, 0) }; com.Children.Add(Tk.TB("Сообщество", 12, Tk.Muted));
             var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 0) };
@@ -948,7 +949,7 @@ namespace WXQSetup
             var card = new StackPanel();
             card.Children.Add(Tk.TB("Что дальше", 12, Tk.Muted));
             var l1 = ItemRow("play", S.HasLauncherShortcut ? "Запустите игру" : "Откройте игру вручную",
-                S.HasLauncherShortcut ? (S.LauncherInstalled ? "Откроется русский лаунчер: Windows спросит права администратора" : "Откроется оригинальный лаунчер") : "Ярлык лаунчера не найден");
+                S.HasLauncherShortcut ? (S.LauncherInstalled ? "Откроется русский лаунчер от обычного пользователя" : "Откроется оригинальный лаунчер") : "Ярлык лаунчера не найден");
             l1.Margin = new Thickness(0, 16, 0, 12); card.Children.Add(l1);
             card.Children.Add(ItemRow("redo", "После обновления игры", "Первый запуск будет на китайском: дойдите до главного меню и закройте игру, перевод вернётся сам"));
             if (S.LauncherInstalled) card.Children.Add(ItemRow("shield", "Русский лаунчер", "Ярлык «Honor of Kings ACE (RU)»; новая функция, с ACE в игре не проверена. Выключить: переустановка с выключенным переключателем"));
@@ -1022,7 +1023,7 @@ namespace WXQSetup
             else
             {
                 left.Children.Add(StatusIcon("check", Tk.Text));
-                left.Children.Add(Title("Перевод уже установлен", "«Переустановить» запишет файлы заново. «Удалить перевод» вернёт исходные файлы игры. Игру и лаунчер перед этим закройте.", 420));
+                left.Children.Add(Title("Перевод уже установлен", "«Переустановить» запишет файлы заново. «Удалить перевод» восстановит файлы до установки перевода. Игру и лаунчер перед этим закройте.", 420));
             }
             body.Children.Add(left);
             var card = new StackPanel();
@@ -1076,7 +1077,7 @@ namespace WXQSetup
             Grid body, footer; var root = Frame(out body, out footer);
             var left = new StackPanel { HorizontalAlignment = HorizontalAlignment.Left };
             left.Children.Add(StatusIcon("check", Tk.Success));
-            left.Children.Add(Title("Перевод удалён", (string.IsNullOrEmpty(S.Note) ? "Файлы игры снова исходные." : S.Note) + " Захотите вернуть перевод — запустите установщик ещё раз.", 480));
+            left.Children.Add(Title("Перевод удалён", (string.IsNullOrEmpty(S.Note) ? "Восстановлено состояние файлов до установки перевода." : S.Note) + " Захотите вернуть перевод — запустите установщик ещё раз.", 480));
             body.Children.Add(left);
             footer.Children.Add(SupportBlock());
             var close = new Btn(BK.Primary, "Закрыть", null, null, 44, 132); close.Click += delegate { Fire("close"); };
@@ -1159,7 +1160,7 @@ namespace WXQSetup
             Directory.CreateDirectory(dir);
             string[] names = { "01-welcome", "02-welcome-launcher-on", "03-progress", "04-done", "05-fail", "06-installed", "07-installed-confirm", "08-removed", "09-progress-start", "10-fail-after-write",
                 "11-done-no-launcher", "12-interrupted", "13-progress-remove", "14-fail-remove", "15-welcome-can-remove", "16-welcome-no-launcher-block", "17-removed-note", "18-interrupted-confirm", "19-fail-pick-game",
-                "20-progress-closing", "21-progress-backup", "22-progress-verify", "23-progress-finish", "24-fail-running", "25-progress-remove-closing" };
+                "20-progress-closing", "21-progress-backup", "22-progress-verify", "23-progress-finish", "24-fail-running", "25-progress-remove-closing", "26-done-launcher-not-found" };
             foreach (string n in names)
             {
                 var v = new MainView();
@@ -1176,6 +1177,7 @@ namespace WXQSetup
                 if (n == "24-fail-running") { screen = "fail"; v.S.FailureCode = "running"; v.S.FailureMessage = "Игра или лаунчер сейчас запущены, и закрыть их не удалось (王者万象棋.exe (PID 4120)). Закройте их вручную: диспетчер задач, вкладка «Подробности», «Снять задачу», в том числе значок лаунчера в области уведомлений, и повторите."; }
                 if (n == "04-done") screen = "done";
                 if (n == "11-done-no-launcher") { screen = "done"; v.S.LauncherInstalled = false; }
+                if (n == "26-done-launcher-not-found") { screen = "done"; v.S.LauncherInstalled = false; v.S.Note = "Лаунчер не переведён: найдены несколько подходящих установок лаунчера. Укажите нужную папку игры и повторите установку."; }
                 if (n == "12-interrupted" || n == "18-interrupted-confirm") { screen = "installed"; v.S.Interrupted = true; }
                 if (n == "18-interrupted-confirm") typeof(MainView).GetField("confirmRemove", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(v, true);
                 if (n == "13-progress-remove") { screen = "progress"; v.S.Op = "remove"; v.S.Percent = 40; v.S.Eta = "осталось ~1 мин"; v.S.File = "WXQ_Data\\Package\\builtin\\1\\1.db"; v.S.DoneBytes = 1200L * 1048576; v.S.TotalBytes = 3000L * 1048576; }

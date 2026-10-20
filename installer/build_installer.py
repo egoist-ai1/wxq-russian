@@ -92,7 +92,7 @@ def expected_text(manifest: dict) -> str:
 
 
 def build_activator(staging: Path, manifest: dict) -> None:
-    """WXQLauncherRU.exe: релизная сборка (без TESTBUILD), манифест requireAdministrator, SHA модуля и словаря зашиты ресурсом."""
+    """WXQLauncherRU.exe: релизная сборка (без TESTBUILD), манифест asInvoker, SHA модуля и словаря зашиты ресурсом."""
     if not CSC.is_file():
         fail(f'не найден csc.exe из .NET Framework 4: {CSC}')
     with tempfile.TemporaryDirectory(prefix='wxq-ru-expected-') as temporary:
@@ -624,8 +624,13 @@ def build_tool(staging: Path, test_build: bool = False, update_config: Path | No
     if not CSC.is_file():
         fail(f'не найден csc.exe из .NET Framework 4: {CSC}')
     env = dict(os.environ)
+    # Только структура пустой QtsVFS-таблицы; заголовок пакета заменяется проверенным заголовком установленной игры.
+    template = INSTALLER / 'tests/fixtures/10.db.placeholder'
+    if sha(template) != 'a997d0bb53887d5a3ed45152700ba5130dc140a8afe3be85de4361819897a51a':
+        fail('шаблон пустого кэша повреждён')
     completed = subprocess.run([str(CSC), '/nologo', '/target:exe', '/platform:x64', '/optimize+', '/codepage:65001',
                                 *(['/define:TESTBUILD'] if test_build else []), '/r:System.Web.Extensions.dll', '/r:Microsoft.CSharp.dll',
+                                f'/resource:{template},cache-template.db',
                                 *([f'/resource:{update_config},update-config.json'] if update_config else []),
                                 f'/out:{staging / "WXQTool.exe"}', str(INSTALLER / 'WXQTool.cs')],
                                capture_output=True, env=env)

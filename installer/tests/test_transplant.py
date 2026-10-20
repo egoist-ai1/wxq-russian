@@ -6,8 +6,8 @@
 скелеты override 1.4.0.1 пакетов 0, 1, 10 (source/game-build-rebase/.../official-cache-v2-parent-observation), QtskDB.dll из того же vendor,
 QtsVFS.log с pkgHash из заголовков скелетов. install.json собран build_installer.combine для кандидатов build/carrier-2026-10-17-v8-1.6.0.1 (пакет 1) и
 build/lua-wrap-2026-10-17-v10-1.6.0.1 (пакет 10) под 1.6.0.1; пересборка Lua из настоящей игры в этом тесте отключена (игра новее, её не читаем).
-Настоящая игра и её кэш не читаются и не меняются; окон нет. Если настоящая WXQ.exe запущена, помощник собирается без остановки по
-запущенной игре (это единственное отличие копии; песочница не пересекается с настоящей игрой).
+Настоящая игра и её кэш не читаются и не меняются; окон нет. Помощник собирается штатно с TESTBUILD и cache-template.db,
+а WXQ_RU_TEST_CLOSE_ROOT ограничивает проверку процессов временной песочницей.
 """
 from __future__ import annotations
 
@@ -52,27 +52,11 @@ def sha(path: Path) -> str:
         return hashlib.file_digest(handle, 'sha256').hexdigest()
 
 
-def game_is_running() -> bool:
-    done = subprocess.run(['tasklist', '/FO', 'CSV', '/NH'], capture_output=True)
-    return bool(re.search(rb'"(WXQ|HonorofKingsACE|WXQLauncher[^"]*)\.exe"', done.stdout, re.IGNORECASE))
-
-
 def build_tool(work: Path) -> Path:
-    """Помощник из installer/WXQTool.cs (TESTBUILD). При запущенной настоящей игре — копия без остановки по процессам."""
+    """Штатная TESTBUILD-сборка с теми же ресурсами и защитами, что у установщика."""
     folder = work / 'tool'
     folder.mkdir()
-    if not game_is_running():
-        bi.build_tool(folder, test_build=True)
-        return folder / 'WXQTool.exe'
-    print('       WXQ.exe запущен: помощник собран без остановки по запущенной игре (только для песочницы)', flush=True)
-    source = (PROJECT / 'installer/WXQTool.cs').read_text('utf-8-sig')
-    needle = 'if (active.Count > 0)'
-    assert source.count(needle) == 1
-    (folder / 'WXQTool.cs').write_text(source.replace(needle, 'if (false && active.Count > 0)'), 'utf-8-sig')
-    done = subprocess.run([str(bi.CSC), '/nologo', '/target:exe', '/platform:x64', '/optimize+', '/codepage:65001', '/define:TESTBUILD',
-                           '/r:System.Web.Extensions.dll', f'/out:{folder / "WXQTool.exe"}', str(folder / 'WXQTool.cs')], capture_output=True)
-    if done.returncode:
-        raise SystemExit('помощник не собрался: ' + (done.stdout + done.stderr).decode('cp866', errors='replace'))
+    bi.build_tool(folder, test_build=True)
     return folder / 'WXQTool.exe'
 
 
@@ -135,7 +119,8 @@ def run(tool: Path, box: dict, payload: Path, command: str, _env: dict | None = 
     args = [str(tool), command, '--payload', str(payload), '--data', str(box['data']), '--out', str(out), '--game', str(box['game'])]
     for name, value in extra.items():
         args += ['--' + name, value]
-    done = subprocess.run(args, capture_output=True, timeout=1800, env=dict(os.environ, WXQ_RU_USERS_ROOT=str(box['root'] / 'no-users'), **(_env or {})))
+    done = subprocess.run(args, capture_output=True, timeout=1800,
+                          env=dict(os.environ, WXQ_RU_USERS_ROOT=str(box['root'] / 'no-users'), WXQ_RU_TEST_CLOSE_ROOT=str(box['root']), **(_env or {})))
     rows = {'_exit': str(done.returncode)}
     if out.is_file():
         for line in out.read_text('utf-8-sig').splitlines():
@@ -223,7 +208,7 @@ def main() -> int:
         check('T14 restore вернул кэш к скелетам 1.4.0.1 байт-в-байт (файлы данных удалены)', snapshot(box['cache']) == cache_before)
         check('T14a prime по-прежнему не менялся', snapshot(box['game'] / 'WXQ_Data/Package') == prime_before)
 
-        # Отказы: ничего не записано, понятный код.
+        # Восстановимые остатки заменяются целиком; при неподтверждённой версии — отказ до записи.
         def fresh_box(name: str, **options) -> dict:
             return build_box(work / name, **options)
 
@@ -236,11 +221,37 @@ def main() -> int:
         check('T16 нет журнала QtsVFS.log: stop cache_missing', rows.get('code') == 'cache_missing', str(rows))
         foreign = fresh_box('neg-foreign')
         built = box['data'] / 'backup' / label / 'built' / '1' / '1.db'
+        built_storage = built.with_name('1_0.db')
         check('T16a собранный файл пакета 1 сохранён в папке копии', built.is_file())
-        if built.is_file():
-            shutil.copyfile(built, foreign['cache'] / '1' / '1.db')
+
+        def dirty_package(made: dict, package: str) -> None:
+            """Прежний overlay: валидный каталог с base header, данные и дополнительные хранилища."""
+            target = made['cache'] / package / f'{package}.db'
+            old_header, new_header = header_of(built), header_of(target)
+            content = built.read_bytes()
+            assert content.count(old_header) == 1
+            target.write_bytes(content.replace(old_header, new_header, 1))
+            shutil.copyfile(built_storage, target.with_name(f'{package}_0.db'))
+            for suffix in ('1', '2'):
+                target.with_name(f'{package}_{suffix}.db').write_bytes(f'previous overlay {package}_{suffix}'.encode('ascii'))
+
+        dirty_package(foreign, '1')
+        before_foreign = snapshot(foreign['cache'])
         rows = run(tool, foreign, payload, 'check')
-        check('T17 скелет уже содержит записи: stop cache_missing', rows.get('code') == 'cache_missing', str(rows))
+        check('T17 старый overlay с совпавшим header/log: state=fresh, check ничего не записал',
+              rows.get('status') == 'ok' and rows.get('state') == 'fresh' and snapshot(foreign['cache']) == before_foreign, str(rows))
+        rows = run(tool, foreign, payload, 'backup')
+        foreign_label = rows.get('label', '')
+        check('T17a backup старого overlay: есть метка, до unpack кэш байт-в-байт прежний',
+              rows.get('status') == 'ok' and bool(foreign_label) and snapshot(foreign['cache']) == before_foreign, str(rows))
+        rows = run(tool, foreign, payload, 'unpack', label=foreign_label)
+        check('T17b unpack заменил старый overlay и удалил все дополнительные хранилища',
+              rows.get('status') == 'ok' and not (foreign['cache'] / '1/1_1.db').exists() and not (foreign['cache'] / '1/1_2.db').exists(), str(rows))
+        rows = run(tool, foreign, payload, 'verify', label=foreign_label)
+        check('T17c новая пересадка поверх старого overlay проходит verify', rows.get('status') == 'ok', str(rows))
+        rows = run(tool, foreign, payload, 'restore')
+        check('T17d restore вернул прежний overlay со всеми хранилищами байт-в-байт',
+              rows.get('status') == 'ok' and snapshot(foreign['cache']) == before_foreign, str(rows))
         unknown = fresh_box('neg-sdk')
         bad_payload = work / 'payload-bad-sdk'
         shutil.copytree(payload, bad_payload)
@@ -286,17 +297,24 @@ def main() -> int:
         rows = run(tool, oldbox, old_format, 'backup')
         check('T19 install.json без resources: stop payload, кэш не тронут', rows.get('code') == 'payload' and snapshot(oldbox['cache']) == cache_before, str(rows))
         busy = fresh_box('neg-pending')
+        dirty_package(busy, '1')
         rows = run(tool, busy, payload, 'backup')
         label2 = rows.get('label', '')
         rows = run(tool, busy, payload, 'unpack', label=label2)
-        check('T20 вторая независимая установка проходит так же (повторяемость)', rows.get('status') == 'ok', str(rows))
+        check('T20 независимая установка поверх старого overlay прошла и сняла _1/_2',
+              rows.get('status') == 'ok' and not (busy['cache'] / '1/1_1.db').exists() and not (busy['cache'] / '1/1_2.db').exists(), str(rows))
         receipt2 = receipt_of(busy, label2)
-        # Файл, переписанный игрой после установки, при откате не затирается.
+        # Изменение одного файла обновлением исключает весь пакет из отката.
+        installed_catalog_sha = sha(busy['cache'] / '1/1.db')
         victim = busy['cache'] / '1' / '1_0.db'
         victim.write_bytes(b'game wrote this')
         rows = run(tool, busy, payload, 'restore')
         check('T21 restore пропускает файл, переписанный игрой (skipped), а не затирает', rows.get('status') == 'ok' and '1_0.db' in rows.get('skipped', '') and victim.read_bytes() == b'game wrote this', str(rows))
-        check('T21a остальные файлы вернулись к скелету', sha(busy['cache'] / '1' / '1.db') == cache_before['1/1.db'] and receipt2.get('transplant') is True)
+        check('T21a при изменении одного файла весь пакет 1 пропущен, соседний пакет 10 откатился',
+              sha(busy['cache'] / '1/1.db') == installed_catalog_sha and 'packages/1/1.db' in rows.get('skipped', '')
+              and snapshot(busy['cache'] / '10') == snapshot(box['cache'] / '10') and receipt2.get('transplant') is True, str(rows))
+        check('T21b удалённые старые _1/_2 не воскресли рядом с обновлённым пакетом',
+              not (busy['cache'] / '1/1_1.db').exists() and not (busy['cache'] / '1/1_2.db').exists())
 
         # --- ревью: частичное владение, устаревший заголовок, устаревший журнал, остаток быстрого пути, прерванный unpack ---
         def installed_box(name: str) -> tuple[dict, str]:
@@ -316,13 +334,24 @@ def main() -> int:
               state_file.get('game_version') == '1.4.0.1' and state_file.get('build_game_version') == '1.6.0.1', str(state_file))
 
         part, _ = installed_box('p1-partial')
+        installed_part = snapshot(part['cache'])
         shutil.copyfile(SKELETON / '10/10.db', part['cache'] / '10' / '10.db')
         (part['cache'] / '10' / '10_0.db').unlink()
         touch_log(part, 30)
         before_part = snapshot(part['cache'])
         rows = run(tool, part, payload, 'check')
-        check('T23 частичное владение (пакет 1 наш, пакет 10 снова скелет): stop reinstall, кэш не тронут',
-              rows.get('code') == 'reinstall' and snapshot(part['cache']) == before_part, str(rows))
+        check('T23 частичная установка (пакет 1 наш, пакет 10 снова скелет): state=fresh, check ничего не записал',
+              rows.get('status') == 'ok' and rows.get('state') == 'fresh' and snapshot(part['cache']) == before_part, str(rows))
+        rows = run(tool, part, payload, 'backup')
+        repair_label = rows.get('label', '')
+        check('T23a повторная установка подготовила непустую копию для ремонта', rows.get('status') == 'ok' and bool(repair_label), str(rows))
+        rows = run(tool, part, payload, 'unpack', label=repair_label)
+        check('T23b ремонт вернул оба пакета к полному переводу байт-в-байт',
+              rows.get('status') == 'ok' and snapshot(part['cache']) == installed_part, str(rows))
+        rows = run(tool, part, payload, 'verify', label=repair_label)
+        check('T23c отремонтированная частичная установка проходит verify', rows.get('status') == 'ok', str(rows))
+        rows = run(tool, part, payload, 'check')
+        check('T23d после ремонта частичной установки: state=same', rows.get('status') == 'ok' and rows.get('state') == 'same', str(rows))
 
         stale, _ = installed_box('p2-stale-header')
         log_path = stale['cache'].parent / 'QtsVFS.log'
@@ -339,8 +368,10 @@ def main() -> int:
         newskel = build_box(work / 'p3-newskel')
         future = time.time() + 3600
         os.utime(newskel['cache'] / '1' / '1.db', (future, future))
+        before_newskel = snapshot(newskel['cache'])
         rows = run(tool, newskel, payload, 'check')
-        check('T25a журнал старше скелета (хеш совпадает): stop cache_missing', rows.get('code') == 'cache_missing' and snapshot(newskel['cache']) != {}, str(rows))
+        check('T25a журнал старше скелета (хеш совпадает): stop cache_missing, кэш не тронут',
+              rows.get('code') == 'cache_missing' and snapshot(newskel['cache']) == before_newskel, str(rows))
 
         remnant = build_box(work / 'p6-remnant')
         entry = next(e for e in install['packages'] if e['id'] == '1')
@@ -348,8 +379,8 @@ def main() -> int:
         shutil.copyfile(payload / flat, remnant['cache'] / '1' / '1.db')
         before_remnant = snapshot(remnant['cache'])
         rows = run(tool, remnant, payload, 'check')
-        check('T26 остаток быстрого пути (известный SHA 1.db) при другой версии: stop reinstall, кэш не тронут',
-              rows.get('code') == 'reinstall' and snapshot(remnant['cache']) == before_remnant, str(rows))
+        check('T26 остаток быстрого пути: header не совпал с журналом, stop cache_missing, кэш не тронут',
+              rows.get('code') == 'cache_missing' and snapshot(remnant['cache']) == before_remnant, str(rows))
 
         cut = build_box(work / 'p7-interrupted')
         cut_before = snapshot(cut['cache'])
@@ -363,6 +394,120 @@ def main() -> int:
         rows = run(tool, cut, payload, 'restore')
         check('T27 прерванный unpack (status=applying, записан один файл) -> restore в режиме пересадки: status=ok', rows.get('status') == 'ok', str(rows))
         check('T27a кэш вернулся к скелетам байт-в-байт', snapshot(cut['cache']) == cut_before)
+
+        # В пакете 1 нет совместимых оригиналов, но прежний перевод всё равно должен быть снят.
+        # Отдельный sandbox-манифест моделирует сборку для другого набора оригиналов p1; helper не меняем.
+        no_match_payload = work / 'payload-no-match-p1'
+        shutil.copytree(payload, no_match_payload)
+        no_match_install = json.loads((payload / 'install.json').read_text('utf-8'))
+        for entry in no_match_install['packages']:
+            if entry['id'] == '1':
+                for resource in entry['resources']:
+                    resource['original_sha256'] = '0' * 64
+        (no_match_payload / 'install.json').write_text(json.dumps(no_match_install, ensure_ascii=False), 'utf-8')
+        no_match = fresh_box('p8-no-match-p1')
+        dirty_package(no_match, '1')
+        before_no_match = snapshot(no_match['cache'])
+        prime_no_match = snapshot(no_match['game'] / 'WXQ_Data/Package')
+        rows = run(tool, no_match, no_match_payload, 'backup')
+        no_match_label = rows.get('label', '')
+        no_match_receipt = receipt_of(no_match, no_match_label) if no_match_label else {}
+        check('T28 p1 без совпадений, p10 совместим: backup готов, p1 skipped, p10 applied, кэш не тронут',
+              rows.get('status') == 'ok' and bool(no_match_label)
+              and set(no_match_receipt.get('skipped_packages', [])) == {'1'}
+              and '1' not in no_match_receipt.get('applied_resources', {})
+              and set(no_match_receipt.get('applied_resources', {}).get('10', [])) == expected_applied['10']
+              and snapshot(no_match['cache']) == before_no_match, str(rows))
+        rows = run(tool, no_match, no_match_payload, 'unpack', label=no_match_label)
+        with QtsContainer(no_match['cache'] / '1/1.db', raw_values=True) as meta:
+            clean_no_match = (set(meta.entries) == {HEADER_ID} and meta.invalid_record_count == 0
+                              and meta.raw_record_values(HEADER_ID)[0] == skeleton_headers['1'])
+        check('T28a unpack очистил весь прежний p1 до base header и удалил _0/_1/_2',
+              rows.get('status') == 'ok' and clean_no_match and not list((no_match['cache'] / '1').glob('1_*.db')), str(rows))
+        rows = run(tool, no_match, no_match_payload, 'verify', label=no_match_label)
+        check('T28b p10 установлен, очищенный p1 проходит verify; prime не менялся',
+              rows.get('status') == 'ok' and snapshot(no_match['game'] / 'WXQ_Data/Package') == prime_no_match, str(rows))
+        rows = run(tool, no_match, no_match_payload, 'check')
+        check('T28c установленный p10 и намеренно очищенный p1 распознаются как state=same',
+              rows.get('status') == 'ok' and rows.get('state') == 'same', str(rows))
+        rows = run(tool, no_match, no_match_payload, 'restore')
+        check('T28d restore после p1 без совпадений вернул весь прежний кэш байт-в-байт',
+              rows.get('status') == 'ok' and snapshot(no_match['cache']) == before_no_match, str(rows))
+
+        # Наличие receipt не скрывает остатки, появившиеся после успешной установки.
+        for variant in ('extra-storage', 'neighbor'):
+            repaired, _ = installed_box('p9-' + variant)
+            installed_packages = {p: snapshot(repaired['cache'] / p) for p in ('1', '10')}
+            if variant == 'extra-storage':
+                (repaired['cache'] / '1/1_2.db').write_bytes(b'old translation returned after install')
+            else:
+                for name in ('0.db', '0_0.db'):
+                    link_or_copy(VENDOR / 'prime/0' / name, repaired['game'] / 'WXQ_Data/Package/builtin/0' / name)
+                dirty_package(repaired, '0')
+            before_repair = snapshot(repaired['cache'])
+            rows = run(tool, repaired, payload, 'check')
+            check(f'T29 {variant} после установки: state=fresh, check не меняет кэш',
+                  rows.get('status') == 'ok' and rows.get('state') == 'fresh' and snapshot(repaired['cache']) == before_repair, str(rows))
+            rows = run(tool, repaired, payload, 'backup')
+            repair_label = rows.get('label', '')
+            check(f'T29a {variant}: ремонт подготовлен, backup кэш не меняет',
+                  rows.get('status') == 'ok' and bool(repair_label) and snapshot(repaired['cache']) == before_repair, str(rows))
+            rows = run(tool, repaired, payload, 'unpack', label=repair_label)
+            check(f'T29b {variant}: unpack прошёл, перевод p1/p10 остался байт-в-байт полным',
+                  rows.get('status') == 'ok' and all(snapshot(repaired['cache'] / p) == installed_packages[p] for p in ('1', '10')), str(rows))
+            if variant == 'neighbor':
+                with QtsContainer(repaired['cache'] / '0/0.db', raw_values=True) as meta:
+                    clean_neighbor = (set(meta.entries) == {HEADER_ID} and meta.invalid_record_count == 0
+                                      and meta.raw_record_values(HEADER_ID)[0] == skeleton_headers['0'])
+                check('T29c neighbor: весь соседний p0 очищен до своего base header, все хранилища удалены, .info сохранён',
+                      clean_neighbor and not list((repaired['cache'] / '0').glob('0_*.db'))
+                      and sha(repaired['cache'] / '0/0.info') == before_repair['0/0.info'])
+            else:
+                check('T29c extra-storage: лишний _2 удалён', not (repaired['cache'] / '1/1_2.db').exists())
+            rows = run(tool, repaired, payload, 'verify', label=repair_label)
+            check(f'T29d {variant}: после ремонта verify успешен', rows.get('status') == 'ok', str(rows))
+            rows = run(tool, repaired, payload, 'check')
+            check(f'T29e {variant}: после ремонта state=same', rows.get('status') == 'ok' and rows.get('state') == 'same', str(rows))
+
+        race = fresh_box('p10-extra-after-backup')
+        rows = run(tool, race, payload, 'backup')
+        race_label = rows.get('label', '')
+        check('T30 backup до изменения состава кэша готов', rows.get('status') == 'ok' and bool(race_label), str(rows))
+        (race['cache'] / '1/1_2.db').write_bytes(b'appeared between backup and unpack')
+        before_race = snapshot(race['cache'])
+        rows = run(tool, race, payload, 'unpack', label=race_label)
+        check('T30a _2 появился между backup/unpack: stop changed, весь кэш байт-в-байт прежний',
+              rows.get('code') == 'changed' and snapshot(race['cache']) == before_race, str(rows))
+
+        # На Windows старый _0.DB и новый _0.db обозначают одно хранилище, а не удаление плюс создание.
+        uppercase = fresh_box('p11-uppercase-storage')
+        dirty_package(uppercase, '1')
+        previous_storage = uppercase['cache'] / '1/1_0.db'
+        previous_storage.rename(previous_storage.with_suffix('.DB'))
+        uppercase_names = {file.name for file in (uppercase['cache'] / '1').iterdir()}
+        check('T31 прежний основной storage действительно называется 1_0.DB',
+              '1_0.DB' in uppercase_names and '1_0.db' not in uppercase_names, str(uppercase_names))
+        before_uppercase = snapshot(uppercase['cache'])
+        prime_uppercase = snapshot(uppercase['game'] / 'WXQ_Data/Package')
+        rows = run(tool, uppercase, payload, 'check')
+        check('T31a старый overlay с 1_0.DB: state=fresh, check кэш не меняет',
+              rows.get('status') == 'ok' and rows.get('state') == 'fresh' and snapshot(uppercase['cache']) == before_uppercase, str(rows))
+        rows = run(tool, uppercase, payload, 'backup')
+        uppercase_label = rows.get('label', '')
+        uppercase_receipt = receipt_of(uppercase, uppercase_label) if uppercase_label else {}
+        storage_ops = [op for op in uppercase_receipt.get('operations', []) if op['relative'].casefold() == 'packages/1/1_0.db']
+        check('T31b backup 1_0.DB: одна операция замены основного storage, кэш не тронут',
+              rows.get('status') == 'ok' and bool(uppercase_label) and len(storage_ops) == 1
+              and storage_ops[0]['before_exists'] is True and bool(storage_ops[0]['candidate_sha256'])
+              and snapshot(uppercase['cache']) == before_uppercase, str(rows) + ', operations=' + str(storage_ops))
+        rows = run(tool, uppercase, payload, 'unpack', label=uppercase_label)
+        check('T31c unpack поверх 1_0.DB проходит без ложного changed', rows.get('status') == 'ok', str(rows))
+        rows = run(tool, uppercase, payload, 'verify', label=uppercase_label)
+        check('T31d verify после замены 1_0.DB успешен', rows.get('status') == 'ok', str(rows))
+        rows = run(tool, uppercase, payload, 'restore')
+        check('T31e restore 1_0.DB вернул весь прежний кэш байт-в-байт, включая написание имён',
+              rows.get('status') == 'ok' and snapshot(uppercase['cache']) == before_uppercase, str(rows))
+        check('T31f prime после полного цикла с 1_0.DB не менялся', snapshot(uppercase['game'] / 'WXQ_Data/Package') == prime_uppercase)
     finally:
         if args.keep:
             print('рабочая папка оставлена:', work)

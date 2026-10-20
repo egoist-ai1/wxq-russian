@@ -284,8 +284,14 @@ class LauncherRU(unittest.TestCase):
         """Настоящая механика process._debugProcess на обычном Node (подписан, проверяется Authenticode)."""
         if not NODE.exists():
             self.skipTest('нет node.exe')
-        thumbprint = subprocess.run(['powershell', '-NoProfile', '-Command', f"(Get-AuthenticodeSignature -LiteralPath '{NODE}').SignerCertificate.Thumbprint"],
-                                    capture_output=True, text=True).stdout.strip()
+        # PowerShell 5.1 не должен импортировать несовместимые модули из унаследованного PSModulePath PowerShell 7.
+        winps = Path(os.environ.get('SystemRoot', r'C:\Windows')) / 'System32/WindowsPowerShell/v1.0'
+        signature_env = dict(os.environ, PSModulePath=str(winps / 'Modules'))
+        signature = subprocess.run([str(winps / 'powershell.exe'), '-NoProfile', '-NonInteractive', '-Command',
+                                    f"(Get-AuthenticodeSignature -LiteralPath '{NODE}').SignerCertificate.Thumbprint"],
+                                   capture_output=True, text=True, env=signature_env)
+        self.assertEqual(signature.returncode, 0, signature.stderr)
+        thumbprint = signature.stdout.strip()
         self.assertEqual(len(thumbprint), 40)
         rig = self.make('node', launcher_src=NODE, thumbprint=thumbprint)
         node = subprocess.Popen([str(rig.exe), f'--inspect-port={rig.port}', '-e', 'setInterval(()=>{},1e3)'], env=rig.env())
@@ -463,11 +469,16 @@ class LauncherRU(unittest.TestCase):
 
     def test_target_outside_program_files_refused(self) -> None:
         rig = self.make('outside')
-        self.assert_not_started(rig, rig.run(f'--test-trust-root={rig.root / "nowhere"}'), 'untrusted-target')
+        self.assert_not_started(rig, rig.run('--test-elevated', f'--test-trust-root={rig.root / "nowhere"}'), 'untrusted-target')
 
     def test_target_outside_program_files_flag_off(self) -> None:
         rig = self.make('outside0')
-        self.assert_not_started(rig, rig.run('--test-flag=0', f'--test-trust-root={rig.root / "nowhere"}'), 'untrusted-target')
+        self.assert_not_started(rig, rig.run('--test-elevated', '--test-flag=0', f'--test-trust-root={rig.root / "nowhere"}'), 'untrusted-target')
+
+    def test_standard_user_custom_directory_supported(self) -> None:
+        rig = self.make('custom-user')
+        status = rig.run('--test-standard-user', f'--test-trust-root={rig.root / "nowhere"}')
+        self.check_attached(rig, status)
 
     def test_junction_in_target_path_refused(self) -> None:
         rig = self.make('junction')
@@ -570,7 +581,8 @@ class LauncherRU(unittest.TestCase):
             self.assertNotIn(option.encode('ascii'), data, option)
         self.assertNotIn(b'TESTBUILD', data)
         self.assertNotIn(b'WXQFakeInspect', data)
-        self.assertIn(b'requireAdministrator', data)
+        self.assertIn(b'asInvoker', data)
+        self.assertNotIn(b'requireAdministrator', data)
         self.assertIn('Egoist\\WXQ-Russian'.encode('utf-16le'), data)
 
 
