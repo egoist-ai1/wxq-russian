@@ -119,10 +119,8 @@ Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 ; Установленные на диск: помощник (нужен для удаления перевода) и значок.
 Source: "{#Staging}\{#ToolExe}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Staging}\wxq-ru.ico"; DestDir: "{app}"; Flags: ignoreversion
-#ifdef WithUpdater
-; Значок автообновления в области уведомлений (без прав администратора). Запущенный старый WXQTray.exe переименовывается в .old в PrepareToInstall.
-Source: "{#Staging}\WXQTray.exe"; DestDir: "{app}"; Flags: ignoreversion
-#endif
+; Единый установщик остаётся доступен для повторного открытия, обновления и отката.
+Source: "{srcexe}"; DestDir: "{app}"; DestName: "WXQ-Russian.exe"; Flags: external ignoreversion; Check: SelfCopyNeeded
 #ifdef WithLauncher
 ; Русский лаунчер (переключатель на странице приветствия, Check: LauncherWanted): активатор и шесть файлов В ОДНОЙ папке {app}\launcher.
 ; Активатор берёт target.txt и файлы из папки собственного exe, поэтому exe обязан лежать рядом с ними; runtime читает словарь, draft, css и png из своей папки.
@@ -139,15 +137,9 @@ Source: "{#Staging}\launcher\main-logo-title.a73b14e6.png"; DestDir: "{app}\laun
 ; Только для работы мастера (распаковываются в {tmp}).
 #include Staging + "\payload-files.iss"
 
-#if defined(WithUpdater) && !defined(TestBuild)
-[Registry]
-; Значок обновления стартует при входе любого пользователя (HKLM Run, 64-битный вид). Тестовая сборка системных записей не делает.
-Root: HKLM64; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "EgoistWXQRussianTray"; ValueData: """{app}\WXQTray.exe"""; Flags: uninsdeletevalue
-
-[Run]
-; После установки значок появляется сразу, в сеансе пользователя (в тихом режиме, то есть при автообновлении от SYSTEM, не запускается: сработает вход пользователя).
-Filename: "{app}\WXQTray.exe"; Flags: nowait runasoriginaluser skipifsilent
-#endif
+[Icons]
+Name: "{code:DesktopDir}\Egoist · Русификатор ACE"; Filename: "{app}\WXQ-Russian.exe"; WorkingDir: "{app}"; IconFilename: "{app}\wxq-ru.ico"
+Name: "{code:StartDir}\Egoist · Русификатор ACE"; Filename: "{app}\WXQ-Russian.exe"; WorkingDir: "{app}"; IconFilename: "{app}\wxq-ru.ico"
 
 #ifdef WithLauncher
 [Icons]
@@ -333,9 +325,19 @@ var
   ClosingShown: Boolean;
   SvDone, SvTotal: Int64;
   SvCanRemove, SvInterrupted, SvFailedBefore: Boolean;
+  SuState, SuVersion, SuMessage, SuAction, SuLast, SuOut: String;
+  SuDone, SuTotal: Int64;
+  SuWaiting, AutoContinue, SelfUpdateContinue: Boolean;
+  SuStarted: LongWord;
+  WizardReady: Boolean;
+  WelcomeReadyAt: LongWord;
+  SelfSourceHandle: LongWord;
+  SelfSourceSha: String;
 
 function GetCurrentProcessId: LongWord;
   external 'GetCurrentProcessId@kernel32.dll stdcall';
+function CreateFileW(Name: String; Access, Share, Security, Creation, Flags, Template: LongWord): LongWord;
+  external 'CreateFileW@kernel32.dll stdcall';
 function OpenMutexW(Access: LongWord; Inherit: Boolean; Name: String): LongWord;
   external 'OpenMutexW@kernel32.dll stdcall';
 function CloseHandle(H: LongWord): Boolean;
@@ -429,7 +431,14 @@ begin
     ',"failure_code":"' + JsonStr(SvFailCode) + '","failure_message":"' + JsonStr(SvFailMsg) + '","failed_before_write":' + JsonBool(SvFailedBefore) +
     ',"fail_kind":"' + SvFailKind + '","note":"' + JsonStr(SvNote) + '","interrupted":' + JsonBool(SvInterrupted) +
     ',"can_remove":' + JsonBool(SvCanRemove) + ',"translation_version":"' + JsonStr(InstalledVersion) +
-    '","game_version":"' + JsonStr(InstalledGameVersion) + '"}');
+    '","game_version":"' + JsonStr(InstalledGameVersion) + '","update_state":"' + JsonStr(SuState) +
+    '","update_version":"' + JsonStr(SuVersion) + '","update_message":"' + JsonStr(SuMessage) +
+    '","update_done_bytes":' + IntToStr(SuDone) + ',"update_total_bytes":' + IntToStr(SuTotal) +
+#ifdef WithUpdater
+    ',"update_enabled":true}');
+#else
+    ',"update_enabled":false}');
+#endif
 end;
 
 // «Inno закончил»: окно, если оно ещё открыто, закрывается само.
@@ -1161,6 +1170,13 @@ begin
   Log('Tool ' + Command + ' -> ' + ToolValue('status') + ' ' + ToolValue('code'));
 end;
 
+function SelfCopyNeeded: Boolean;
+begin
+  if (SelfSourceSha = '') or (GetSHA256OfFile(ExpandConstant('{srcexe}')) <> SelfSourceSha) then
+    RaiseException('Файл установщика изменился после запуска. Откройте его заново.');
+  Result := CompareText(ExpandConstant('{srcexe}'), ExpandConstant('{app}\WXQ-Russian.exe')) <> 0;
+end;
+
 function FailureText: String;
 begin
   Result := ToolValue('message');
@@ -1654,7 +1670,7 @@ end;
 // передаётся stale, который ничего не закрывает; интерактивный мастер (в том числе по кнопке «Обновить сейчас»), явный тихий запуск и удаление закрывают всё подходящее.
 function CloseParam: String;
 begin
-  if UpdateMode then Result := ' --close stale' else Result := ' --close all';
+  if UpdateMode and (not SelfUpdateContinue) then Result := ' --close stale' else Result := ' --close all';
 end;
 
 // Запуск помощника с живым прогрессом: окно не зависает, полоса идёт по файлу --progress. Результат — как у RunTool.
@@ -1957,12 +1973,14 @@ begin
 end;
 
 procedure ShowMode(NewMode: Integer; State, Detail, Info, Primary, Secondary: String); forward;
+#ifdef WithLauncher
+procedure RemoveLauncherTraces; forward;
+#endif
 
 // «Удалить перевод» из окна установщика: откат по резервной копии, затем снятие записи из «Установки и удаления программ».
 procedure PressRemove(Sender: TObject);
 var
-  Uninstaller, Foreign, Note: String;
-  EntryGone: Boolean;
+  Foreign, Note: String;
 begin
   if Mode = 0 then
   begin
@@ -1980,9 +1998,10 @@ begin
     if RunToolLive('restore', '', 0) then
     begin
       Foreign := ToolValue('foreign');
-      Uninstaller := RemoveBackslashUnlessRoot(WizardDirValue) + '\unins000.exe';
-      DetailLabel.Caption := 'Снимаю запись из «Установки и удаления программ».';
-      EntryGone := RemoveUninstallEntry(Uninstaller);
+#ifdef WithLauncher
+      RemoveLauncherTraces;
+      LauncherExe := '';
+#endif
       Busy := False;
       Removed := True;
       IsInstalled := False;
@@ -1993,11 +2012,6 @@ begin
         Note := 'Резервные копии другой папки игры (' + Foreign + ') не тронуты и оставлены на месте.'
       else if ToolValue('skipped') <> '' then
         Note := 'Часть файлов (' + ToolValue('skipped') + ') уже заменена игрой или обновлением; их установщик не тронул.';
-      if not EntryGone then
-      begin
-        if Note <> '' then Note := Note + ' ';
-        Note := Note + 'Файлы игры возвращены, но запись в «Установке и удалении программ» снять не удалось: удалите её там вручную.';
-      end;
       if Note <> '' then
         ShowMode(3, 'Перевод удалён', Note, '', 'Закрыть', '')
       else
@@ -2194,7 +2208,7 @@ end;
 
 function UiKnownCmd(Cmd: String): Boolean;
 begin
-  Result := (Cmd = 'install') or (Cmd = 'options') or (Cmd = 'remove') or (Cmd = 'launch') or (Cmd = 'back') or (Cmd = 'pickgame') or (Cmd = 'close');
+  Result := (Cmd = 'install') or (Cmd = 'options') or (Cmd = 'remove') or (Cmd = 'launch') or (Cmd = 'back') or (Cmd = 'pickgame') or (Cmd = 'close') or (Cmd = 'checkupdate') or (Cmd = 'update');
 end;
 
 // «Выбрать папку игры» (экран сбоя при game_not_found / game_ambiguous / game_missing). Папку выбирает системный диалог в самом Setup:
@@ -2231,6 +2245,96 @@ begin
   Result := (WizardForm.CurPageID = wpWelcome) and ((SvScreen = 'welcome') or (SvScreen = 'installed'));
 end;
 
+procedure UiExec(Cmd: String; HasOpt, Launcher: Boolean); forward;
+
+procedure SuStart(Action: String);
+var
+  Params, Extra: String;
+  Code: Integer;
+begin
+#ifdef WithUpdater
+  if SuWaiting or Busy or UiClosing or WizardSilent then Exit;
+  if not SecVerify('перед проверкой обновления') then Exit;
+  SuAction := Action;
+  SuOut := SecDir + '\setup-update-out.txt';
+  DeleteFile(SuOut);
+  DeleteFile(SecDir + '\setup-update.cancel');
+  DeleteFile(GetDataDir('') + '\setup-update-status.txt');
+  SuDone := 0;
+  SuTotal := 0;
+  SuLast := '';
+  if Action = 'download' then SuState := 'downloading'
+  else if Action = 'handoff' then SuState := 'handoff'
+  else SuState := 'checking';
+  SuMessage := 'Проверяю новую версию…';
+  if Action = 'download' then SuMessage := 'Подготавливаю скачивание…';
+  if Action = 'handoff' then SuMessage := 'Открываю новую версию установщика…';
+  Extra := '';
+#ifdef TestBuild
+  if ExpandConstant('{param:UPDATEBASE|}') <> '' then Extra := ' --test-base-url "' + ExpandConstant('{param:UPDATEBASE|}') + '"';
+#endif
+  Params := 'setup-update --mode ' + Action + ' --current-version {#AppVersion} --data "' + GetDataDir('') +
+    '" --out "' + SuOut + '" --parent ' + IntToStr(GetCurrentProcessId) + ' --cancel "' + SecDir + '\setup-update.cancel"' + GameParam + Extra;
+  if LauncherOn then Params := Params + ' --launcher 1' else Params := Params + ' --launcher 0';
+  SuWaiting := Exec(ToolPath, Params, '', SW_HIDE, ewNoWait, Code);
+  SuStarted := GetTickCount;
+  if not SuWaiting then
+  begin
+    SuState := 'failed';
+    SuMessage := 'Не удалось запустить проверку. Попробуйте ещё раз.';
+  end;
+  PublishState;
+#endif
+end;
+
+procedure SuPoll;
+var
+  Lines, ResultLines: TArrayOfString;
+  Current, State_, Finished: String;
+begin
+  if not SuWaiting then Exit;
+  SetArrayLength(Lines, 0);
+  if FileExists(GetDataDir('') + '\setup-update-status.txt') then LoadStringsFromFile(GetDataDir('') + '\setup-update-status.txt', Lines);
+  Current := LineValue(Lines, 'state') + '|' + LineValue(Lines, 'message') + '|' + LineValue(Lines, 'bytes_done');
+  if (GetArrayLength(Lines) > 0) and (Current <> SuLast) then
+  begin
+    SuLast := Current;
+    State_ := LineValue(Lines, 'state');
+    if (State_ = 'checking') and (SuAction = 'download') then State_ := 'downloading';
+    if (State_ = 'checking') or (State_ = 'current') or (State_ = 'available') or (State_ = 'downloading') or
+       (State_ = 'ready') or (State_ = 'handoff') or (State_ = 'failed') then SuState := State_;
+    SuVersion := LineValue(Lines, 'available');
+    SuMessage := LineValue(Lines, 'message');
+    SuDone := StrToInt64Def(LineValue(Lines, 'bytes_done'), 0);
+    SuTotal := StrToInt64Def(LineValue(Lines, 'bytes_total'), 0);
+    PublishState;
+  end;
+  SetArrayLength(ResultLines, 0);
+  if FileExists(SuOut) then LoadStringsFromFile(SuOut, ResultLines);
+  Finished := LineValue(ResultLines, 'status');
+  if Finished <> '' then
+  begin
+    SuWaiting := False;
+    if Finished <> 'ok' then
+    begin
+      SuState := 'failed';
+      SuMessage := LineValue(ResultLines, 'message');
+      if SuMessage = '' then SuMessage := 'Проверка не завершилась. Попробуйте ещё раз.';
+      PublishState;
+    end
+    else if (SuAction = 'download') and (SuState = 'ready') then SuStart('handoff')
+    else if (SuAction = 'handoff') and (SuState = 'handoff') then UiExec('close', False, False);
+  end
+  else if (SuAction = 'check') and (GetTickCount - SuStarted > 12000) then
+  begin
+    SaveStringToFile(SecDir + '\setup-update.cancel', 'cancel', False);
+    SuWaiting := False;
+    SuState := 'failed';
+    SuMessage := 'Нет быстрого ответа от сервера. Установка доступна; проверку можно повторить.';
+    PublishState;
+  end;
+end;
+
 // Каждая команда проверяется по текущему экрану: «удалить» из окна приветствия, «запустить» только на «Готово». Прочее молча игнорируется.
 procedure UiExec(Cmd: String; HasOpt, Launcher: Boolean);
 var
@@ -2238,9 +2342,16 @@ var
 begin
   if SvState = 'running' then Exit;   // во время записи команды окна не исполняются
   if Busy or UiClosing then Exit;
+  if SuWaiting and (SuAction <> 'check') and (Cmd <> 'close') then Exit;
   Page := WizardForm.CurPageID;
   Log('UI: команда ' + Cmd);
-  if Cmd = 'options' then
+  if (Cmd = 'checkupdate') or (Cmd = 'update') then
+  begin
+    if HasOpt then Exit;
+    if Cmd = 'checkupdate' then SuStart('check')
+    else if (SuState = 'available') or (SuState = 'ready') then SuStart('download');
+  end
+  else if Cmd = 'options' then
   begin
     if HasOpt and LauncherAvailable and UiOnWelcome then LauncherOn := Launcher;
   end
@@ -2258,7 +2369,8 @@ begin
   end
   else if Cmd = 'back' then
   begin
-    if SvScreen = 'fail' then
+    if (SvScreen = 'removed') and (Page = wpWelcome) then CurPageChanged(wpWelcome)
+    else if SvScreen = 'fail' then
     begin
       if Page = wpPreparing then WizardForm.BackButton.OnClick(WizardForm.BackButton)
       else if Page = wpWelcome then CurPageChanged(wpWelcome);   // сбой удаления: снова приветствие по свежему состоянию
@@ -2333,6 +2445,12 @@ begin
   if InTick then Exit;
   InTick := True;
   try
+    SuPoll;
+    if AutoContinue and WizardReady and (GetTickCount - WelcomeReadyAt > 300) and (not Busy) and (not UiClosing) and UiOnWelcome then
+    begin
+      AutoContinue := False;
+      UiExec('install', False, False);
+    end;
     if UiActive then
     begin
       KeepHidden;
@@ -2584,6 +2702,7 @@ procedure DeinitializeSetup;
 var
   I: Integer;
 begin
+  if SecDir <> '' then SaveStringToFile(SecDir + '\setup-update.cancel', 'cancel', False);
   if UiTimer <> 0 then KillTimer(0, UiTimer);
   UiTimer := 0;
   if UiActive then
@@ -2597,6 +2716,8 @@ begin
     end;
   end;
   SecRemove;   // не удалилась - уберёт следующий запуск
+  if (SelfSourceHandle <> 0) and (SelfSourceHandle <> $FFFFFFFF) then CloseHandle(SelfSourceHandle);
+  SelfSourceHandle := 0;
 end;
 
 // Самое раннее место для скрытия служебного окна приложения (кнопки на панели задач): окно UI должно быть единственным видимым.
@@ -2604,6 +2725,14 @@ end;
 function InitializeSetup: Boolean;
 begin
   Result := True;
+  // Копия единого EXE в Program Files не должна браться по пути, который могли заменить после запуска.
+  SelfSourceHandle := CreateFileW(ExpandConstant('{srcexe}'), $80000000, 1, 0, 3, $80, 0);
+  if SelfSourceHandle = $FFFFFFFF then
+  begin
+    Result := False;
+    Exit;
+  end;
+  SelfSourceSha := GetSHA256OfFile(ExpandConstant('{srcexe}'));
 #ifdef WithUI
   if (not WizardSilent) and (ExpandConstant('{param:NOUI|0}') <> '1') then HideAppWindows;
 #endif
@@ -2623,6 +2752,8 @@ begin
   Mode := 0;
   GameParam := '';
   UpdateMode := ExpandConstant('{param:UPDATE|0}') = '1';
+  SelfUpdateContinue := UpdateMode and (ExpandConstant('{param:CONTINUE|0}') = '1');
+  AutoContinue := SelfUpdateContinue;
   UpdateRestored := False;
   LauncherOn := LauncherAvailable and (ExpandConstant('{param:LAUNCHERRU|1}') <> '0');   // по умолчанию включён; /LAUNCHERRU=0 выключает
   LauncherExe := '';
@@ -2635,6 +2766,8 @@ begin
   IsInterrupted := False;
   LastCode := '';
   UiStart;
+  if UiTimer = 0 then UiTimer := SetTimer(0, 0, 50, CreateCallback(@UiTick));
+  SuStart('check');
 end;
 
 // Закрытие без вопроса «Прервать установку?»: никаких системных окон.
@@ -2727,6 +2860,15 @@ begin
     Result := LastFailure;
     Exit;
   end;
+#ifndef TestBuild
+  if not RunTool('legacy-cleanup', ' --app "' + ExpandConstant('{app}') + '"') then
+  begin
+    LastFailure := FailureText;
+    LastCode := ToolValue('code');
+    Result := LastFailure;
+    Exit;
+  end;
+#endif
   ResetSteps;
   StartTick := GetTickCount;
   UiBeginProgress('install');
@@ -2853,23 +2995,6 @@ end;
 // Саму регистрацию делает помощник (WXQTool.exe task-register / task-remove): Pascal-скрипт через CreateOleObject падал с пустым сообщением.
 // Установка запускает помощника из защищённой копии (как остальные команды); удаление - установленного {app}\WXQTool.exe.
 
-procedure RegisterUpdateTask;
-var
-  Code: Integer;
-begin
-  if RunTool('task-register', ' --exe "' + ExpandConstant('{app}\{#ToolExe}') + '"') then
-    Log('Задача автообновления зарегистрирована: ' + ToolValue('task'))
-  else
-  begin
-    Log('Задача автообновления не создана: ' + ToolValue('code') + ' ' + ToolValue('message'));
-    // Старая задача 0.6.0 (триггеры «вход» и «каждые 6 часов», действие update) осталась бы работать в фоне: убираем её, чтобы фона точно не было.
-    if Exec(ExpandConstant('{sys}\schtasks.exe'), '/delete /tn "Egoist\WXQ-Russian Update" /f', '', SW_HIDE, ewWaitUntilTerminated, Code) then
-      Log('Прежняя задача автообновления удалена (код ' + IntToStr(Code) + '; 0 - удалена, иначе её не было). Автообновления не будет, пока русификатор не переустановят.')
-    else
-      Log('ВНИМАНИЕ: задачу автообновления не удалось ни обновить, ни удалить: старая версия задачи может продолжать проверки в фоне.');
-  end;
-end;
-
 procedure RemoveUpdateTask;
 var
   Tool, OutFile, Params: String;
@@ -2884,7 +3009,7 @@ begin
   end;
   OutFile := ExpandConstant('{app}') + '\task-out.txt';
   DeleteFile(OutFile);
-  Params := 'task-remove --out "' + OutFile + '"';
+  Params := 'legacy-cleanup --app "' + ExpandConstant('{app}') + '" --out "' + OutFile + '"';
   if UninstDataDir <> '' then Params := Params + ' --data "' + UninstDataDir + '"';
   if Exec(Tool, Params, '', SW_HIDE, ewWaitUntilTerminated, Code) then
   begin
@@ -2923,10 +3048,17 @@ begin
   if Result = '' then
   begin
     RetireRunningExe('{#ToolExe}');
-    RetireRunningExe('WXQTray.exe');
+    if SelfCopyNeeded then RetireRunningExe('WXQ-Russian.exe');
   end;
 #endif
   if Result <> '' then UiInstallFailed(Result);
+end;
+
+// При скрытом мастере Inno может принудительно показать wpReady, считая,
+// что предыдущие страницы не были показаны. Установку уже подтвердили в нашем окне.
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := PageID = wpReady;
 end;
 
 procedure CurPageChanged(CurPageID: Integer);
@@ -2939,6 +3071,8 @@ begin
   CloseLabel.Visible := CurPageID <> wpInstalling;
   if CurPageID = wpWelcome then
   begin
+    WizardReady := True;
+    WelcomeReadyAt := GetTickCount;
     ResetSteps;
     RefreshStatus;
     if IsInterrupted then
@@ -2981,6 +3115,7 @@ end;
 function InitializeUninstall: Boolean;
 var
   Code: Integer;
+  MutexHandle: LongWord;
   OutFile, Tool, Message: String;
   Lines: TArrayOfString;
   I, P: Integer;
@@ -2988,6 +3123,14 @@ var
 begin
   Result := True;
   KeepBackups := False;
+  MutexHandle := OpenMutexW($00100000, False, 'Global\Egoist.WXQRussian.Setup');
+  if MutexHandle <> 0 then
+  begin
+    CloseHandle(MutexHandle);
+    if not UninstallSilent then MsgBox('Сначала закройте окно русификатора и повторите удаление приложения.', mbInformation, MB_OK);
+    Result := False;
+    Exit;
+  end;
   // /DIR= в релизе не поддерживается: деинсталлятор из другой папки не запускает помощника и не откатывает.
   if not AppDirOk then
   begin
@@ -3064,11 +3207,6 @@ begin
     Log('Русский лаунчер установлен: ' + LauncherExe + ' (сборка ' + LauncherBuildText + ')');
   end;
 #endif
-#ifdef WithUpdater
-#ifndef TestBuild
-  if CurStep = ssPostInstall then RegisterUpdateTask;
-#endif
-#endif
   if CurStep = ssPostInstall then
   begin
     SetArrayLength(Lines, 1);
@@ -3097,7 +3235,6 @@ begin
   begin
     RemoveUpdateTask;
     // Значок держит WXQTray.exe открытым: без этого файл не удалится.
-    Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM WXQTray.exe', '', SW_HIDE, ewWaitUntilTerminated, KillCode);
   end;
 #endif
 #endif

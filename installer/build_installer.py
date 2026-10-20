@@ -696,6 +696,8 @@ def assert_clean(install: dict, files: list[tuple[Path, str]], staging: Path, la
     (активатор и шесть файлов в launcher/), и он допустим только при launcher=True: любой другой файл с такими именами отвергается."""
     allowed = LAUNCHER_STAGED if launcher else set()
     present = {f.relative_to(staging).as_posix() for f in staging.rglob('*') if f.is_file()}
+    if any(Path(name).name.lower() == 'wxqtray.exe' for name in present):
+        fail('резидентный WXQTray.exe больше не должен входить в установщик')
     bad = [name for name in present if name not in allowed and (FORBIDDEN_NAME.search(name.rsplit('/', 1)[-1]) or 'launcher' in name.lower())]
     bad += [f.name for f in staging.rglob('*') if f.is_dir() and not (launcher and f.name == 'launcher') and (FORBIDDEN_NAME.search(f.name) or 'launcher' in f.name.lower())]
     if launcher:
@@ -709,14 +711,12 @@ def assert_clean(install: dict, files: list[tuple[Path, str]], staging: Path, la
 def make_staging(install: dict, files: list[tuple[Path, str]], staging: Path, with_tool: bool = True, launcher_build: Path | None = None,
                  test_build: bool = False, update_repo: str | None = None) -> None:
     """Раскладывает staging-папку (данные, значки, помощник, списки для Inno, русский лаунчер при launcher_build) и проверяет её состав.
-    update_repo (владелец/репозиторий GitHub): включает автообновление - ресурс update-config.json в помощнике и WXQTray.exe в установщике."""
+    update_repo (владелец/репозиторий GitHub): включает проверку и загрузку обновлений в открытом окне через ресурс update-config.json."""
     (staging / 'install.json').write_text(json.dumps(install, ensure_ascii=False, indent=1), encoding='utf-8')
     write_assets(staging)
     if with_tool:
         build_tool(staging, test_build, write_update_config(staging, update_repo) if update_repo else None)
         build_ui(staging, test_build)
-        if update_repo:
-            build_tray(staging)
     if launcher_build is not None:
         stage_launcher(staging, launcher_build.resolve(), load_launcher_build(launcher_build))
     write_include(staging, files, launcher_build is not None)
@@ -741,7 +741,7 @@ def iscc_defines(staging: Path, output: Path, version: str, date: str, game_vers
         defines.append('/DWITHLAUNCHER')
     if (staging / 'WXQSetupUI.exe').is_file():
         defines.append('/DWITHUI')
-    if (staging / 'WXQTray.exe').is_file():   # автообновление: задача планировщика, значок в трее, запись автозапуска
+    if (staging / 'update-config.json').is_file():   # проверка и обновление внутри окна, без резидентного процесса
         defines.append('/DWITHUPDATER')
     for name, define in (('WXQTool.exe', 'ToolSha256'), ('install.json', 'InstallSha256'), ('WXQSetupUI.exe', 'UiSha256'),
                          ('launcher/profiles.json', 'ProfilesSha256')):

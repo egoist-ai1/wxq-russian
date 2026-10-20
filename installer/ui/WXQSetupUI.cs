@@ -322,14 +322,20 @@ namespace WXQSetup
         public string TranslationVersion = "";
         public string GameVersion = "";
         public bool HasLauncherShortcut = true;
+        public bool UpdateEnabled;
+        public string UpdateState = "none";  // none | checking | current | available | downloading | ready | handoff | failed
+        public string UpdateVersion = "", UpdateMessage = "";
+        public long UpdateDoneBytes, UpdateTotalBytes;
+        public bool UpdateBusy { get { return UpdateState == "downloading" || UpdateState == "handoff"; } }
     }
 
     // ===== Протокол с Inno (PROTOCOL.md): разбор состояния, команды, белые списки =====
     static class Proto
     {
         // Единственные команды, которые окно вообще умеет посылать. Пути, адреса и произвольный текст в Inno не передаются.
-        public static readonly string[] Cmds = { "install", "close", "remove", "launch", "options", "back", "pickgame" };
+        public static readonly string[] Cmds = { "install", "close", "remove", "launch", "options", "back", "pickgame", "checkupdate", "update" };
         public static readonly string[] Screens = { "welcome", "progress", "done", "fail", "installed", "removed" };
+        public static readonly string[] UpdateStates = { "none", "checking", "current", "available", "downloading", "ready", "handoff", "failed" };
         const int MaxState = 65536;
 
         // Ссылки «Поддержать» и «Сообщество»: хост без www + путь целиком, https, без порта, логина, запроса и якоря. Регистр пути важен (код приглашения Discord).
@@ -420,6 +426,43 @@ namespace WXQSetup
             return (bool)o;
         }
 
+        // Строки обновления — только текст, без управляющих знаков; длинный текст остаётся в подсказке, а не меняет геометрию окна.
+        static string Plain(Dictionary<string, object> d, string k, int limit)
+        {
+            object o; if (!d.TryGetValue(k, out o) || !(o is string)) return "";
+            var sb = new StringBuilder(); bool space = false;
+            foreach (char c in (string)o)
+            {
+                if (char.IsWhiteSpace(c)) { space = sb.Length > 0; continue; }
+                if (char.IsControl(c) || char.GetUnicodeCategory(c) == UnicodeCategory.Format) continue;
+                if (space && sb.Length < limit) sb.Append(' ');
+                space = false;
+                if (sb.Length >= limit) break;
+                sb.Append(c);
+            }
+            return sb.ToString().TrimEnd();
+        }
+
+        static long Bytes(Dictionary<string, object> d, string k)
+        {
+            object o; if (!d.TryGetValue(k, out o) || o == null) return 0;
+            long exact;
+            if (long.TryParse(Convert.ToString(o, CultureInfo.InvariantCulture), NumberStyles.Integer, CultureInfo.InvariantCulture, out exact)) return Math.Max(0, exact);
+            double value = Num(d, k);
+            if (value <= 0) return 0;
+            return value >= (double)long.MaxValue ? long.MaxValue : (long)value;
+        }
+
+        public static bool CanSend(UiState s, string cmd)
+        {
+            if (Array.IndexOf(Cmds, cmd) < 0 || s.State == "running" || s.Screen == "progress") return false;
+            if (cmd == "close") return true;  // загрузку можно остановить закрытием установщика
+            if (s.UpdateBusy) return false;
+            if (cmd == "checkupdate") return s.UpdateEnabled && s.UpdateState != "checking";
+            if (cmd == "update") return s.UpdateEnabled && (s.UpdateState == "available" || s.UpdateState == "ready");
+            return true;
+        }
+
         // Разбор файла состояния. Оборванный, пустой, повреждённый файл, чужая структура, неизвестный экран, rev не больше прежнего: false, состояние не меняется.
         // screen == "quit" означает «Inno закончил, закрыться».
         public static bool TryApply(string text, UiState s, ref long lastRev, out string screen, out string sig)
@@ -458,6 +501,12 @@ namespace WXQSetup
             s.FailKind = Str(d, "fail_kind") == "remove" ? "remove" : "install";
             s.Note = Str(d, "note"); s.CanRemove = Bool(d, "can_remove"); s.Interrupted = Bool(d, "interrupted");
             s.TranslationVersion = Str(d, "translation_version"); s.GameVersion = Str(d, "game_version");
+            s.UpdateEnabled = Bool(d, "update_enabled");
+            string updateState = Plain(d, "update_state", 20);
+            s.UpdateState = Array.IndexOf(UpdateStates, updateState) >= 0 ? updateState : "none";
+            s.UpdateVersion = Plain(d, "update_version", 80); s.UpdateMessage = Plain(d, "update_message", 280);
+            s.UpdateDoneBytes = Bytes(d, "update_done_bytes"); s.UpdateTotalBytes = Bytes(d, "update_total_bytes");
+            if (s.UpdateTotalBytes > 0 && s.UpdateDoneBytes > s.UpdateTotalBytes) s.UpdateDoneBytes = s.UpdateTotalBytes;
             // Галочка «Русский лаунчер» принадлежит окну: из состояния она берётся только при входе на экран, чтобы клик не перерисовывал экран.
             if (intoNew) s.LauncherOn = Bool(d, "launcher_on");
             sig = string.Join("|", scr, s.CanRemove, s.Interrupted, s.FailureMessage, s.FailKind, s.Note, s.LauncherAvailable, s.LauncherInstalled,
@@ -473,6 +522,10 @@ namespace WXQSetup
         public event Action<string> Command;
         public UiState S = new UiState();
         readonly Grid host = new Grid();
+        readonly Grid updateHost = new Grid();
+        readonly Dictionary<Btn, bool> operationButtons = new Dictionary<Btn, bool>();
+        bool updatePending, checkPending;
+        string updateSig;
         string current;
         // элементы экрана прогресса
         TextBlock pctText, etaText, fileText, detailText, infoLead, infoMore;
@@ -524,13 +577,126 @@ namespace WXQSetup
             close.HorizontalAlignment = HorizontalAlignment.Right; close.VerticalAlignment = VerticalAlignment.Top; close.Margin = new Thickness(0, 16, 16, 0);
             close.Click += delegate { Fire("close"); };
             g.Children.Add(close);
+            updateHost.Width = 268; updateHost.Height = 100;
+            updateHost.HorizontalAlignment = HorizontalAlignment.Right; updateHost.VerticalAlignment = VerticalAlignment.Top;
+            updateHost.Margin = new Thickness(0, 14, 64, 0); updateHost.Visibility = Visibility.Collapsed;
+            g.Children.Add(updateHost);
             Draggable = new Border { Background = Tk.Clear, Child = g };
             return Draggable;
         }
 
         public void RaiseClose() { Fire("close"); }
         public void Do(string cmd) { Fire(cmd); }
-        void Fire(string cmd) { if (Command != null) Command(cmd); }
+        void Fire(string cmd)
+        {
+            if (!Proto.CanSend(S, cmd) || (updatePending && cmd != "close") || (checkPending && cmd == "checkupdate")) return;
+            if (cmd == "update") { updatePending = true; UpdateUpdates(false); }
+            if (cmd == "checkupdate") { checkPending = true; UpdateUpdates(false); }
+            if (Command != null) Command(cmd);
+        }
+
+        public void AcceptUpdateState()
+        {
+            if (S.UpdateBusy || S.UpdateState == "failed") updatePending = false;
+            if (S.UpdateState != "none") checkPending = false;
+            UpdateUpdates(false);
+        }
+
+        public void UpdateCommandFailed()
+        {
+            updatePending = checkPending = false;
+            S.UpdateState = "failed"; S.UpdateMessage = "Не удалось передать команду установщику. Повторите проверку.";
+            UpdateUpdates(false);
+        }
+
+        static TextBlock UpdateText(string text, double size, Brush color)
+        {
+            var t = Tk.TB(text, size, color, Tk.Body, 17);
+            t.TextTrimming = TextTrimming.CharacterEllipsis;
+            AutomationProperties.SetName(t, text);
+            return t;
+        }
+
+        public void UpdateUpdates(bool animate)
+        {
+            bool busy = S.UpdateBusy || updatePending;
+            foreach (var item in operationButtons) item.Key.IsEnabledBtn = item.Value && !busy;
+            if (launcherToggle != null) launcherToggle.IsEnabled = !busy;
+            updateHost.Visibility = S.UpdateEnabled ? Visibility.Visible : Visibility.Collapsed;
+            string st = updatePending ? "pending" : checkPending ? "checking" : S.UpdateState;
+            string nextSig = string.Join("|", st, S.UpdateVersion, S.UpdateMessage, S.UpdateDoneBytes, S.UpdateTotalBytes, S.UpdateEnabled, S.State, S.Screen);
+            if (nextSig == updateSig) return;
+            bool entering = updateSig != null && (st == "available" || st == "ready") && !updateSig.StartsWith(st + "|", StringComparison.Ordinal);
+            updateSig = nextSig;
+            updateHost.Children.Clear();
+            if (!S.UpdateEnabled) return;
+            var content = new Grid();
+            content.RowDefinitions.Add(new RowDefinition { Height = new GridLength(17) });
+            content.RowDefinitions.Add(new RowDefinition { Height = new GridLength(4) });
+            content.RowDefinitions.Add(new RowDefinition { Height = new GridLength(17) });
+            content.RowDefinitions.Add(new RowDefinition { Height = new GridLength(8) });
+            content.RowDefinitions.Add(new RowDefinition { Height = new GridLength(30) });
+            string headline = "Обновления перевода", sub = "Проверка при каждом запуске";
+            Brush accent = Tk.Text;
+            switch (st)
+            {
+                case "checking": headline = "Проверяю обновления…"; sub = "Можно продолжать установку"; break;
+                case "current": headline = "У вас актуальная версия"; sub = string.IsNullOrEmpty(S.UpdateVersion) ? "Проверено при запуске" : "Версия " + S.UpdateVersion; accent = Tk.Success; break;
+                case "available": headline = "Доступно обновление"; sub = string.IsNullOrEmpty(S.UpdateVersion) ? "Новая версия перевода" : "Версия " + S.UpdateVersion; accent = Tk.Gold; break;
+                case "ready": headline = "Обновление готово"; sub = string.IsNullOrEmpty(S.UpdateVersion) ? "Можно применить обновление" : "Версия " + S.UpdateVersion; accent = Tk.Gold; break;
+                case "pending": headline = "Подготовка обновления…"; sub = string.IsNullOrEmpty(S.UpdateVersion) ? "Ожидаю ответ установщика" : "Версия " + S.UpdateVersion; accent = Tk.Gold; break;
+                case "downloading": headline = "Скачиваю обновление…"; sub = string.IsNullOrEmpty(S.UpdateVersion) ? "Установщик можно закрыть" : "Версия " + S.UpdateVersion; accent = Tk.Gold; break;
+                case "handoff": headline = "Применяю обновление…"; sub = string.IsNullOrEmpty(S.UpdateVersion) ? "Новая версия уже скачана" : "Версия " + S.UpdateVersion; accent = Tk.Gold; break;
+                case "failed": headline = "Не удалось получить обновление"; sub = string.IsNullOrEmpty(S.UpdateMessage) ? "Проверьте подключение к интернету" : S.UpdateMessage; break;
+            }
+            var title = UpdateText(headline, 12, accent); content.Children.Add(title);
+            var message = UpdateText(sub, 11.5, Tk.Muted); SetRow(message, 2); content.Children.Add(message);
+            string full = headline + (string.IsNullOrEmpty(S.UpdateVersion) ? "" : "\nВерсия " + S.UpdateVersion) + (string.IsNullOrEmpty(S.UpdateMessage) ? "" : "\n" + S.UpdateMessage);
+            content.ToolTip = full; AutomationProperties.SetName(content, full);
+            FrameworkElement actions;
+            if (st == "downloading" || st == "pending")
+            {
+                var progress = new Grid();
+                string size = st == "pending" ? "Подготавливаю загрузку" : S.UpdateTotalBytes > 0 ? Proto.SizeText(S.UpdateDoneBytes, S.UpdateTotalBytes) : "Размер загрузки уточняется";
+                var status = UpdateText(size, 11.5, Tk.TextSoft); status.VerticalAlignment = VerticalAlignment.Top; progress.Children.Add(status);
+                var track = new Border { Height = 3, Background = Tk.Surface3, CornerRadius = new CornerRadius(1.5), VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 0, 2) };
+                double fraction = st == "downloading" && S.UpdateTotalBytes > 0 ? Math.Max(0, Math.Min(1, (double)S.UpdateDoneBytes / S.UpdateTotalBytes)) : 0.16;
+                track.Child = new Border { Height = 3, Width = 246 * fraction, Background = Tk.Gold, CornerRadius = new CornerRadius(1.5), HorizontalAlignment = HorizontalAlignment.Left };
+                progress.Children.Add(track); actions = progress;
+            }
+            else if (st == "handoff")
+            {
+                var wait = UpdateText("Установщик перезапустится…", 11.5, Tk.TextSoft); wait.VerticalAlignment = VerticalAlignment.Center; actions = wait;
+            }
+            else
+            {
+                bool canUpdate = st == "available" || st == "ready";
+                string label = canUpdate ? "Обновить" : st == "failed" ? "Проверить ещё раз" : st == "checking" ? "Проверяю…" : "Проверить";
+                var button = new Btn(canUpdate ? BK.Primary : BK.Secondary, label, canUpdate ? null : "redo", null, 30, canUpdate ? 116 : 0);
+                string cmd = canUpdate ? "update" : "checkupdate";
+                button.IsEnabledBtn = !checkPending && !updatePending && Proto.CanSend(S, cmd);
+                button.Click += delegate { Fire(cmd); }; actions = button;
+                if (canUpdate)
+                {
+                    var row = new Grid();
+                    row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                    row.Children.Add(button);
+                    var recheck = new Btn(BK.Ghost, null, "redo", null, 30, 30, true, "Проверить обновления");
+                    recheck.IsEnabledBtn = !checkPending && !updatePending && Proto.CanSend(S, "checkupdate");
+                    recheck.Click += delegate { Fire("checkupdate"); }; SetColumn(recheck, 1); row.Children.Add(recheck); actions = row;
+                }
+            }
+            SetRow(actions, 4); content.Children.Add(actions);
+            var card = new Border { Background = Tk.Surface1, BorderBrush = st == "available" || st == "ready" ? Tk.Gold : Tk.Line, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(10), Child = content };
+            updateHost.Children.Add(card);
+            if ((animate || entering) && Tk.Anim)
+            {
+                var shift = new TranslateTransform(10, 0); card.RenderTransform = shift;
+                card.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, Tk.D(200)));
+                shift.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(10, 0, Tk.D(320)) { EasingFunction = Tk.Expo });
+            }
+        }
 
         // ----- каркас экрана: тело + подвал -----
         Grid Frame(out Grid body, out Grid footer, double footerH = FooterH)
@@ -572,7 +738,13 @@ namespace WXQSetup
         FrameworkElement Buttons(params FrameworkElement[] items)
         {
             var sp = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 0, 26) };
-            for (int i = 0; i < items.Length; i++) { if (i > 0) items[i].Margin = new Thickness(8, 0, 0, 0); sp.Children.Add(items[i]); }
+            for (int i = 0; i < items.Length; i++)
+            {
+                if (i > 0) items[i].Margin = new Thickness(8, 0, 0, 0);
+                var button = items[i] as Btn;
+                if (button != null && AutomationProperties.GetName(button) != "Закрыть") operationButtons[button] = button.IsEnabledBtn;
+                sp.Children.Add(items[i]);
+            }
             return sp;
         }
 
@@ -606,7 +778,7 @@ namespace WXQSetup
         }
 
         // ================= Экран 1: приветствие =================
-        public const string UpdateLimit = "После выхода обновления игры первый запуск будет на китайском: перевод вернётся автоматически после того, как вы один раз запустите игру до главного меню и закроете её. Иначе нельзя — новые хеши файлов игры создаются только самой игрой.";
+        public const string UpdateLimit = "После обновления игры первый запуск будет на китайском. Дойдите до главного меню, закройте игру и откройте русификатор для переустановки перевода.";
         FrameworkElement Welcome()
         {
             Grid body, footer; var root = Frame(out body, out footer);
@@ -620,7 +792,7 @@ namespace WXQSetup
             list.Children.Add(ItemRow("text", "Тексты игры", null));
             list.Children.Add(ItemRow("image", "Картинки интерфейса", "Кнопки, ранги, вывеска «Новости»"));
             left.Children.Add(list);
-            // Ограничение автообновления: говорим о нём заранее, до первой установки.
+            // После обновления игры перевод восстанавливается через установщик, без фонового процесса.
             var upd = new Grid { Margin = new Thickness(0, 14, 0, 0), Width = 424, HorizontalAlignment = HorizontalAlignment.Left };
             upd.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
             upd.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -801,8 +973,8 @@ namespace WXQSetup
             }
             if (s.Op == "remove")
             {
-                lead = "Восстанавливаю файлы по резервным копиям.";
-                more = "Возвращаются сохранённые перед установкой файлы, затем запись о переводе снимается из «Установки и удаления программ». Копии не трогаются, пока откат не закончится. Если игра или лаунчер запущены, установщик закроет их сам; если откат прервётся, нажмите «Удалить перевод» ещё раз: он продолжится.";
+                lead = "Восстанавливаю файлы игры и убираю русский лаунчер.";
+                more = "Сохранённые перед установкой файлы возвращаются на место. Русификатор остаётся доступным для повторной установки и обновлений; удалить приложение целиком можно через настройки Windows. Если откат прервётся, нажмите «Удалить перевод» ещё раз: он продолжится.";
                 return;
             }
             switch (s.Step)
@@ -828,8 +1000,8 @@ namespace WXQSetup
                     more = "Для каждого записанного файла считается контрольная сумма SHA-256 и сверяется с эталоном; результат фиксируется в журнале. Если что-то не совпало, запись откатывается по копии. Запускать игру можно после сообщения «Перевод установлен».";
                     return;
                 case 6:
-                    lead = "Ставлю русский лаунчер (если он включён), задачу автообновления и значок в области уведомлений.";
-                    more = "Это делается с правами администратора, которые вы уже разрешили. Лаунчер даёт ярлык «Honor of Kings ACE (RU)»; задача в планировщике проверяет новую версию перевода и ждёт, пока вы играете; значок показывает её состояние. Убрать всё можно удалением программы.";
+                    lead = "Сохраняю русификатор и настраиваю русский лаунчер, если он включён.";
+                    more = "Русификатор остаётся доступным для переустановки, отката и обновлений. Русский лаунчер получает ярлык «Honor of Kings ACE (RU)». Проверка обновлений происходит при запуске русификатора; закрытое приложение не работает в фоне.";
                     return;
                 default:
                     lead = "Готовлюсь к установке.";
@@ -951,7 +1123,7 @@ namespace WXQSetup
             var l1 = ItemRow("play", S.HasLauncherShortcut ? "Запустите игру" : "Откройте игру вручную",
                 S.HasLauncherShortcut ? (S.LauncherInstalled ? "Откроется русский лаунчер от обычного пользователя" : "Откроется оригинальный лаунчер") : "Ярлык лаунчера не найден");
             l1.Margin = new Thickness(0, 16, 0, 12); card.Children.Add(l1);
-            card.Children.Add(ItemRow("redo", "После обновления игры", "Первый запуск будет на китайском: дойдите до главного меню и закройте игру, перевод вернётся сам"));
+            card.Children.Add(ItemRow("redo", "После обновления игры", "Дойдите до главного меню, закройте игру и откройте русификатор для переустановки"));
             if (S.LauncherInstalled) card.Children.Add(ItemRow("shield", "Русский лаунчер", "Ярлык «Honor of Kings ACE (RU)»; новая функция, с ACE в игре не проверена. Выключить: переустановка с выключенным переключателем"));
             var c = Card(card, 24); SetColumn(c, 2); c.VerticalAlignment = VerticalAlignment.Top; body.Children.Add(c);
 
@@ -1038,7 +1210,7 @@ namespace WXQSetup
                 card.Children.Add(Fact("Версия перевода", string.IsNullOrEmpty(S.TranslationVersion) ? "—" : S.TranslationVersion, 16));
                 card.Children.Add(Fact("Версия игры", string.IsNullOrEmpty(S.GameVersion) ? "—" : S.GameVersion, 12));
                 card.Children.Add(new Border { Height = 1, Background = Tk.Line, Margin = new Thickness(0, 6, 0, 14) });
-                var n = Tk.TB("После обновления игры первый запуск будет на китайском: дойдите до главного меню и закройте игру, перевод вернётся сам.", 12.5, Tk.Muted, Tk.Body, 18, TextWrapping.Wrap); card.Children.Add(n);
+                var n = Tk.TB("После обновления игры дойдите до главного меню, закройте игру и откройте русификатор для переустановки.", 12.5, Tk.Muted, Tk.Body, 18, TextWrapping.Wrap); card.Children.Add(n);
             }
             var c = Card(card, 24); SetColumn(c, 2); c.VerticalAlignment = VerticalAlignment.Top; body.Children.Add(c);
 
@@ -1077,11 +1249,12 @@ namespace WXQSetup
             Grid body, footer; var root = Frame(out body, out footer);
             var left = new StackPanel { HorizontalAlignment = HorizontalAlignment.Left };
             left.Children.Add(StatusIcon("check", Tk.Success));
-            left.Children.Add(Title("Перевод удалён", (string.IsNullOrEmpty(S.Note) ? "Восстановлено состояние файлов до установки перевода." : S.Note) + " Захотите вернуть перевод — запустите установщик ещё раз.", 480));
+            left.Children.Add(Title("Перевод удалён", (string.IsNullOrEmpty(S.Note) ? "Восстановлено состояние файлов до установки перевода." : S.Note) + " Русификатор остаётся доступным для повторной установки.", 480));
             body.Children.Add(left);
             footer.Children.Add(SupportBlock());
-            var close = new Btn(BK.Primary, "Закрыть", null, null, 44, 132); close.Click += delegate { Fire("close"); };
-            footer.Children.Add(Buttons(close));
+            var close = new Btn(BK.Secondary, "Закрыть", null, null, 44, 112); close.Click += delegate { Fire("close"); };
+            var again = new Btn(BK.Primary, "Установить снова", "redo", null, 44, 204); again.Click += delegate { Fire("back"); };
+            footer.Children.Add(Buttons(close, again));
             return root;
         }
 
@@ -1092,6 +1265,7 @@ namespace WXQSetup
         {
             if (pctTimer != null && screen != "progress") pctTimer.Stop();
             S.Screen = screen; current = screen;
+            operationButtons.Clear(); launcherToggle = null;
             FrameworkElement el;
             switch (screen)
             {
@@ -1119,6 +1293,7 @@ namespace WXQSetup
                     }
                 }
             }
+            UpdateUpdates(false);
             if (screen == "installed" && confirmRemove) { /* без повторного входа: оставляем как есть */ }
         }
     }
@@ -1160,7 +1335,8 @@ namespace WXQSetup
             Directory.CreateDirectory(dir);
             string[] names = { "01-welcome", "02-welcome-launcher-on", "03-progress", "04-done", "05-fail", "06-installed", "07-installed-confirm", "08-removed", "09-progress-start", "10-fail-after-write",
                 "11-done-no-launcher", "12-interrupted", "13-progress-remove", "14-fail-remove", "15-welcome-can-remove", "16-welcome-no-launcher-block", "17-removed-note", "18-interrupted-confirm", "19-fail-pick-game",
-                "20-progress-closing", "21-progress-backup", "22-progress-verify", "23-progress-finish", "24-fail-running", "25-progress-remove-closing", "26-done-launcher-not-found" };
+                "20-progress-closing", "21-progress-backup", "22-progress-verify", "23-progress-finish", "24-fail-running", "25-progress-remove-closing", "26-done-launcher-not-found",
+                "27-update-checking", "28-installed-update-available", "29-update-downloading", "30-update-failed", "31-update-ready", "32-update-handoff", "33-update-current", "34-update-unknown-size" };
             foreach (string n in names)
             {
                 var v = new MainView();
@@ -1191,6 +1367,24 @@ namespace WXQSetup
                 if (n == "06-installed" || n == "07-installed-confirm") screen = "installed";
                 if (n == "07-installed-confirm") typeof(MainView).GetField("confirmRemove", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(v, true);
                 if (n == "08-removed") screen = "removed";
+                if (n.StartsWith("27-", StringComparison.Ordinal) || n.StartsWith("28-", StringComparison.Ordinal) || n.StartsWith("29-", StringComparison.Ordinal) || n.StartsWith("30-", StringComparison.Ordinal)
+                    || n.StartsWith("31-", StringComparison.Ordinal) || n.StartsWith("32-", StringComparison.Ordinal) || n.StartsWith("33-", StringComparison.Ordinal) || n.StartsWith("34-", StringComparison.Ordinal))
+                {
+                    v.S.UpdateEnabled = true; v.S.LauncherOn = true; v.S.TranslationVersion = "0.6.3";
+                    v.S.UpdateVersion = "0.6.4-rc.1234567890+проверка-длинного-обозначения-версии-перевода";
+                    v.S.UpdateMessage = "Сервер обновлений временно недоступен. Проверьте подключение к интернету или повторите попытку позже. Установку и откат перевода можно продолжить без сети.";
+                    switch (n)
+                    {
+                        case "27-update-checking": v.S.UpdateState = "checking"; break;
+                        case "28-installed-update-available": screen = "installed"; v.S.UpdateState = "available"; break;
+                        case "29-update-downloading": screen = "installed"; v.S.UpdateState = "downloading"; v.S.UpdateDoneBytes = 62 * 1048576; v.S.UpdateTotalBytes = 163 * 1048576; break;
+                        case "30-update-failed": v.S.UpdateState = "failed"; break;
+                        case "31-update-ready": screen = "done"; v.S.UpdateState = "ready"; break;
+                        case "32-update-handoff": screen = "installed"; v.S.UpdateState = "handoff"; break;
+                        case "33-update-current": screen = "installed"; v.S.UpdateState = "current"; v.S.UpdateVersion = "0.6.3"; break;
+                        case "34-update-unknown-size": v.S.UpdateState = "downloading"; break;
+                    }
+                }
                 v.Show(screen);
                 var host = new Border { Child = v, Background = Tk.Bg, Width = MainView.W, Height = MainView.H };
                 host.Measure(new Size(MainView.W, MainView.H)); host.Arrange(new Rect(0, 0, MainView.W, MainView.H)); host.UpdateLayout();
@@ -1250,7 +1444,8 @@ namespace WXQSetup
             {
                 if (Array.IndexOf(Proto.Cmds, cmd) < 0) return;
                 bool? launcher = v.S.LauncherAvailable ? (bool?)v.S.LauncherOn : null;
-                try { Proto.Append(cmdPath, Proto.Cmd(++seq, cmd, launcher)); } catch (Exception) { }
+                try { Proto.Append(cmdPath, Proto.Cmd(++seq, cmd, launcher)); }
+                catch (Exception) { if (cmd == "update" || cmd == "checkupdate") v.UpdateCommandFailed(); }
             };
             Action exitSoon = delegate
             {
@@ -1260,7 +1455,7 @@ namespace WXQSetup
             };
             v.Command += delegate (string cmd)
             {
-                if (v.S.State == "running") return;   // во время записи окно команд не шлёт
+                if (!Proto.CanSend(v.S, cmd)) return;   // запись игры и обновление не запускаются одновременно
                 if (cmd == "close" || cmd == "launch") { if (sentClose) return; sentClose = true; send(cmd); exitSoon(); return; }
                 send(cmd);
             };
@@ -1280,6 +1475,7 @@ namespace WXQSetup
                 if (screen == "quit") { force = true; w.Close(); return; }
                 if (v.Current != screen || (screen != "progress" && sig != lastSig)) { lastSig = sig; v.Show(screen); }
                 else if (screen == "progress") v.UpdateProgress(false);
+                v.AcceptUpdateState();
 #if TESTBUILD
                 Pilot.OnState(v);
 #endif
@@ -1403,6 +1599,66 @@ namespace WXQSetup
             Check("проценты ограничены 0..100", Proto.TryApply("{\"rev\":22,\"screen\":\"progress\",\"percent\":950}", s, ref rev, out screen, out sig) && s.Percent == 100);
             Check("чужой объём: done не больше total", Proto.TryApply("{\"rev\":23,\"screen\":\"progress\",\"done_bytes\":9,\"total_bytes\":3}", s, ref rev, out screen, out sig) && s.DoneBytes == 3);
 
+            {
+                var u = new UiState(); long ur = 0; string us, ug;
+                foreach (string state in Proto.UpdateStates)
+                    Check("состояние обновления: " + state, Proto.TryApply("{\"rev\":" + (ur + 1) + ",\"screen\":\"installed\",\"update_enabled\":true,\"update_state\":\"" + state + "\",\"translation_version\":\"0.6.3\",\"update_version\":\"0.6.4\"}", u, ref ur, out us, out ug)
+                        && u.UpdateState == state && u.UpdateEnabled && u.TranslationVersion == "0.6.3" && u.UpdateVersion == "0.6.4");
+                Check("неизвестное состояние обновления безопасно сбрасывается", Proto.TryApply("{\"rev\":20,\"screen\":\"welcome\",\"update_enabled\":true,\"update_state\":\"execute\"}", u, ref ur, out us, out ug) && u.UpdateState == "none");
+                Check("новые поля необязательны и не сохраняют старое значение", Proto.TryApply("{\"rev\":21,\"screen\":\"welcome\"}", u, ref ur, out us, out ug) && !u.UpdateEnabled && u.UpdateState == "none" && u.UpdateVersion == "" && u.UpdateMessage == "" && u.UpdateDoneBytes == 0 && u.UpdateTotalBytes == 0);
+                Check("флаг обновления принимает только bool", Proto.TryApply("{\"rev\":22,\"screen\":\"welcome\",\"update_enabled\":\"true\",\"update_version\":{},\"update_message\":[]}", u, ref ur, out us, out ug) && !u.UpdateEnabled && u.UpdateVersion == "" && u.UpdateMessage == "");
+                Check("объём обновления ограничен известным итогом", Proto.TryApply("{\"rev\":23,\"screen\":\"welcome\",\"update_done_bytes\":999,\"update_total_bytes\":500}", u, ref ur, out us, out ug) && u.UpdateDoneBytes == 500 && u.UpdateTotalBytes == 500);
+                Check("неизвестный итог не теряет скачанный объём", Proto.TryApply("{\"rev\":24,\"screen\":\"welcome\",\"update_done_bytes\":999,\"update_total_bytes\":0}", u, ref ur, out us, out ug) && u.UpdateDoneBytes == 999 && u.UpdateTotalBytes == 0);
+                Check("отрицательный объём обновления равен нулю", Proto.TryApply("{\"rev\":25,\"screen\":\"welcome\",\"update_done_bytes\":-10,\"update_total_bytes\":-1}", u, ref ur, out us, out ug) && u.UpdateDoneBytes == 0 && u.UpdateTotalBytes == 0);
+                Check("Int64.MaxValue читается точно", Proto.TryApply("{\"rev\":26,\"screen\":\"welcome\",\"update_done_bytes\":9223372036854775807,\"update_total_bytes\":9223372036854775807}", u, ref ur, out us, out ug) && u.UpdateDoneBytes == long.MaxValue && u.UpdateTotalBytes == long.MaxValue);
+                Check("переполнение объёма ограничено Int64.MaxValue", Proto.TryApply("{\"rev\":27,\"screen\":\"welcome\",\"update_done_bytes\":1e30,\"update_total_bytes\":1e30}", u, ref ur, out us, out ug) && u.UpdateDoneBytes == long.MaxValue && u.UpdateTotalBytes == long.MaxValue);
+                Check("нечисловой объём обновления равен нулю", Proto.TryApply("{\"rev\":28,\"screen\":\"welcome\",\"update_done_bytes\":\"NaN\",\"update_total_bytes\":\"x\"}", u, ref ur, out us, out ug) && u.UpdateDoneBytes == 0 && u.UpdateTotalBytes == 0);
+                string plain = new JavaScriptSerializer().Serialize(new Dictionary<string, object> { { "rev", 29 }, { "screen", "welcome" }, { "update_version", "  0.6.4\r\n rc\u202e  " }, { "update_message", "  Нет\tсети\n\u0001\u202eпозже  " } });
+                Check("описание обновления остаётся обычным текстом", Proto.TryApply(plain, u, ref ur, out us, out ug) && u.UpdateVersion == "0.6.4 rc" && u.UpdateMessage == "Нет сети позже");
+                string bounded = new JavaScriptSerializer().Serialize(new Dictionary<string, object> { { "rev", 30 }, { "screen", "welcome" }, { "update_version", new string('v', 500) }, { "update_message", new string('я', 1000) } });
+                Check("строки обновления ограничены независимо", Proto.TryApply(bounded, u, ref ur, out us, out ug) && u.UpdateVersion.Length == 80 && u.UpdateMessage.Length == 280);
+                Check("сломанное состояние не стирает обновление", !Proto.TryApply("{\"rev\":31,\"screen\":\"welcome\",\"update_state\":", u, ref ur, out us, out ug) && u.UpdateVersion.Length == 80 && ur == 30);
+            }
+
+            {
+                var u = new UiState { UpdateEnabled = true, UpdateState = "checking" };
+                Check("проверка обновления не блокирует установку и откат", Proto.CanSend(u, "install") && Proto.CanSend(u, "remove") && Proto.CanSend(u, "options") && !Proto.CanSend(u, "checkupdate"));
+                foreach (string idle in new[] { "welcome", "installed", "done", "fail", "removed" })
+                {
+                    u.Screen = idle; u.UpdateState = "current";
+                    Check("проверка вручную на idle-экране " + idle, Proto.CanSend(u, "checkupdate") && !Proto.CanSend(u, "update"));
+                }
+                foreach (string busy in new[] { "downloading", "handoff" })
+                {
+                    u.UpdateState = busy;
+                    Check("закрытие допустимо при " + busy, Proto.CanSend(u, "close"));
+                    bool safe = true;
+                    foreach (string cmd in new[] { "install", "remove", "launch", "options", "back", "pickgame", "checkupdate", "update" }) safe &= !Proto.CanSend(u, cmd);
+                    Check("операции заблокированы при " + busy, safe);
+                }
+                u.UpdateState = "available"; Check("обновление запускается из available", Proto.CanSend(u, "update"));
+                u.UpdateState = "ready"; Check("обновление запускается из ready", Proto.CanSend(u, "update"));
+                u.UpdateEnabled = false; Check("без поддержки обновления команды недоступны", !Proto.CanSend(u, "update") && !Proto.CanSend(u, "checkupdate") && Proto.CanSend(u, "install"));
+                u.UpdateEnabled = true; u.State = "running"; Check("обновление не вмешивается в запись игры", !Proto.CanSend(u, "update") && !Proto.CanSend(u, "checkupdate") && !Proto.CanSend(u, "close"));
+                u.State = "idle"; u.Screen = "progress"; Check("экран прогресса не запускает обновление", !Proto.CanSend(u, "update") && !Proto.CanSend(u, "checkupdate"));
+            }
+
+            {
+                var v = new MainView(); v.S.UpdateEnabled = true; v.S.UpdateState = "available"; v.Show("installed");
+                int updates = 0, installs = 0, closes = 0;
+                v.Command += delegate (string cmd) { if (cmd == "update") updates++; if (cmd == "install") installs++; if (cmd == "close") closes++; };
+                v.Do("update"); v.Do("update"); v.Do("install"); v.Do("close");
+                Check("повторный клик обновления не дублирует команду", updates == 1 && installs == 0 && closes == 1);
+                v.S.UpdateState = "failed"; v.AcceptUpdateState(); v.Do("install");
+                Check("после отказа обновления установка снова доступна", installs == 1);
+                var c = new MainView(); c.S.UpdateEnabled = true; c.Show("welcome"); int checks = 0;
+                c.Command += delegate (string cmd) { if (cmd == "checkupdate") checks++; };
+                c.Do("checkupdate"); c.Do("checkupdate");
+                Check("повторный клик проверки не дублирует команду", checks == 1);
+                c.S.UpdateState = "current"; c.AcceptUpdateState(); c.Do("checkupdate");
+                Check("проверку можно повторить после ответа", checks == 2);
+            }
+
             string[] ok = { "https://boosty.to/eg01stgames", "https://t.me/eg01stgame", "https://discord.gg/Zf69zsm5dQ", "https://vk.com/ego1stgames", "https://www.youtube.com/@egoist_games_one",
                 "https://youtube.com/@egoist_games_one", "https://boosty.to/eg01stgames/" };
             foreach (string u in ok) Check("ссылка разрешена: " + u, Proto.IsAllowedUrl(u));
@@ -1413,10 +1669,12 @@ namespace WXQSetup
 
             Check("команда install с флагом", Proto.Cmd(3, "install", true) == "{\"seq\":3,\"cmd\":\"install\",\"options\":{\"launcher\":true}}\n");
             Check("команда close без options", Proto.Cmd(4, "close", true) == "{\"seq\":4,\"cmd\":\"close\"}\n");
+            Check("команда checkupdate не содержит options", Proto.Cmd(5, "checkupdate", true) == "{\"seq\":5,\"cmd\":\"checkupdate\"}\n");
+            Check("команда update не содержит options", Proto.Cmd(6, "update", false) == "{\"seq\":6,\"cmd\":\"update\"}\n");
             foreach (string c in Proto.Cmds) Check("команда в списке: " + c, Proto.Cmd(1, c, false).EndsWith("}\n") && Proto.Cmd(1, c, false).IndexOf('\n') == Proto.Cmd(1, c, false).Length - 1);
             bool threw = false; try { Proto.Cmd(1, "format", null); } catch (ArgumentException) { threw = true; }
             Check("неизвестная команда не формируется", threw);
-            Check("ровно семь команд (шесть и выбор папки игры)", Proto.Cmds.Length == 7);
+            Check("ровно девять команд, включая две команды обновления", Proto.Cmds.Length == 9);
 
             string tmp = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "wxq-ui-selftest-" + Guid.NewGuid().ToString("N") + ".jsonl");
             try

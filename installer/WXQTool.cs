@@ -1396,7 +1396,7 @@ namespace Egoist.WXQRussian
                 Log.Write("команда " + command);
                 // update берёт мьютекс сам и не на всё время: пока идёт скачивание, установка и удаление не должны упираться в «занято»,
                 // а запущенный им Setup.exe запускает собственного помощника, которому нужен тот же Global-мьютекс.
-                if (!readOnly && !parseOnly && command != "update")
+                if (!readOnly && !parseOnly && command != "update" && command != "setup-update")
                 {
                     bool created;
                     mutex = new Mutex(false, "Global\\Egoist.WXQRussian.Tool", out created);
@@ -1419,6 +1419,8 @@ namespace Egoist.WXQRussian
                     case "purge": Purge(ctx, args.ContainsKey("keep") && args["keep"] == "1"); break;
                     case "parse-packages": ParsePackages(ctx, args); break;
                     case "update": Update(ctx, args, checkOnly); break;
+                    case "setup-update": SetupUpdate(ctx, args); break;
+                    case "legacy-cleanup": LegacyCleanup(ctx, args); break;
                     case "task-register": TaskRegister(ctx, args); break;
                     case "task-remove": TaskRemove(ctx, args); break;
 #if TESTBUILD
@@ -3614,6 +3616,7 @@ namespace Egoist.WXQRussian
         public string Installed = "", Available = "", NextTry = "", Notes = "", GameVersion = "";
         public long BytesDone, BytesTotal, SetupBytes;
         public string SetupPath = "", SetupSha = "";   // готовый проверенный установщик для кнопки «Обновить сейчас»
+        public string TextFile;
 
         public UpdateStatus(Context context, string file) { ctx = context; path = file; }
 
@@ -3645,6 +3648,14 @@ namespace Egoist.WXQRussian
             try { Util.WriteJson(path, data); }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
+            if (!string.IsNullOrEmpty(TextFile))
+            {
+                var lines = data.Select(p => p.Key + "=" + Convert.ToString(p.Value, CultureInfo.InvariantCulture).Replace("\r", " ").Replace("\n", " ")).ToArray();
+                // Inno определяет UTF-8 текстового протокола по BOM.
+                try { Program.WriteSetupStatus(TextFile, Encoding.UTF8.GetBytes("\uFEFF" + string.Join("\n", lines) + "\n")); }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+            }
         }
     }
 
@@ -3657,6 +3668,242 @@ namespace Egoist.WXQRussian
         static readonly Regex UpdAssetName = new Regex(@"^[A-Za-z0-9][A-Za-z0-9._-]*$");
         static readonly Regex UpdVersionText = new Regex(@"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-rc[1-9][0-9]*)?$");
         static readonly Regex UpdSha = new Regex("^[0-9a-f]{64}$");
+        static bool SetupFastNetwork;
+        static DateTime SetupNetworkDeadline;
+
+        public static void WriteSetupStatus(string path, byte[] bytes) { UpdWriteAtomic(path, bytes); }
+
+        // Проверка канала из окна установщика не требует установленной игры и не скачивает EXE.
+        static void SetupUpdate(Context ctx, Dictionary<string, string> args)
+        {
+            string mode = args.ContainsKey("mode") ? args["mode"] : "check";
+            var status = new UpdateStatus(ctx, Path.Combine(ctx.Data, "setup-update-status.json"));
+            status.TextFile = Path.Combine(ctx.Data, "setup-update-status.txt");
+            Process owner = null;
+            Mutex gate = null;
+            bool held = false;
+            try
+            {
+                if (mode == "launch") { SetupLaunch(ctx, args, status); return; }
+                if (args.ContainsKey("parent"))
+                {
+                    int pid;
+                    if (!int.TryParse(args["parent"], out pid) || pid < 1) throw new StopException("parent_changed", "Окно установщика уже закрыто.");
+                    try { owner = Process.GetProcessById(pid); var ignored = owner.StartTime; if (owner.HasExited) throw new InvalidOperationException(); }
+                    catch (Exception) { throw new StopException("parent_changed", "Окно установщика уже закрыто."); }
+                    if (mode != "handoff")
+                    {
+                        var boundOwner = owner;
+                        string cancel = args.ContainsKey("cancel") ? args["cancel"] : null;
+                        var watcher = new Thread(delegate() { while (true) { try { if (boundOwner.HasExited || (cancel != null && File.Exists(cancel))) Environment.Exit(0); } catch (Exception) { Environment.Exit(0); } Thread.Sleep(150); } });
+                        watcher.IsBackground = true;
+                        watcher.Start();
+                    }
+                }
+                gate = new Mutex(false, UpdMutexName);
+                try { held = gate.WaitOne(0); } catch (AbandonedMutexException) { held = true; }
+                if (!held) throw new StopException("busy", "Уже идёт другая проверка обновлений. Повторите через несколько секунд.");
+                if (mode == "handoff") { SetupHandoff(ctx, args, owner, status); return; }
+                if (mode != "check" && mode != "download") throw new StopException("usage", "Неизвестный режим обновления установщика.");
+                string current = args.ContainsKey("current-version") ? args["current-version"] : "";
+                if (!UpdVersionText.IsMatch(current)) throw new StopException("usage", "Не указана версия открытого установщика.");
+                string installed, stamp, game;
+                UpdReadState(ctx, out installed, out stamp, out game);
+                status.Installed = installed ?? "";
+                if (UpdVersionText.IsMatch(status.Installed) && UpdCmp(UpdVer(status.Installed), UpdVer(current)) > 0) current = status.Installed;
+                status.Set("checking", "", "Проверяю новую версию…");
+                SetupFastNetwork = mode == "check";
+                SetupNetworkDeadline = DateTime.UtcNow.AddSeconds(8);
+                if (SetupFastNetwork)
+                {
+                    var deadline = new Thread(delegate() { Thread.Sleep(8500); status.Set("failed", "network", "Нет быстрого ответа от сервера. Проверку можно повторить."); Environment.Exit(2); });
+                    deadline.IsBackground = true; deadline.Start();
+                }
+                string baseUrl;
+                var keys = UpdLoadKeys(out baseUrl);
+#if TESTBUILD
+                if (args.ContainsKey("test-base-url")) baseUrl = args["test-base-url"];
+#endif
+                if (string.IsNullOrEmpty(baseUrl) || keys.Count == 0 || !UpdUrlOk(baseUrl)) throw new StopException("not_configured", "В этой сборке не настроен канал обновлений.");
+                var meta = UpdLoadMeta(ctx);
+                bool noRelease;
+                var fetched = UpdFetchManifest(ctx, baseUrl, keys, meta, out noRelease);
+                if (fetched == null) { status.Set("current", "no_release", "Новых выпусков пока нет."); return; }
+                var m = fetched.M;
+                SetupAcceptManifest(ctx, m, meta);
+                if (!fetched.FromCache)
+                {
+                    UpdWriteAtomic(Path.Combine(ctx.Data, "update-cache.json"), fetched.Data);
+                    UpdWriteAtomic(Path.Combine(ctx.Data, "update-cache.sig"), fetched.Sig);
+                    if (string.IsNullOrEmpty(fetched.NewEtag)) meta.Remove("etag"); else meta["etag"] = fetched.NewEtag;
+                }
+                meta["last_issued_utc"] = m.Issued.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
+                UpdSaveMeta(ctx, meta);
+                status.Available = m.Version;
+                status.Notes = m.Notes;
+                if (UpdCmp(UpdVer(m.Version), UpdVer(current)) <= 0) { status.Set("current", "up_to_date", "У вас актуальная версия."); return; }
+                if (mode == "check") { status.Set("available", "", "Доступна новая версия " + m.Version + "."); return; }
+                SetupFastNetwork = false;
+                string updates = Path.Combine(ctx.Data, "updates");
+                Directory.CreateDirectory(updates);
+                CheckDataTree(ctx.Data);
+                string tag = UpdCacheBase(m), exe = Path.Combine(updates, tag + ".exe"), part = Path.Combine(updates, tag + "-" + m.SetupSha.Substring(0, 16) + ".part");
+                status.BytesTotal = m.SetupBytes;
+                status.Set("downloading", "", "Скачиваю версию " + m.Version + "…");
+                if (!File.Exists(exe) || !UpdFileOk(exe, m)) UpdDownload(m, part, exe, status);
+                CheckDataTree(ctx.Data);
+                if (!UpdFileOk(exe, m)) throw new StopException("sha_mismatch", "Скачанный установщик не прошёл проверку.");
+                status.BytesDone = m.SetupBytes;
+                status.SetupPath = exe; status.SetupSha = m.SetupSha; status.SetupBytes = m.SetupBytes;
+                ctx.Result["setup_path"] = exe; ctx.Result["setup_sha"] = m.SetupSha;
+                status.Set("ready", "", "Новая версия проверена. Перезапускаю установщик…");
+            }
+            catch (StopException stop) { status.Set("failed", stop.Code, stop.Message); throw; }
+            catch (Exception) { status.Set("failed", "unexpected", "Проверка обновления не завершилась. Попробуйте ещё раз."); throw; }
+            finally
+            {
+                SetupFastNetwork = false;
+                if (held) { try { gate.ReleaseMutex(); } catch (ApplicationException) { } }
+                if (gate != null) gate.Dispose();
+                // Поток наблюдения сам завершается вместе с короткой командой; дескриптор родителя живёт до выхода процесса.
+            }
+        }
+
+        static void SetupAcceptManifest(Context ctx, UpdateManifest m, Dictionary<string, object> meta)
+        {
+            if (m.MinUpdater > UpdaterVersion) throw new StopException("updater_too_old", "Обновите установщик со страницы релизов.");
+            DateTime issued;
+            if (UpdParseTime(Util.Str(meta, "last_issued_utc"), out issued) && m.Issued < issued)
+                throw new StopException("replay", "Получен устаревший манифест. Повторите проверку позже.");
+        }
+
+        static UpdateManifest SetupCached(Context ctx, out string exe)
+        {
+            CheckDataTree(ctx.Data);
+            string baseUrl;
+            var keys = UpdLoadKeys(out baseUrl);
+            byte[] bytes = File.ReadAllBytes(Path.Combine(ctx.Data, "update-cache.json"));
+            byte[] sig;
+            try { sig = Convert.FromBase64String(File.ReadAllText(Path.Combine(ctx.Data, "update-cache.sig"), Encoding.ASCII).Trim()); }
+            catch (FormatException) { throw new StopException("bad_signature", "Подпись обновления не прошла проверку."); }
+            var signer = UpdVerify(keys, bytes, sig);
+            if (signer == null) throw new StopException("bad_signature", "Подпись обновления не прошла проверку.");
+            var m = UpdParse(bytes, signer);
+            SetupAcceptManifest(ctx, m, UpdLoadMeta(ctx));
+            string installed, stamp, game;
+            if (UpdReadState(ctx, out installed, out stamp, out game) && UpdCmp(UpdVer(m.Version), UpdVer(installed)) <= 0)
+                throw new StopException("downgrade", "Эта версия уже установлена или заменена более новой.");
+            exe = Path.Combine(ctx.Data, "updates", UpdCacheBase(m) + ".exe");
+            if (!File.Exists(exe) || !UpdFileOk(exe, m)) throw new StopException("sha_mismatch", "Файл обновления изменился. Скачайте его заново.");
+            return m;
+        }
+
+        static void SetupHandoff(Context ctx, Dictionary<string, string> args, Process parent, UpdateStatus status)
+        {
+            if (parent == null || parent.HasExited) throw new StopException("parent_changed", "Окно установщика уже закрыто.");
+            string exe;
+            var m = SetupCached(ctx, out exe);
+            string ticket = Guid.NewGuid().ToString("N"), updates = Path.Combine(ctx.Data, "updates");
+            string self = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            string staged = Path.Combine(updates, "handoff-" + ticket + ".exe"), ready = Path.Combine(updates, "handoff-" + ticket + ".ready");
+            Util.Copy(self, staged, false);
+            Util.FlushToDisk(staged);
+            if (Util.Sha(staged) != Util.Sha(self)) throw new StopException("sha_mismatch", "Не удалось подготовить перезапуск установщика.");
+            CheckDataTree(ctx.Data);
+            string command = "setup-update --mode launch --data \"" + ctx.Data + "\" --parent " + parent.Id + " --parent-start " + parent.StartTime.ToUniversalTime().Ticks + " --ticket " + ticket;
+            if (args.ContainsKey("game") && !string.IsNullOrEmpty(args["game"])) command += " --game \"" + Util.NormPath(args["game"]) + "\"";
+            command += " --launcher " + (args.ContainsKey("launcher") && args["launcher"] == "0" ? "0" : "1");
+            var child = Process.Start(new ProcessStartInfo(staged, command) { UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = updates });
+            if (child == null) throw new StopException("handoff", "Не удалось подготовить перезапуск. Старое окно остаётся открытым.");
+            var clock = Stopwatch.StartNew();
+            while (clock.ElapsedMilliseconds < 7000 && !File.Exists(ready) && !child.HasExited) Thread.Sleep(50);
+            if (!File.Exists(ready) || File.ReadAllText(ready, Encoding.UTF8) != ticket || child.HasExited)
+                throw new StopException("handoff", "Не удалось подготовить перезапуск. Повторите обновление.");
+            status.Available = m.Version;
+            status.Set("handoff", "", "Открываю новую версию установщика…");
+        }
+
+        static void SetupLaunch(Context ctx, Dictionary<string, string> args, UpdateStatus status)
+        {
+            int pid;
+            long ticks;
+            string ticket = args.ContainsKey("ticket") ? args["ticket"] : "";
+            if (!Regex.IsMatch(ticket, "^[0-9a-f]{32}$") || !args.ContainsKey("parent") || !int.TryParse(args["parent"], out pid) || pid < 1 ||
+                !args.ContainsKey("parent-start") || !long.TryParse(args["parent-start"], out ticks))
+                throw new StopException("parent_changed", "Не удалось подтвердить окно установщика.");
+            Process parent;
+            try { parent = Process.GetProcessById(pid); if (parent.HasExited || parent.StartTime.ToUniversalTime().Ticks != ticks) throw new InvalidOperationException(); }
+            catch (Exception) { throw new StopException("parent_changed", "Окно установщика сменилось. Откройте русификатор заново."); }
+            string exe;
+            var m = SetupCached(ctx, out exe);
+            string ready = Path.Combine(ctx.Data, "updates", "handoff-" + ticket + ".ready");
+            File.WriteAllText(ready, ticket, new UTF8Encoding(false));
+            if (!parent.WaitForExit(30000)) throw new StopException("handoff", "Прежнее окно не закрылось. Обновление остановлено.");
+            File.Delete(ready);
+            // Inno держит глобальный SetupMutex до завершения старого мастера, включая его внешнюю оболочку.
+            var clock = Stopwatch.StartNew();
+            while (true)
+            {
+                bool exists = false;
+                try { using (var old = Mutex.OpenExisting(SetupMutexName)) { exists = true; } } catch (WaitHandleCannotBeOpenedException) { }
+                if (!exists) break;
+                if (clock.ElapsedMilliseconds > 10000) throw new StopException("busy", "Другое окно установщика ещё работает. Откройте русификатор заново.");
+                Thread.Sleep(100);
+            }
+            m = SetupCached(ctx, out exe);   // повторная проверка подписи и SHA непосредственно перед запуском
+            string command = "/UPDATE=1 /CONTINUE=1 /NORESTART /LAUNCHERRU=" + (args.ContainsKey("launcher") && args["launcher"] == "0" ? "0" : "1");
+            if (args.ContainsKey("game") && !string.IsNullOrEmpty(args["game"])) command += " /GAMEDIR=\"" + Util.NormPath(args["game"]) + "\"";
+            command += " /LOG=\"" + Path.Combine(ctx.Data, "updates", "setup.log") + "\"";
+            status.Available = m.Version;
+            status.Set("handoff", "", "Открываю новую версию установщика…");
+            var setup = Process.Start(new ProcessStartInfo(exe, command) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(exe) });
+            if (setup == null) throw new StopException("handoff", "Не удалось открыть новую версию установщика.");
+            setup.Dispose();
+            status.Set("handoff", "launched", "Новая версия установщика открыта.");
+        }
+
+        // Удаление прежней фоновой интеграции. Только известные имена и точный путь нашего приложения.
+        static void LegacyCleanup(Context ctx, Dictionary<string, string> args)
+        {
+            string app = args.ContainsKey("app") ? Util.NormPath(args["app"]) : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Egoist", "WXQ-Russian");
+            bool allowed = Util.SamePath(app, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Egoist", "WXQ-Russian"));
+#if TESTBUILD
+            string test = Environment.GetEnvironmentVariable("WXQ_RU_TEST_APP_ROOT");
+            allowed = !string.IsNullOrEmpty(test) && Util.SamePath(test, app);
+#endif
+            if (!allowed || Util.IsReparse(app)) throw new StopException("dir", "Не подтверждена папка установленного русификатора.");
+            string tray = Path.Combine(app, "WXQTray.exe");
+#if !TESTBUILD
+            foreach (var process in Process.GetProcessesByName("WXQTray"))
+            {
+                using (process)
+                {
+                    try
+                    {
+                        if (!Util.SamePath(process.MainModule.FileName, tray)) continue;
+                        process.Kill(); process.WaitForExit(5000);
+                    }
+                    catch (Exception error) { Log.Write("прежний трей: " + error.Message); }
+                }
+            }
+            foreach (var hive in new[] { Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryHive.CurrentUser })
+                foreach (var view in new[] { Microsoft.Win32.RegistryView.Registry64, Microsoft.Win32.RegistryView.Registry32 })
+                    using (var root = Microsoft.Win32.RegistryKey.OpenBaseKey(hive, view))
+                    using (var key = root.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true))
+                    {
+                        if (key == null) continue;
+                        string value = key.GetValue("EgoistWXQRussianTray") as string;
+                        if (value != null && string.Equals(value.Trim().Trim('"'), tray, StringComparison.OrdinalIgnoreCase)) key.DeleteValue("EgoistWXQRussianTray", false);
+                    }
+            TaskRemove(ctx, new Dictionary<string, string>());
+#endif
+            foreach (string name in new[] { "WXQTray.exe", "WXQTray.exe.old" })
+            {
+                string file = Path.Combine(app, name);
+                if (File.Exists(file) && !Util.IsReparse(file)) File.Delete(file);
+            }
+            ctx.Result["legacy_cleanup"] = "done";
+        }
 
         // Точка входа: один обновляющий процесс на компьютер (отдельный Global-мьютекс). Статус пишется только после его захвата,
         // чтобы второй запуск не затёр статус работающего.
@@ -4735,6 +4982,7 @@ namespace Egoist.WXQRussian
 
         static int[] UpdPauses()
         {
+            if (SetupFastNetwork) return new[] { 150, 300 };
 #if TESTBUILD
             int ms;
             if (int.TryParse(Environment.GetEnvironmentVariable("WXQ_RU_TEST_RETRY_MS"), NumberStyles.None, CultureInfo.InvariantCulture, out ms)) return new[] { ms, ms };
@@ -4749,6 +4997,7 @@ namespace Egoist.WXQRussian
             NetFail last = null;
             for (int attempt = 0; attempt < 3; attempt++)
             {
+                if (SetupFastNetwork && DateTime.UtcNow >= SetupNetworkDeadline) throw new NetFail("network", "время быстрой проверки истекло", false, 0);
                 if (attempt > 0) Thread.Sleep(pauses[Math.Min(attempt - 1, pauses.Length - 1)]);
                 try { return operation(); }
                 catch (NetFail fail)
@@ -4766,8 +5015,9 @@ namespace Egoist.WXQRussian
             ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072;   // только TLS 1.2
             ServicePointManager.Expect100Continue = false;
             var request = (HttpWebRequest)WebRequest.Create(url);
-            request.Timeout = 15000;
-            request.ReadWriteTimeout = 60000;
+            int timeout = SetupFastNetwork ? Math.Max(100, Math.Min(2000, (int)(SetupNetworkDeadline - DateTime.UtcNow).TotalMilliseconds)) : 15000;
+            request.Timeout = timeout;
+            request.ReadWriteTimeout = SetupFastNetwork ? timeout : 60000;
             request.UserAgent = "WXQRussianUpdater/" + UpdaterVersion;
             request.AutomaticDecompression = DecompressionMethods.None;
             request.AllowAutoRedirect = true;
