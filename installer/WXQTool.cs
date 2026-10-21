@@ -1503,6 +1503,7 @@ namespace Egoist.WXQRussian
                     case "parse-packages": ParsePackages(ctx, args); break;
                     case "update": Update(ctx, args, checkOnly); break;
                     case "setup-update": SetupUpdate(ctx, args); break;
+                    case "manager-update": ManagerUpdate(ctx, args); break;
                     case "legacy-cleanup": LegacyCleanup(ctx, args); break;
                     case "task-register": TaskRegister(ctx, args); break;
                     case "task-remove": TaskRemove(ctx, args); break;
@@ -4139,7 +4140,6 @@ namespace Egoist.WXQRussian
                 string installed, stamp, game;
                 UpdReadState(ctx, out installed, out stamp, out game);
                 status.Installed = installed ?? "";
-                if (UpdVersionText.IsMatch(status.Installed) && UpdCmp(UpdVer(status.Installed), UpdVer(current)) > 0) current = status.Installed;
                 status.Set("checking", "", "Проверяю новую версию…");
                 SetupFastNetwork = mode == "check";
                 SetupNetworkDeadline = DateTime.UtcNow.AddSeconds(8);
@@ -4170,7 +4170,11 @@ namespace Egoist.WXQRussian
                 UpdSaveMeta(ctx, meta);
                 status.Available = m.Version;
                 status.Notes = m.Notes;
-                if (UpdCmp(UpdVer(m.Version), UpdVer(current)) <= 0) { status.Set("current", "up_to_date", "У вас актуальная версия."); return; }
+                // Версия перевода не заменяет версию запущенного приложения. Старый
+                // ярлык должен получить новый manager, даже если перевод уже новый.
+                if (UpdCmp(UpdVer(m.Version), UpdVer(current)) <= 0 ||
+                    (UpdVersionText.IsMatch(status.Installed) && UpdCmp(UpdVer(m.Version), UpdVer(status.Installed)) < 0))
+                { status.Set("current", "up_to_date", "У вас актуальная версия приложения."); return; }
                 if (mode == "check") { status.Set("available", "", "Доступна новая версия " + m.Version + "."); return; }
                 SetupFastNetwork = false;
                 string updates = Path.Combine(ctx.Data, "updates");
@@ -4220,8 +4224,8 @@ namespace Egoist.WXQRussian
             var m = UpdParse(bytes, signer);
             SetupAcceptManifest(ctx, m, UpdLoadMeta(ctx));
             string installed, stamp, game;
-            if (UpdReadState(ctx, out installed, out stamp, out game) && UpdCmp(UpdVer(m.Version), UpdVer(installed)) <= 0)
-                throw new StopException("downgrade", "Эта версия уже установлена или заменена более новой.");
+            if (UpdReadState(ctx, out installed, out stamp, out game) && UpdCmp(UpdVer(m.Version), UpdVer(installed)) < 0)
+                throw new StopException("downgrade", "Установлен более новый перевод; понижение версии остановлено.");
             exe = Path.Combine(ctx.Data, "updates", UpdCacheBase(m) + ".exe");
             if (!File.Exists(exe) || !UpdFileOk(exe, m)) throw new StopException("sha_mismatch", "Файл обновления изменился. Скачайте его заново.");
             return m;
@@ -4285,12 +4289,124 @@ namespace Egoist.WXQRussian
             string command = "/UPDATE=1 /CONTINUE=1 /NORESTART /LAUNCHERRU=" + (args.ContainsKey("launcher") && args["launcher"] == "0" ? "0" : "1");
             if (args.ContainsKey("game") && !string.IsNullOrEmpty(args["game"])) command += " /GAMEDIR=\"" + Util.NormPath(args["game"]) + "\"";
             command += " /LOG=\"" + Path.Combine(ctx.Data, "updates", "setup.log") + "\"";
+#if TESTBUILD
+            // Полный стенд handoff запускает настоящий TEST Setup, сохраняя все
+            // его записи в песочнице. В релизе этого контракта нет.
+            string testProfile = Path.Combine(ctx.Data, "test-setup-profile.json");
+            if (File.Exists(testProfile))
+            {
+                CheckDataTree(ctx.Data);
+                var profile = Util.ReadJson(testProfile);
+                string tempRoot = Path.GetFullPath(Path.GetTempPath()).TrimEnd('\\') + "\\";
+                Func<string, string> testPath = delegate(string key)
+                {
+                    string value = Util.Str(profile, key);
+                    if (string.IsNullOrEmpty(value) || value.IndexOfAny(new[] { '"', '\r', '\n' }) >= 0)
+                        throw new StopException("dir", "Некорректный тестовый путь.");
+                    value = Util.NormPath(value);
+                    if (!value.StartsWith(tempRoot, StringComparison.OrdinalIgnoreCase))
+                        throw new StopException("dir", "Тестовый путь вышел из Temp.");
+                    return value;
+                };
+                if (!ctx.Data.StartsWith(tempRoot, StringComparison.OrdinalIgnoreCase)) throw new StopException("dir", "Тестовые данные вышли из Temp.");
+                Uri testBase;
+                string baseText = Util.Str(profile, "update_base"), uiSha = Util.Str(profile, "fake_ui_sha");
+                if (!Uri.TryCreate(baseText, UriKind.Absolute, out testBase) || testBase.Scheme != "http" || testBase.Host != "127.0.0.1" ||
+                    !string.IsNullOrEmpty(testBase.UserInfo) || !Regex.IsMatch(uiSha ?? "", "^[0-9a-f]{64}$"))
+                    throw new StopException("usage", "Некорректный тестовый профиль.");
+                command += " /CURRENTUSER /DIR=\"" + testPath("app_root") + "\" /DATADIR=\"" + ctx.Data +
+                    "\" /UISTATEDIR=\"" + testPath("ui_root") + "\" /UIEXE=\"" + testPath("fake_ui") + "\" /UIEXESHA=" + uiSha +
+                    " /DESKTOPDIR=\"" + testPath("desktop_root") + "\" /STARTDIR=\"" + testPath("start_root") + "\" /UPDATEBASE=\"" + testBase.AbsoluteUri + "\"";
+            }
+#endif
             status.Available = m.Version;
             status.Set("handoff", "", "Открываю новую версию установщика…");
             var setup = Process.Start(new ProcessStartInfo(exe, command) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(exe) });
             if (setup == null) throw new StopException("handoff", "Не удалось открыть новую версию установщика.");
             setup.Dispose();
             status.Set("handoff", "launched", "Новая версия установщика открыта.");
+        }
+
+        // Сохраняем приложение до переустановки игрового перевода: отказ нового
+        // патча игры не должен возвращать ярлык к прежнему EXE.
+        static void ManagerUpdate(Context ctx, Dictionary<string, string> args)
+        {
+            if (!args.ContainsKey("app") || !args.ContainsKey("source") || !args.ContainsKey("sha"))
+                throw new StopException("usage", "Не указаны данные обновления приложения.");
+            string app = Util.NormPath(args["app"]), source = Util.NormPath(args["source"]);
+            string expected = args["sha"].ToLowerInvariant();
+            string canonical = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Egoist", "WXQ-Russian");
+#if TESTBUILD
+            bool allowed = app.StartsWith(Path.GetFullPath(Path.GetTempPath()).TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase);
+#else
+            bool allowed = Util.SamePath(app, canonical);
+#endif
+            if (!allowed || !Regex.IsMatch(expected, "^[0-9a-f]{64}$"))
+                throw new StopException("dir", "Не подтверждена папка обновления приложения.");
+            // Проверяем все существующие компоненты до создания файла, включая
+            // родителя канонической папки. Владение и ACL не ослабляются.
+            for (string dir = app; !string.IsNullOrEmpty(dir); dir = Path.GetDirectoryName(dir))
+                if ((Directory.Exists(dir) || File.Exists(dir)) && Util.IsReparse(dir))
+                    throw new StopException("acl", "Путь приложения содержит ссылку.");
+            string parent = Path.GetDirectoryName(app);
+            if (!Directory.Exists(parent) || !IsTrusted(OwnerOf(parent, true), "parent"))
+                throw new StopException("acl", "Не подтверждён владелец папки приложения.");
+            string target = Path.Combine(app, "WXQ-Russian.exe");
+            if (Util.SamePath(source, target)) { ctx.Result["manager_updated"] = "same"; return; }
+            SecureDataDir(new Context { Data = app });
+            string pending = Path.Combine(app, "manager-" + Guid.NewGuid().ToString("N") + ".new");
+            string previous = Path.Combine(app, "manager-" + Guid.NewGuid().ToString("N") + ".previous");
+            bool committed = false;
+            try
+            {
+                // SHA и копирование берутся из одного закреплённого дескриптора.
+                using (var input = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    string actual;
+                    using (var hash = SHA256.Create()) actual = BitConverter.ToString(hash.ComputeHash(input)).Replace("-", "").ToLowerInvariant();
+                    if (actual != expected) throw new StopException("sha_mismatch", "Исходный установщик изменился.");
+                    input.Position = 0;
+                    using (var output = new FileStream(pending, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    { input.CopyTo(output); output.Flush(true); }
+                }
+                if (Util.Sha(pending) != expected) throw new StopException("sha_mismatch", "Копия приложения не прошла проверку.");
+                CheckDataTree(app);
+                Version from, to;
+                if (!Version.TryParse(FileVersionInfo.GetVersionInfo(pending).FileVersion, out from))
+                    throw new StopException("version", "У копии приложения нет корректной версии.");
+                if (File.Exists(target) && Version.TryParse(FileVersionInfo.GetVersionInfo(target).FileVersion, out to) && to > from)
+                    throw new StopException("downgrade", "Установлено более новое приложение; понижение остановлено.");
+                if (File.Exists(target))
+                {
+                    try
+                    {
+#if TESTBUILD
+                        if (Environment.GetEnvironmentVariable("WXQ_RU_TEST_MANAGER_REPLACE_FAILURE") == "1177")
+                        { File.Move(target, previous); throw new IOException("simulated ERROR_UNABLE_TO_MOVE_REPLACEMENT_2"); }
+#endif
+                        // Backup обязателен: ReplaceFile может переименовать старый
+                        // файл, а затем не суметь переместить новый (Win32 1177).
+                        File.Replace(pending, target, previous);
+                    }
+                    catch
+                    {
+                        if (!File.Exists(target) && File.Exists(previous)) File.Move(previous, target);
+                        throw;
+                    }
+                }
+                else File.Move(pending, target);
+                if (Util.Sha(target) != expected) throw new StopException("sha_mismatch", "Обновлённое приложение не прошло проверку.");
+                committed = true;
+                Log.Write("приложение обновлено до применения игрового перевода: " + target);
+                ctx.Result["manager_updated"] = "yes";
+            }
+            finally
+            {
+                // Если даже восстановление имени остановил I/O, сохраняем оба
+                // проверенных файла. При отказе backup не удаляется.
+                if (File.Exists(target) && File.Exists(pending)) File.Delete(pending);
+                if (committed && File.Exists(previous)) File.Delete(previous);
+            }
         }
 
         // Удаление прежней фоновой интеграции. Только известные имена и точный путь нашего приложения.

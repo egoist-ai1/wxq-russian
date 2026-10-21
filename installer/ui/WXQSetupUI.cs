@@ -320,6 +320,7 @@ namespace WXQSetup
         public string FailureMessage = "";
         public bool FailedBeforeWrite = true;
         public string TranslationVersion = "";
+        public string ManagerVersion = "";
         public string GameVersion = "";
         public bool HasLauncherShortcut = true;
         public bool UpdateEnabled;
@@ -501,6 +502,7 @@ namespace WXQSetup
             s.FailKind = Str(d, "fail_kind") == "remove" ? "remove" : "install";
             s.Note = Str(d, "note"); s.CanRemove = Bool(d, "can_remove"); s.Interrupted = Bool(d, "interrupted");
             s.TranslationVersion = Str(d, "translation_version"); s.GameVersion = Str(d, "game_version");
+            s.ManagerVersion = Plain(d, "manager_version", 80);
             s.UpdateEnabled = Bool(d, "update_enabled");
             string updateState = Plain(d, "update_state", 20);
             s.UpdateState = Array.IndexOf(UpdateStates, updateState) >= 0 ? updateState : "none";
@@ -525,6 +527,7 @@ namespace WXQSetup
         readonly Grid updateHost = new Grid();
         readonly Dictionary<Btn, bool> operationButtons = new Dictionary<Btn, bool>();
         bool updatePending, checkPending;
+        string commandError = "", retryCommand = "";
         string updateSig;
         string current;
         // элементы экрана прогресса
@@ -590,6 +593,7 @@ namespace WXQSetup
         void Fire(string cmd)
         {
             if (!Proto.CanSend(S, cmd) || (updatePending && cmd != "close") || (checkPending && cmd == "checkupdate")) return;
+            commandError = retryCommand = "";
             if (cmd == "update") { updatePending = true; UpdateUpdates(false); }
             if (cmd == "checkupdate") { checkPending = true; UpdateUpdates(false); }
             if (Command != null) Command(cmd);
@@ -597,7 +601,7 @@ namespace WXQSetup
 
         public void AcceptUpdateState()
         {
-            if (S.UpdateBusy || S.UpdateState == "failed") updatePending = false;
+            if (S.UpdateBusy || S.UpdateState == "failed" || S.UpdateState == "current" || S.UpdateState == "available") updatePending = false;
             if (S.UpdateState != "none") checkPending = false;
             UpdateUpdates(false);
         }
@@ -606,6 +610,14 @@ namespace WXQSetup
         {
             updatePending = checkPending = false;
             S.UpdateState = "failed"; S.UpdateMessage = "Не удалось передать команду установщику. Повторите проверку.";
+            UpdateUpdates(false);
+        }
+
+        public void CommandFailed(string cmd)
+        {
+            if (cmd == "update" || cmd == "checkupdate") { UpdateCommandFailed(); return; }
+            commandError = "Не удалось передать действие установщику. Нажмите ещё раз.";
+            retryCommand = cmd;
             UpdateUpdates(false);
         }
 
@@ -623,13 +635,13 @@ namespace WXQSetup
             foreach (var item in operationButtons) item.Key.IsEnabledBtn = item.Value && !busy;
             if (launcherToggle != null) launcherToggle.IsEnabled = !busy;
             updateHost.Visibility = S.UpdateEnabled ? Visibility.Visible : Visibility.Collapsed;
-            string st = updatePending ? "pending" : checkPending ? "checking" : S.UpdateState;
+            string st = commandError.Length > 0 ? "command_failed" : updatePending ? "pending" : checkPending ? "checking" : S.UpdateState;
             string nextSig = string.Join("|", st, S.UpdateVersion, S.UpdateMessage, S.UpdateDoneBytes, S.UpdateTotalBytes, S.UpdateEnabled, S.State, S.Screen);
             if (nextSig == updateSig) return;
             bool entering = updateSig != null && (st == "available" || st == "ready") && !updateSig.StartsWith(st + "|", StringComparison.Ordinal);
             updateSig = nextSig;
             updateHost.Children.Clear();
-            if (!S.UpdateEnabled) return;
+            if (!S.UpdateEnabled && commandError.Length == 0) return;
             var content = new Grid();
             content.RowDefinitions.Add(new RowDefinition { Height = new GridLength(17) });
             content.RowDefinitions.Add(new RowDefinition { Height = new GridLength(4) });
@@ -648,6 +660,7 @@ namespace WXQSetup
                 case "downloading": headline = "Скачиваю обновление…"; sub = string.IsNullOrEmpty(S.UpdateVersion) ? "Установщик можно закрыть" : "Версия " + S.UpdateVersion; accent = Tk.Gold; break;
                 case "handoff": headline = "Применяю обновление…"; sub = string.IsNullOrEmpty(S.UpdateVersion) ? "Новая версия уже скачана" : "Версия " + S.UpdateVersion; accent = Tk.Gold; break;
                 case "failed": headline = "Не удалось получить обновление"; sub = string.IsNullOrEmpty(S.UpdateMessage) ? "Проверьте подключение к интернету" : S.UpdateMessage; break;
+                case "command_failed": headline = "Действие не началось"; sub = commandError; accent = Tk.Danger; break;
             }
             var title = UpdateText(headline, 12, accent); content.Children.Add(title);
             var message = UpdateText(sub, 11.5, Tk.Muted); SetRow(message, 2); content.Children.Add(message);
@@ -671,9 +684,9 @@ namespace WXQSetup
             else
             {
                 bool canUpdate = st == "available" || st == "ready";
-                string label = canUpdate ? "Обновить" : st == "failed" ? "Проверить ещё раз" : st == "checking" ? "Проверяю…" : "Проверить";
+                string label = st == "command_failed" ? "Повторить" : canUpdate ? "Обновить" : st == "failed" ? "Проверить ещё раз" : st == "checking" ? "Проверяю…" : "Проверить";
                 var button = new Btn(canUpdate ? BK.Primary : BK.Secondary, label, canUpdate ? null : "redo", null, 30, canUpdate ? 116 : 0);
-                string cmd = canUpdate ? "update" : "checkupdate";
+                string cmd = st == "command_failed" ? retryCommand : canUpdate ? "update" : "checkupdate";
                 button.IsEnabledBtn = !checkPending && !updatePending && Proto.CanSend(S, cmd);
                 button.Click += delegate { Fire(cmd); }; actions = button;
                 if (canUpdate)
@@ -1210,6 +1223,7 @@ namespace WXQSetup
             else
             {
                 card.Children.Add(Fact("Версия перевода", string.IsNullOrEmpty(S.TranslationVersion) ? "—" : S.TranslationVersion, 16));
+                card.Children.Add(Fact("Версия приложения", string.IsNullOrEmpty(S.ManagerVersion) ? "—" : S.ManagerVersion, 12));
                 card.Children.Add(Fact("Версия игры", string.IsNullOrEmpty(S.GameVersion) ? "—" : S.GameVersion, 12));
                 card.Children.Add(new Border { Height = 1, Background = Tk.Line, Margin = new Thickness(0, 6, 0, 14) });
                 var n = Tk.TB("После обновления игры дойдите до главного меню, закройте игру и откройте русификатор для переустановки.", 12.5, Tk.Muted, Tk.Body, 18, TextWrapping.Wrap); card.Children.Add(n);
@@ -1447,7 +1461,7 @@ namespace WXQSetup
                 if (Array.IndexOf(Proto.Cmds, cmd) < 0) return;
                 bool? launcher = v.S.LauncherAvailable ? (bool?)v.S.LauncherOn : null;
                 try { Proto.Append(cmdPath, Proto.Cmd(++seq, cmd, launcher)); }
-                catch (Exception) { if (cmd == "update" || cmd == "checkupdate") v.UpdateCommandFailed(); }
+                catch (Exception) { v.CommandFailed(cmd); }
             };
             Action exitSoon = delegate
             {

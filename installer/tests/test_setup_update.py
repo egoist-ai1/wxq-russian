@@ -207,11 +207,19 @@ def main() -> int:
               and status.get('state') == 'current' and server.count('Setup.exe') == 0, (rows, status))
         box = env.new_box('1.1.0')
         env.publish('1.1.0')
-        rows, status = env.run(box)
-        check('S3b равная версия: current', rows['_exit'] == '0' and status.get('state') == 'current', (rows, status))
-        rows, status = env.run(box, 'download')
+        rows, status = env.run(box, current='1.1.0')
+        check('S3b равная версия приложения: current', rows['_exit'] == '0' and status.get('state') == 'current', (rows, status))
+        rows, status = env.run(box, 'download', current='1.1.0')
         check('S3c download не понижает и не загружает актуальную версию', rows['_exit'] == '0'
               and status.get('state') == 'current' and server.count('Setup.exe') == 0 and env.unchanged(box), (rows, status))
+
+        # Новый игровой перевод не доказывает обновление EXE старого ярлыка.
+        rows, status = env.run(box, current='1.0.0')
+        check('S3d старое приложение видит выпуск с уже установленным переводом', rows['_exit'] == '0'
+              and status.get('state') == 'available' and env.unchanged(box), (rows, status))
+        rows, status = env.run(box, 'download', current='1.0.0')
+        check('S3e восстановление старого приложения скачивает ту же версию перевода', rows['_exit'] == '0'
+              and status.get('state') == 'ready' and env.unchanged(box), (rows, status))
 
         box = env.new_box(first_install=True)
         started = time.monotonic()

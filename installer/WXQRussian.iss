@@ -353,7 +353,7 @@ var
   SvCanRemove, SvInterrupted, SvFailedBefore: Boolean;
   SuState, SuVersion, SuMessage, SuAction, SuLast, SuOut: String;
   SuDone, SuTotal: Int64;
-  SuWaiting, AutoContinue, SelfUpdateContinue: Boolean;
+  SuWaiting, AutoContinue, SelfUpdateContinue, SuDownloadQueued, ManagerReady: Boolean;
   SuStarted: LongWord;
   WizardReady: Boolean;
   WelcomeReadyAt: LongWord;
@@ -456,7 +456,7 @@ begin
     ',"launcher_installed":' + JsonBool(LauncherWanted) + ',"has_launcher_shortcut":' + JsonBool((LauncherLnk <> '') or LauncherWanted) +
     ',"failure_code":"' + JsonStr(SvFailCode) + '","failure_message":"' + JsonStr(SvFailMsg) + '","failed_before_write":' + JsonBool(SvFailedBefore) +
     ',"fail_kind":"' + SvFailKind + '","note":"' + JsonStr(SvNote) + '","interrupted":' + JsonBool(SvInterrupted) +
-    ',"can_remove":' + JsonBool(SvCanRemove) + ',"translation_version":"' + JsonStr(InstalledVersion) +
+    ',"can_remove":' + JsonBool(SvCanRemove) + ',"manager_version":"{#AppVersion}","translation_version":"' + JsonStr(InstalledVersion) +
     '","game_version":"' + JsonStr(InstalledGameVersion) + '","update_state":"' + JsonStr(SuState) +
     '","update_version":"' + JsonStr(SuVersion) + '","update_message":"' + JsonStr(SuMessage) +
     '","update_done_bytes":' + IntToStr(SuDone) + ',"update_total_bytes":' + IntToStr(SuTotal) +
@@ -1200,7 +1200,7 @@ function SelfCopyNeeded: Boolean;
 begin
   if (SelfSourceSha = '') or (GetSHA256OfFile(ExpandConstant('{srcexe}')) <> SelfSourceSha) then
     RaiseException('Файл установщика изменился после запуска. Откройте его заново.');
-  Result := CompareText(ExpandConstant('{srcexe}'), ExpandConstant('{app}\WXQ-Russian.exe')) <> 0;
+  Result := CompareText(ExpandConstant('{srcexe}'), AddBackslash(WizardDirValue) + 'WXQ-Russian.exe') <> 0;
 end;
 
 function FailureText: String;
@@ -2341,7 +2341,14 @@ var
   Code: Integer;
 begin
 #ifdef WithUpdater
-  if SuWaiting or Busy or UiClosing or WizardSilent then Exit;
+  if SuWaiting then
+  begin
+    // Плашка available может появиться раньше финального --out проверки.
+    // Сохраняем клик до завершения check, а не теряем его молча.
+    if (Action = 'download') and (SuAction = 'check') then SuDownloadQueued := True;
+    Exit;
+  end;
+  if Busy or UiClosing or WizardSilent then Exit;
   if not SecVerify('перед проверкой обновления') then Exit;
   SuAction := Action;
   SuOut := SecDir + '\setup-update-out.txt';
@@ -2423,6 +2430,11 @@ begin
     end
     else if (SuAction = 'download') and (SuState = 'ready') then SuStart('handoff')
     else if (SuAction = 'handoff') and (SuState = 'handoff') then UiExec('close', False, False);
+    if SuDownloadQueued and not SuWaiting then
+    begin
+      SuDownloadQueued := False;
+      if (SuState = 'available') or (SuState = 'ready') then SuStart('download');
+    end;
   end
   else if (SuAction = 'check') and (GetTickCount - SuStarted > 12000) then
   begin
@@ -2853,6 +2865,8 @@ begin
   UpdateMode := ExpandConstant('{param:UPDATE|0}') = '1';
   SelfUpdateContinue := UpdateMode and (ExpandConstant('{param:CONTINUE|0}') = '1');
   AutoContinue := SelfUpdateContinue;
+  SuDownloadQueued := False;
+  ManagerReady := False;
   UpdateRestored := False;
   LauncherOn := LauncherAvailable and (ExpandConstant('{param:LAUNCHERRU|1}') <> '0');   // по умолчанию включён; /LAUNCHERRU=0 выключает
   LauncherExe := '';
@@ -3172,7 +3186,7 @@ end;
 
 procedure CurPageChanged(CurPageID: Integer);
 var
-  Detail: String;
+  Detail, ManagerDir: String;
 begin
   Log('Page ' + IntToStr(CurPageID));
   HidePageContent;
@@ -3183,6 +3197,46 @@ begin
     WizardReady := True;
     WelcomeReadyAt := GetTickCount;
     ResetSteps;
+    // На welcome {app} ещё не готов: WizardDirValue возвращает выбранный
+    // или стандартный путь без преждевременного раскрытия константы.
+    if not ManagerReady then
+    begin
+      ManagerDir := RemoveBackslashUnlessRoot(WizardDirValue);
+      if UpdateMode and SelfCopyNeeded and DirExists(ManagerDir) then
+      begin
+        LastFailure := '';
+        LastCode := '';
+        Busy := True;
+        try
+          UiBeginProgress('install');
+          SvDetail := 'Сохраняю новую версию приложения';
+          PublishState;
+#ifndef TestBuild
+          if CompareText(ManagerDir, CanonicalAppDir) <> 0 then
+          begin
+            LastFailure := AppDirRefusal;
+            LastCode := 'dir';
+          end
+          else
+#endif
+          if not RunTool('manager-update', ' --app "' + ManagerDir + '" --source "' +
+             ExpandConstant('{srcexe}') + '" --sha ' + SelfSourceSha) then
+          begin
+            LastFailure := 'Не удалось сохранить новую версию приложения: ' + FailureText;
+            LastCode := ToolValue('code');
+          end;
+        finally
+          Busy := False;
+        end;
+        if LastFailure <> '' then
+        begin
+          AutoContinue := False;
+          UiInstallFailed(LastFailure);
+          Exit;
+        end;
+      end;
+      ManagerReady := True;
+    end;
     RefreshStatus;
     if IsInterrupted then
       ShowMode(0, 'Установка была прервана', 'Часть файлов игры могла остаться изменённой. Закройте игру и лаунчер и нажмите «Удалить перевод»: файлы вернутся к прежнему состоянию.', InfoInterrupted, 'Удалить перевод', 'Закрыть')
@@ -3191,7 +3245,7 @@ begin
     else if NeedsReapply then
       ShowMode(0, 'Файлы игры изменились', 'Перевод можно установить заново. Известные строки будут переведены, новые и изменившиеся останутся в оригинале.', InfoAfterUpdate, 'Переустановить', RemoveCaption)
     else if IsInstalled then
-      ShowMode(0, 'Перевод уже установлен', 'Версия установщика ' + InstalledVersion + ', игра ' + InstalledGameVersion + '.', InfoInstalled, 'Переустановить', 'Удалить перевод')
+      ShowMode(0, 'Перевод уже установлен', 'Приложение {#AppVersion}; перевод ' + InstalledVersion + ', игра ' + InstalledGameVersion + '.', InfoInstalled, 'Переустановить', 'Удалить перевод')
     else if IsPending then
       ShowMode(0, 'Перевод Honor of Kings ACE', 'Игру найду сам, перед записью сохраню резервную копию.', InfoWelcome, 'Установить', 'Удалить перевод')
     else
@@ -3321,6 +3375,9 @@ begin
 #endif
   if CurStep = ssPostInstall then
   begin
+    if (not FileExists(ExpandConstant('{app}\WXQ-Russian.exe'))) or
+       (GetSHA256OfFile(ExpandConstant('{app}\WXQ-Russian.exe')) <> SelfSourceSha) then
+      RaiseException('Файл приложения не обновлён. Откройте скачанный установщик снова; перевод игры уже проверен.');
     SetArrayLength(Lines, 1);
     Lines[0] := GetDataDir('');
     if not SaveStringsToUTF8File(ExpandConstant('{app}\datadir.txt'), Lines, False) then
