@@ -7,3 +7,4 @@ __pycache__/
 !keys/update-public.pem
 *.sha256
 key-pass*
+!scripts/tests_release/vectors/public.pem

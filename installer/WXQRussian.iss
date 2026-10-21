@@ -219,8 +219,9 @@ var
   DotWait, DotAct, DotDone, DotFail, CheckOn, CheckOff: TBitmap;
   UiPct: Integer;   // вариант растров: 100, 125, 150, 175, 200 или 250 (ближайший к масштабу Windows)
   ToolLines: TArrayOfString;
+  AppliedResources, SkippedResources, PreservedTextRows: Int64;   // итог verify; следующая команда перезапишет ToolLines
   GameParam, FoundGame, LauncherLnk, LastFailure, LastCode, SizeText: String;
-  IsInstalled, IsPending, IsInterrupted, ToolReady, Removed: Boolean;
+  IsInstalled, IsPending, IsInterrupted, NeedsReapply, ToolReady, Removed: Boolean;
   UninstDataDir: String;
   KeepBackups: Boolean;
   RemoveMode: Boolean;     // последняя операция - «Удалить перевод» (для честного текста при сбое отката)
@@ -1236,6 +1237,7 @@ begin
   IsInstalled := False;
   IsPending := False;
   IsInterrupted := False;
+  NeedsReapply := False;
   InStatus := True;
   try
     if RunTool('status', '') then
@@ -1243,6 +1245,7 @@ begin
       IsInstalled := ToolValue('installed') = 'yes';
       IsPending := ToolValue('pending') = 'yes';
       IsInterrupted := ToolValue('interrupted') = 'yes';
+      NeedsReapply := ToolValue('needs_reapply') = 'yes';
       InstalledVersion := ToolValue('version');
       InstalledGameVersion := ToolValue('game_version');
     end;
@@ -1866,8 +1869,8 @@ end;
 
 function InfoAfterUpdate: String;
 begin
-  Result := 'Если игра обновится, запустите её один раз до меню, затем перевод нужно поставить заново. Установщик перенесёт ' +
-    'в новую версию то, что не изменилось; новое останется китайским.';
+  Result := 'Обновление игры может заменить перевод. Здесь можно повторно установить известные строки: новые и изменившиеся останутся в оригинале. ' +
+    'Если игра ещё не создала новый кэш, установщик подскажет один раз запустить её до меню.';
 end;
 
 function InfoWelcome: String;
@@ -1914,6 +1917,18 @@ begin
   else if LauncherFindReason = 'ambiguous' then Result := 'найдено несколько установок лаунчера'
   else if LauncherFindReason = 'unsafe-path' then Result := 'путь лаунчера содержит ссылку или сетевой каталог'
   else Result := 'подходящая версия оригинального лаунчера не найдена; нужен профиль этой сборки';
+end;
+
+function InstallResultNote: String;
+begin
+  Result := '';
+  if (SkippedResources > 0) or (PreservedTextRows > 0) then
+  begin
+    if AppliedResources > 0 then
+      Result := 'Применён перевод совместимых ресурсов. Новые и изменённые данные оставлены в оригинале.'
+    else
+      Result := 'Совместимых данных для перевода не найдено. Файлы игры оставлены в оригинале.';
+  end;
 end;
 
 function InfoFinished(HasLauncher: Boolean): String;
@@ -2223,7 +2238,12 @@ begin
     SvScreen := 'done';
     SvState := 'finished';
     SvStep := 6;
-    if LauncherAvailable and LauncherOn and not LauncherWanted then SvNote := 'Лаунчер не переведён: ' + LauncherOffReason + '.';
+    SvNote := InstallResultNote;
+    if LauncherAvailable and LauncherOn and not LauncherWanted then
+    begin
+      if SvNote <> '' then SvNote := SvNote + ' ';
+      SvNote := SvNote + 'Лаунчер не переведён: ' + LauncherOffReason + '.';
+    end;
     ShownPermille := 1000;
   end
   else
@@ -2929,6 +2949,9 @@ begin
   Result := '';
   LastFailure := '';
   LastCode := '';
+  AppliedResources := 0;
+  SkippedResources := 0;
+  PreservedTextRows := 0;
   RemoveMode := False;
   // /DIR= в релизе отвергается до любых действий.
   if not AppDirOk then
@@ -3060,7 +3083,14 @@ begin
     Result := FailStep(5);
     Exit;
   end;
-  SetStep(5, StDone, 'всё совпало');
+  AppliedResources := StrToInt64Def(ToolValue('applied_resources'), 0);
+  SkippedResources := StrToInt64Def(ToolValue('skipped_resources'), 0);
+  PreservedTextRows := StrToInt64Def(ToolValue('preserved_text_rows'), 0);
+  if AppliedResources < 0 then AppliedResources := 0;
+  if SkippedResources < 0 then SkippedResources := 0;
+  if PreservedTextRows < 0 then PreservedTextRows := 0;
+  if InstallResultNote <> '' then SetStep(5, StDone, 'перевод проверен')
+  else SetStep(5, StDone, 'всё совпало');
   SetOverall(1000);
 end;
 
@@ -3158,6 +3188,8 @@ begin
       ShowMode(0, 'Установка была прервана', 'Часть файлов игры могла остаться изменённой. Закройте игру и лаунчер и нажмите «Удалить перевод»: файлы вернутся к прежнему состоянию.', InfoInterrupted, 'Удалить перевод', 'Закрыть')
     else if LastFailure <> '' then
       ShowMode(0, 'Можно повторить', 'Закройте игру и лаунчер, если они запущены, и повторите.', InfoWelcome, 'Повторить', RemoveCaption)
+    else if NeedsReapply then
+      ShowMode(0, 'Файлы игры изменились', 'Перевод можно установить заново. Известные строки будут переведены, новые и изменившиеся останутся в оригинале.', InfoAfterUpdate, 'Переустановить', RemoveCaption)
     else if IsInstalled then
       ShowMode(0, 'Перевод уже установлен', 'Версия установщика ' + InstalledVersion + ', игра ' + InstalledGameVersion + '.', InfoInstalled, 'Переустановить', 'Удалить перевод')
     else if IsPending then
@@ -3179,7 +3211,8 @@ begin
   end
   else if CurPageID = wpFinished then
   begin
-    Detail := 'Файлы проверены, резервная копия сохранена.';
+    Detail := InstallResultNote;
+    if Detail = '' then Detail := 'Файлы проверены, резервная копия сохранена.';
     if (LauncherLnk <> '') or LauncherWanted then
       ShowMode(2, 'Перевод установлен', Detail, InfoFinished(True), 'Запустить игру', 'Закрыть')
     else

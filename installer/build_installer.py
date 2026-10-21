@@ -30,6 +30,7 @@ import sys
 import tempfile
 import zlib
 from pathlib import Path
+from contextlib import closing, nullcontext
 
 sys.dont_write_bytecode = True
 INSTALLER = Path(__file__).resolve().parent
@@ -249,25 +250,48 @@ def check_conflicts(manifests: list[tuple[str, dict]]) -> None:
             resource_owner[key] = (name, str(row['package']))
 
 
-def package_resources(directory: Path, manifest: dict, package: str, missing: list[str]) -> list[dict]:
+def package_resources(directory: Path, manifest: dict, package: str, missing: list[str], *, reuse_dir: Path | None = None) -> list[dict]:
     """Ресурсы пакета для install.json: id_hex, kind, SHA оригинала prime и нагрузки, размер декодированной нагрузки, число чанков.
     Размер и число чанков берутся из самого <N>_0.db кандидата (validate_carrier уже сверил SHA нагрузок с манифестом).
     Ресурс без корректного original_sha256 попадает в missing (combine потом останавливает сборку)."""
     from game_inspect import QtsContainer
     rows = []
-    with QtsContainer(directory / 'packages' / package / f'{package}_0.db') as data:
+    reader = None
+    if reuse_dir is not None and any(r['package'] == package and r['kind'] in ('lang', 'global-localize') for r in manifest['resources']):
+        import pilot_contract
+        import wxq_install
+        game = wxq_install.require_install_structure(GAME_ROOT if GAME_ROOT else wxq_install.detect_active_install(), full=True)
+        reader = pilot_contract.make_prime_reader(game, QtsContainer)
+    with (closing(reader) if reader is not None else nullcontext()), QtsContainer(directory / 'packages' / package / f'{package}_0.db') as data:
         for resource in sorted((r for r in manifest['resources'] if r['package'] == package), key=lambda r: r['id_hex']):
             original = resource.get('original_sha256')
             if not isinstance(original, str) or not re.fullmatch(r'[0-9a-f]{64}', original):
                 missing.append(f'{package}/{resource.get("id_hex")}')
                 continue
             chunks = data.entries[int(resource['id_hex'], 16)]
-            rows.append({'id_hex': resource['id_hex'], 'kind': resource['kind'], 'original_sha256': original, 'sha256': resource['sha256'],
-                         'bytes': sum(c.uncompressed_size for c in chunks), 'chunks': len(chunks)})
+            row = {'id_hex': resource['id_hex'], 'kind': resource['kind'], 'original_sha256': original, 'sha256': resource['sha256'],
+                   'bytes': sum(c.uncompressed_size for c in chunks), 'chunks': len(chunks)}
+            if reader is not None and resource['kind'] in ('lang', 'global-localize'):
+                from build_compat_text import make_reuse
+                source = reader(package, int(resource['id_hex'], 16))
+                translated = data.decode_entry(int(resource['id_hex'], 16))
+                if hashlib.sha256(source).hexdigest() != original or hashlib.sha256(translated).hexdigest() != resource['sha256']:
+                    fail('Ресурс изменился при подготовке переносимых строк: ' + resource['id_hex'])
+                reuse = make_reuse(resource['kind'], source, translated)
+                encoded = json.dumps(reuse, ensure_ascii=False, separators=(',', ':')).encode('utf-8')
+                if len(encoded) > 32 * 1024 * 1024:
+                    fail('Метаданные одного текстового ресурса превышают 32 МиБ')
+                reuse_dir.mkdir(parents=True, exist_ok=True)
+                flat = f'p{package}_text_{resource["id_hex"]}.json'
+                path = reuse_dir / flat
+                path.write_bytes(encoded)
+                row['text_reuse'] = {'schema': 1, 'codec': reuse['codec'], 'payload': flat, 'sha256': sha(path),
+                                     'bytes': len(encoded), 'rows': len(reuse['rows'])}
+            rows.append(row)
     return rows
 
 
-def combine(candidates: list[Path], version: str, built: str) -> tuple[dict, list[tuple[Path, str]]]:
+def combine(candidates: list[Path], version: str, built: str, *, include_text_reuse: bool = False) -> tuple[dict, list[tuple[Path, str]]]:
     """Сводит кандидаты. Возвращает install.json и список (файл, имя в установщике)."""
     manifests = [(directory, load_candidate(directory)) for directory in candidates]
     check_conflicts([(directory.resolve().name, manifest) for directory, manifest in manifests])
@@ -277,55 +301,69 @@ def combine(candidates: list[Path], version: str, built: str) -> tuple[dict, lis
     prime: dict[str, dict] = {}
     files: list[tuple[Path, str]] = []
     missing_original: list[str] = []
-    for directory, manifest in manifests:
-        resolved = directory.resolve()
-        for key in ('game_version', 'prime_global_index_sha256', 'native_sdk_hashes'):
-            if manifest[key] != first[key]:
-                fail(f'{resolved.name}: {key} расходится с первым кандидатом (кандидаты собраны для разных сборок игры)')
-        for package in manifest['packages']:
-            entry = {
-                'id': package,
-                'prime_pkg_hash': str(manifest['prime_pkg_hashes'][package]),
-                'header_hex': manifest['override_package_headers_hex'][package],
-                'info_sha256': manifest['official_cache_infos'][package]['sha256'],
-                'info_version': manifest['official_cache_infos'][package]['data']['version'],
-                'files': [],
-            }
-            for row in manifest['files']:
-                parts = row['relative'].split('/')
-                if parts[1] != package:
-                    continue
-                flat = f'p{package}_{parts[2]}'
-                files.append((resolved / row['relative'], flat))
-                entry['files'].append({'name': parts[2], 'bytes': row['bytes'], 'sha256': row['sha256'], 'payload': flat})
-            entry['resources'] = package_resources(resolved, manifest, package, missing_original)
-            packages[package] = entry
-        for row in manifest['source_copies']:
-            relative = row['relative']
-            old = prime.get(relative)
-            if old and old['sha256'] != row['sha256']:
-                fail(f'prime {relative}: SHA расходится между кандидатами')
-            prime[relative] = {'relative': relative, 'bytes': row['bytes'], 'sha256': row['sha256']}
-    if missing_original:
-        fail('у ресурсов нет original_sha256 в manifest.json (пересадка записей без него невозможна): ' + ', '.join(missing_original))
-    known = known_hashes(game_version)
-    # QtskDB.dll, с которой разрешена пересадка записей в более новую версию игры: библиотека сборки и закреплённая в воркере (1.4.0.1).
-    from game_layer_native_worker import DLL_HASHES
-    sdk_known = sorted({first['native_sdk_hashes']['QtskDB.dll'], DLL_HASHES['QtskDB.dll']})
-    install = {
-        'product': PRODUCT,
-        'version': version,
-        'built': built,
-        'game_version': game_version,
-        'index_sha256': first['prime_global_index_sha256'],
-        'sdk_hashes': first['native_sdk_hashes'],
-        'sdk_known': sdk_known,
-        'candidates': [d.resolve().name for d, _ in manifests],
-        'packages': [packages[p] for p in sorted(packages, key=int)],
-        'prime': [prime[k] for k in sorted(prime)],
-        'known': {k: sorted(v) for k, v in sorted(known.items())},
-    }
-    return install, files
+    # Отдельные файлы читаются только для изменившегося ресурса: 219 тыс. строк
+    # не превращаются в объекты JSON при каждом запуске на слабом ПК.
+    reuse_dir = Path(tempfile.mkdtemp(prefix='wxq-compat-payload-')) if include_text_reuse else None
+    try:
+        for directory, manifest in manifests:
+            resolved = directory.resolve()
+            for key in ('game_version', 'prime_global_index_sha256', 'native_sdk_hashes'):
+                if manifest[key] != first[key]:
+                    fail(f'{resolved.name}: {key} расходится с первым кандидатом (кандидаты собраны для разных сборок игры)')
+            for package in manifest['packages']:
+                entry = {
+                    'id': package,
+                    'prime_pkg_hash': str(manifest['prime_pkg_hashes'][package]),
+                    'header_hex': manifest['override_package_headers_hex'][package],
+                    'info_sha256': manifest['official_cache_infos'][package]['sha256'],
+                    'info_version': manifest['official_cache_infos'][package]['data']['version'],
+                    'files': [],
+                }
+                for row in manifest['files']:
+                    parts = row['relative'].split('/')
+                    if parts[1] != package:
+                        continue
+                    flat = f'p{package}_{parts[2]}'
+                    files.append((resolved / row['relative'], flat))
+                    entry['files'].append({'name': parts[2], 'bytes': row['bytes'], 'sha256': row['sha256'], 'payload': flat})
+                entry['resources'] = package_resources(resolved, manifest, package, missing_original, reuse_dir=reuse_dir)
+                for resource in entry['resources']:
+                    if 'text_reuse' in resource:
+                        flat = resource['text_reuse']['payload']
+                        files.append((reuse_dir / flat, flat))
+                packages[package] = entry
+            for row in manifest['source_copies']:
+                relative = row['relative']
+                old = prime.get(relative)
+                if old and old['sha256'] != row['sha256']:
+                    fail(f'prime {relative}: SHA расходится между кандидатами')
+                prime[relative] = {'relative': relative, 'bytes': row['bytes'], 'sha256': row['sha256']}
+        if missing_original:
+            fail('у ресурсов нет original_sha256 в manifest.json (пересадка записей без него невозможна): ' + ', '.join(missing_original))
+        known = known_hashes(game_version)
+        # QtskDB.dll, с которой разрешена пересадка записей в более новую версию игры: библиотека сборки и закреплённая в воркере (1.4.0.1).
+        from game_layer_native_worker import DLL_HASHES
+        sdk_known = sorted({first['native_sdk_hashes']['QtskDB.dll'], DLL_HASHES['QtskDB.dll']})
+        install = {
+            'product': PRODUCT,
+            'version': version,
+            'built': built,
+            'game_version': game_version,
+            'index_sha256': first['prime_global_index_sha256'],
+            'sdk_hashes': first['native_sdk_hashes'],
+            'sdk_known': sdk_known,
+            'candidates': [d.resolve().name for d, _ in manifests],
+            'packages': [packages[p] for p in sorted(packages, key=int)],
+            'prime': [prime[k] for k in sorted(prime)],
+            'known': {k: sorted(v) for k, v in sorted(known.items())},
+        }
+        if reuse_dir is not None and not any(path.parent == reuse_dir for path, _ in files):
+            shutil.rmtree(reuse_dir, ignore_errors=True)
+        return install, files
+    except BaseException:
+        if reuse_dir is not None:
+            shutil.rmtree(reuse_dir, ignore_errors=True)
+        raise
 
 
 # ---- графика окна: сдержанный графит и один тёплый акцент; без текста в картинках ---------------------------------
@@ -632,7 +670,8 @@ def build_tool(staging: Path, test_build: bool = False, update_config: Path | No
                                 *(['/define:TESTBUILD'] if test_build else []), '/r:System.Web.Extensions.dll', '/r:Microsoft.CSharp.dll',
                                 f'/resource:{template},cache-template.db',
                                 *([f'/resource:{update_config},update-config.json'] if update_config else []),
-                                f'/out:{staging / "WXQTool.exe"}', str(INSTALLER / 'WXQTool.cs')],
+                                f'/out:{staging / "WXQTool.exe"}', str(INSTALLER / 'WXQTool.cs'),
+                                str(INSTALLER / 'WXQCompatText.cs'), str(INSTALLER / 'WXQCompatPack.cs')],
                                capture_output=True, env=env)
     if completed.returncode:
         text = (completed.stdout + completed.stderr).decode('cp866', errors='replace')
@@ -688,7 +727,7 @@ def write_include(staging: Path, files: list[tuple[Path, str]], launcher: bool =
     (staging / 'payload-copy.iss').write_text('\n'.join(copy) + '\n', encoding='utf-8-sig')
 
 
-PAYLOAD_NAME = re.compile(r'^p[1-9][0-9]{0,9}_[1-9][0-9]{0,9}(_0\.db|\.db|\.info)$')
+PAYLOAD_NAME = re.compile(r'^p[1-9][0-9]{0,9}_(?:[1-9][0-9]{0,9}(_0\.db|\.db|\.info)|text_[0-9a-f]{16}\.json)$')
 
 
 def assert_clean(install: dict, files: list[tuple[Path, str]], staging: Path, launcher: bool = False) -> None:
@@ -763,7 +802,7 @@ def main() -> None:
     parser.add_argument('--dump-script', type=Path, help='сохранить скрипт .iss после препроцессора ISPP (для проверки релизной сборки тестами); установщик собирается как обычно')
     parser.add_argument('--launcher-build', type=Path, help='папка build/launcher-ru-*: включить русский лаунчер (активатор и файлы launcher/); без параметра установщик собирается без лаунчера')
     parser.add_argument('--diag', action='store_true', help='метка диагностической сборки (нужен кандидат lua-wrap-* с --diag-log): заголовок окна, подвал и свойства exe; без метки такой кандидат отвергается')
-    parser.add_argument('--update-repo', help='владелец/репозиторий GitHub с релизами: включает автообновление (адрес канала и публичные ключи вшиваются в WXQTool.exe, добавляется WXQTray.exe). Без параметра установщик собирается без автообновления')
+    parser.add_argument('--update-repo', help='владелец/репозиторий GitHub с релизами: включает обновление из окна установщика (адрес канала и публичные ключи вшиваются в WXQTool.exe). Без параметра установщик собирается без автообновления')
     parser.add_argument('--game-root', type=Path, help='папка игры (по умолчанию — установка лаунчера): оригиналы prime для проверки кандидатов (длина потока текстур, текстовые ресурсы) и повторной сборки Lua-нагрузок; игра только читается, версия должна совпасть с кандидатами')
     args = parser.parse_args()
     global GAME_ROOT
@@ -774,13 +813,22 @@ def main() -> None:
     if output.exists():
         fail(f'{output} уже есть; выберите другое имя (готовые сборки не перезаписываются)')
     output.parent.mkdir(parents=True, exist_ok=True)
-    install, files = combine(args.candidate, args.version, args.date)
-    # Диагностический Lua-кандидат (--diag-log) входит только в установщик с --diag, и наоборот: иначе журнал уехал бы в обычную раздачу.
-    has_diag_log = any(bool(json.loads((d.resolve() / 'manifest.json').read_text('utf-8-sig')).get('lua_wrap', {}).get('diag_log')) for d in args.candidate)
-    if has_diag_log != args.diag:
-        fail('кандидат lua-wrap-* с --diag-log допустим только вместе с --diag (и --diag требует такого кандидата)')
-    staging = Path(tempfile.mkdtemp(prefix='wxq-ru-staging-'))
+    install, files = combine(args.candidate, args.version, args.date, include_text_reuse=True)
+    temp_root = Path(tempfile.gettempdir()).resolve()
+    reuse_dirs = sorted({
+        path.resolve().parent
+        for path, flat in files
+        if re.fullmatch(r'p[1-9][0-9]{0,9}_text_[0-9a-f]{16}\.json', flat)
+        and path.resolve().parent.name.startswith('wxq-compat-payload-')
+        and path.resolve().parent.parent == temp_root
+    })
+    staging: Path | None = None
     try:
+        # Диагностический Lua-кандидат (--diag-log) входит только в установщик с --diag, и наоборот: иначе журнал уехал бы в обычную раздачу.
+        has_diag_log = any(bool(json.loads((d.resolve() / 'manifest.json').read_text('utf-8-sig')).get('lua_wrap', {}).get('diag_log')) for d in args.candidate)
+        if has_diag_log != args.diag:
+            fail('кандидат lua-wrap-* с --diag-log допустим только вместе с --diag (и --diag требует такого кандидата)')
+        staging = Path(tempfile.mkdtemp(prefix='wxq-ru-staging-'))
         make_staging(install, files, staging, launcher_build=args.launcher_build, test_build=args.test_build, update_repo=args.update_repo)
         packages_text = ', '.join(p['id'] for p in install['packages'])
         command = [str(ISCC), '/Q', *iscc_defines(staging, output, args.version, args.date, install['game_version'], packages_text, args.test_build,
@@ -794,9 +842,15 @@ def main() -> None:
             print(text.strip())
     finally:
         if args.keep_staging:
-            print('staging:', staging)
+            if staging is not None:
+                print('staging:', staging)
+            for reuse_dir in reuse_dirs:
+                print('text reuse:', reuse_dir)
         else:
-            shutil.rmtree(staging, ignore_errors=True)
+            if staging is not None:
+                shutil.rmtree(staging, ignore_errors=True)
+            for reuse_dir in reuse_dirs:
+                shutil.rmtree(reuse_dir, ignore_errors=True)
     print(json.dumps({'installer': str(output), 'bytes': output.stat().st_size, 'sha256': sha(output), 'game_version': install['game_version'],
                       'packages': [p['id'] for p in install['packages']], 'candidates': install['candidates'], 'test_build': args.test_build, 'diag': args.diag,
                       'launcher': args.launcher_build.resolve().name if args.launcher_build else None}, ensure_ascii=False, indent=1))

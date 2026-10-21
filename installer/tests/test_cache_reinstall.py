@@ -169,7 +169,8 @@ def build_tool(work: Path, source: Path | None) -> Path:
         done = subprocess.run([str(bi.CSC), '/nologo', '/target:exe', '/platform:x64', '/optimize+', '/codepage:65001',
                                '/define:TESTBUILD', '/r:System.Web.Extensions.dll', '/r:Microsoft.CSharp.dll',
                                f'/resource:{PROJECT / "installer/tests/fixtures/10.db.placeholder"},cache-template.db',
-                               f'/out:{folder / "WXQTool.exe"}', str(source.resolve())], capture_output=True, timeout=120)
+                               f'/out:{folder / "WXQTool.exe"}', str(source.resolve()),
+                               str(PROJECT / 'installer/WXQCompatText.cs'), str(PROJECT / 'installer/WXQCompatPack.cs')], capture_output=True, timeout=120)
         assert done.returncode == 0, (done.stdout + done.stderr).decode('cp866', errors='replace')
     return folder / 'WXQTool.exe'
 

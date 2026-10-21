@@ -51,7 +51,8 @@ class Lab:
         source = (PROJECT / 'installer/WXQTool.cs').read_text('utf-8-sig')
         (folder / 'WXQTool.cs').write_text(source, 'utf-8-sig')
         done = subprocess.run([str(CSC), '/nologo', '/target:exe', '/platform:x64', '/optimize+', '/codepage:65001', '/define:TESTBUILD',
-                               '/r:System.Web.Extensions.dll', f'/out:{folder / "WXQTool.exe"}', str(folder / 'WXQTool.cs')], capture_output=True)
+                               '/r:System.Web.Extensions.dll', f'/out:{folder / "WXQTool.exe"}', str(folder / 'WXQTool.cs'),
+                               str(PROJECT / 'installer/WXQCompatText.cs'), str(PROJECT / 'installer/WXQCompatPack.cs')], capture_output=True)
         if done.returncode:
             raise SystemExit('помощник не собрался: ' + (done.stdout + done.stderr).decode('cp866', errors='replace'))
         self.tool = folder / 'WXQTool.exe'

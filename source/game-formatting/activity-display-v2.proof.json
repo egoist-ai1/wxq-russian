@@ -1,0 +1,2825 @@
+{
+  "schema": "wxq-activity-display-proof/v2",
+  "config_resource_id_hex": "b5d856bfdf22400d",
+  "config_source_sha256": "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266",
+  "current_contexts_sha256": "d5ae661d4c6f2d7b89694634c3fe85125a167621b7e2eca394a01cd4a9ccc3c8",
+  "scope": "Самодостаточные конечные source/target пары визуального display. Ссылки на старые источники — provenance для отдельного локального аудита, runtime их не читает.",
+  "source_approval_inputs": [
+    {
+      "path": "source/game-activity-display-proof/activity-help-queue.json",
+      "sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2"
+    },
+    {
+      "path": "source/game-activity-display-proof/manifest.json",
+      "sha256": "e45222d8345c244243460266f20a295fd023d63b3f38435944b9ddc642f565f4"
+    },
+    {
+      "path": "translations/game-inline/activity-help.ru.json",
+      "sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+    },
+    {
+      "path": "translations/game-inline/activity-help.qa.json",
+      "sha256": "256a7669785d8347ec9e7c03c44fff87c019747268544cde2bc77cfda19e91d3"
+    }
+  ],
+  "rows": [
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>7日累登送好礼活动规则</color>",
+      "source_sha256": "36ba0866d5474fe2360e97551fd1a9bd7c19f2d186ac4d2ce6e9e502f990fca6",
+      "target_ru": "<color=#FFFFFF>Правила события «Подарки за 7 дней входа»</color>",
+      "target_sha256": "f0366ed8964bfaa1f85007915f8c1b5b369bd1a87654ff93c069cafe866d86ff",
+      "current_contexts": [
+        {
+          "record_index": 35,
+          "field": "Title",
+          "wire_path": "root.field2[35].field2[0]",
+          "source_cn": "<color=#FFFFFF>7日累登送好礼活动规则</color>",
+          "source_sha256": "36ba0866d5474fe2360e97551fd1a9bd7c19f2d186ac4d2ce6e9e502f990fca6"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-36ba0866d547",
+        "source_sha256": "36ba0866d5474fe2360e97551fd1a9bd7c19f2d186ac4d2ce6e9e502f990fca6",
+        "target_sha256": "f0366ed8964bfaa1f85007915f8c1b5b369bd1a87654ff93c069cafe866d86ff",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>7步成局活动规则</color>",
+      "source_sha256": "d4cc513b0bfab24155cfae82e169f4006426e15348aeaec961956df69306c31b",
+      "target_ru": "<color=#FFFFFF>Правила события «7 шагов до матча»</color>",
+      "target_sha256": "cfb4ec7e28aa4cf54693227bcaf7af3a0edf623d0b3bef01c63b22f8ffbcfd64",
+      "current_contexts": [
+        {
+          "record_index": 20,
+          "field": "Title",
+          "wire_path": "root.field2[20].field2[0]",
+          "source_cn": "<color=#FFFFFF>7步成局活动规则</color>",
+          "source_sha256": "d4cc513b0bfab24155cfae82e169f4006426e15348aeaec961956df69306c31b"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-d4cc513b0bfa",
+        "source_sha256": "d4cc513b0bfab24155cfae82e169f4006426e15348aeaec961956df69306c31b",
+        "target_sha256": "cfb4ec7e28aa4cf54693227bcaf7af3a0edf623d0b3bef01c63b22f8ffbcfd64",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>“秋”你别摇活动规则</color>",
+      "source_sha256": "f5d99041990b7667f5501b2374c171986d0fe84e4e9a5295f7bedc1ddff27e0e",
+      "target_ru": "<color=#FFFFFF>Правила события «Осень без встрясок»</color>",
+      "target_sha256": "fb1cd99b74835d7fbbe0229e3faa2f9b56c15dabd3ba65202d43355e9a5de179",
+      "current_contexts": [
+        {
+          "record_index": 107,
+          "field": "Title",
+          "wire_path": "root.field2[107].field2[0]",
+          "source_cn": "<color=#FFFFFF>“秋”你别摇活动规则</color>",
+          "source_sha256": "f5d99041990b7667f5501b2374c171986d0fe84e4e9a5295f7bedc1ddff27e0e"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-f5d99041990b",
+        "source_sha256": "f5d99041990b7667f5501b2374c171986d0fe84e4e9a5295f7bedc1ddff27e0e",
+        "target_sha256": "fb1cd99b74835d7fbbe0229e3faa2f9b56c15dabd3ba65202d43355e9a5de179",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>万象召集令活动规则</color>",
+      "source_sha256": "d955ea1694efcc08abe0e762729d2279a61253b7e84ae74db369eb107cc079bf",
+      "target_ru": "<color=#FFFFFF>Правила события «Всеобщий сбор Ваньсян»</color>",
+      "target_sha256": "64cdc83c81a924148d1b6fa4a1eee5457dc22e62318229eb777b57c892971d3e",
+      "current_contexts": [
+        {
+          "record_index": 57,
+          "field": "Title",
+          "wire_path": "root.field2[57].field2[0]",
+          "source_cn": "<color=#FFFFFF>万象召集令活动规则</color>",
+          "source_sha256": "d955ea1694efcc08abe0e762729d2279a61253b7e84ae74db369eb107cc079bf"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-d955ea1694ef",
+        "source_sha256": "d955ea1694efcc08abe0e762729d2279a61253b7e84ae74db369eb107cc079bf",
+        "target_sha256": "64cdc83c81a924148d1b6fa4a1eee5457dc22e62318229eb777b57c892971d3e",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>万象启程规则</color>",
+      "source_sha256": "cd091fa0a9f10b36f3f0682c6adeb1f660378b258474b228f250634c40acc940",
+      "target_ru": "<color=#FFFFFF>Правила «Начала пути ACE»</color>",
+      "target_sha256": "035712b0e9d58ef847dc2f0743b6af57585ed92ce98a106e80e9545cf68deb93",
+      "current_contexts": [
+        {
+          "record_index": 0,
+          "field": "Title",
+          "wire_path": "root.field2[0].field2[0]",
+          "source_cn": "<color=#FFFFFF>万象启程规则</color>",
+          "source_sha256": "cd091fa0a9f10b36f3f0682c6adeb1f660378b258474b228f250634c40acc940"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-cd091fa0a9f1",
+        "source_sha256": "cd091fa0a9f10b36f3f0682c6adeb1f660378b258474b228f250634c40acc940",
+        "target_sha256": "035712b0e9d58ef847dc2f0743b6af57585ed92ce98a106e80e9545cf68deb93",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>万象宝匣</color>",
+      "source_sha256": "e859774ba2c455f4298bbf98994a9f6c9e319c988b66e864fc77d22edd9b8a68",
+      "target_ru": "<color=#FFFFFF>Ларец Ваньсян</color>",
+      "target_sha256": "4bfc276e9bb4678cdd731f0e4d3fc5a41ea9cc855fb6cc8c96eed46ff8d35a5b",
+      "current_contexts": [
+        {
+          "record_index": 77,
+          "field": "Title",
+          "wire_path": "root.field2[77].field2[0]",
+          "source_cn": "<color=#FFFFFF>万象宝匣</color>",
+          "source_sha256": "e859774ba2c455f4298bbf98994a9f6c9e319c988b66e864fc77d22edd9b8a68"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-e859774ba2c4",
+        "source_sha256": "e859774ba2c455f4298bbf98994a9f6c9e319c988b66e864fc77d22edd9b8a68",
+        "target_sha256": "4bfc276e9bb4678cdd731f0e4d3fc5a41ea9cc855fb6cc8c96eed46ff8d35a5b",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>万象映画活动规则</color>",
+      "source_sha256": "1ebd3d0a31a880c4ad49f5281c43037e7ec45c283dc6c3d609ed77ffcdd1e661",
+      "target_ru": "<color=#FFFFFF>Правила события «Кадры Ваньсян»</color>",
+      "target_sha256": "6d862057953f14bb1b46baa961d34698ebd4d92d917782a3b0a983e3fb949632",
+      "current_contexts": [
+        {
+          "record_index": 25,
+          "field": "Title",
+          "wire_path": "root.field2[25].field2[0]",
+          "source_cn": "<color=#FFFFFF>万象映画活动规则</color>",
+          "source_sha256": "1ebd3d0a31a880c4ad49f5281c43037e7ec45c283dc6c3d609ed77ffcdd1e661"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-1ebd3d0a31a8",
+        "source_sha256": "1ebd3d0a31a880c4ad49f5281c43037e7ec45c283dc6c3d609ed77ffcdd1e661",
+        "target_sha256": "6d862057953f14bb1b46baa961d34698ebd4d92d917782a3b0a983e3fb949632",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>万象流年活动规则</color>",
+      "source_sha256": "790500957db7d21f51ebcbe0b28023bbdb334c62bff5eef6896794e5ca2c7472",
+      "target_ru": "<color=#FFFFFF>Правила события «Летопись Ваньсян»</color>",
+      "target_sha256": "bcad1552630385cfc97b5c02ad2ce0c108dc99eab086e9f6080030872649c98b",
+      "current_contexts": [
+        {
+          "record_index": 22,
+          "field": "Title",
+          "wire_path": "root.field2[22].field2[0]",
+          "source_cn": "<color=#FFFFFF>万象流年活动规则</color>",
+          "source_sha256": "790500957db7d21f51ebcbe0b28023bbdb334c62bff5eef6896794e5ca2c7472"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-790500957db7",
+        "source_sha256": "790500957db7d21f51ebcbe0b28023bbdb334c62bff5eef6896794e5ca2c7472",
+        "target_sha256": "bcad1552630385cfc97b5c02ad2ce0c108dc99eab086e9f6080030872649c98b",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>万象竞答活动规则</color>",
+      "source_sha256": "62bd0a875670a3d3644b3309f981b1e3c079b14d74c6b2805a6732dd132c8eb8",
+      "target_ru": "<color=#FFFFFF>Правила события «Викторина ACE»</color>",
+      "target_sha256": "f7dfddc6b26d37a761a151a9c3915ce6d1c0ed721a6b2c2ac409c18fec170dd0",
+      "current_contexts": [
+        {
+          "record_index": 36,
+          "field": "Title",
+          "wire_path": "root.field2[36].field2[0]",
+          "source_cn": "<color=#FFFFFF>万象竞答活动规则</color>",
+          "source_sha256": "62bd0a875670a3d3644b3309f981b1e3c079b14d74c6b2805a6732dd132c8eb8"
+        },
+        {
+          "record_index": 38,
+          "field": "Title",
+          "wire_path": "root.field2[38].field2[0]",
+          "source_cn": "<color=#FFFFFF>万象竞答活动规则</color>",
+          "source_sha256": "62bd0a875670a3d3644b3309f981b1e3c079b14d74c6b2805a6732dd132c8eb8"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-62bd0a875670",
+        "source_sha256": "62bd0a875670a3d3644b3309f981b1e3c079b14d74c6b2805a6732dd132c8eb8",
+        "target_sha256": "f7dfddc6b26d37a761a151a9c3915ce6d1c0ed721a6b2c2ac409c18fec170dd0",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>万象结伴</color>",
+      "source_sha256": "22a60618862bd16a8282ffedd89d72faf34bc898441cba2729d98944221fe882",
+      "target_ru": "<color=#FFFFFF>Вместе в Ваньсян</color>",
+      "target_sha256": "abd520b3909965d3edb064f37f2a3d46967996cd41a076bfefe1dce1d9430396",
+      "current_contexts": [
+        {
+          "record_index": 87,
+          "field": "Title",
+          "wire_path": "root.field2[87].field2[0]",
+          "source_cn": "<color=#FFFFFF>万象结伴</color>",
+          "source_sha256": "22a60618862bd16a8282ffedd89d72faf34bc898441cba2729d98944221fe882"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-22a60618862b",
+        "source_sha256": "22a60618862bd16a8282ffedd89d72faf34bc898441cba2729d98944221fe882",
+        "target_sha256": "abd520b3909965d3edb064f37f2a3d46967996cd41a076bfefe1dce1d9430396",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>万象金库</color>",
+      "source_sha256": "cb37de0558ef21de99bec4db1adb412d116419af66bbdd5be385a8b4b338f2f2",
+      "target_ru": "<color=#FFFFFF>Сокровищница Ваньсян</color>",
+      "target_sha256": "f20eaa5484a12b05816e8bf1d92ef72276f759c51ba366d494463c4b2baa2abb",
+      "current_contexts": [
+        {
+          "record_index": 76,
+          "field": "Title",
+          "wire_path": "root.field2[76].field2[0]",
+          "source_cn": "<color=#FFFFFF>万象金库</color>",
+          "source_sha256": "cb37de0558ef21de99bec4db1adb412d116419af66bbdd5be385a8b4b338f2f2"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-cb37de0558ef",
+        "source_sha256": "cb37de0558ef21de99bec4db1adb412d116419af66bbdd5be385a8b4b338f2f2",
+        "target_sha256": "f20eaa5484a12b05816e8bf1d92ef72276f759c51ba366d494463c4b2baa2abb",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>专属昵称颜色</color>",
+      "source_sha256": "6cff76039bd2a44c07980d35d73ecb3ad198eeb3199e108ce42bbc216cc87592",
+      "target_ru": "<color=#FFFFFF>Особый цвет имени</color>",
+      "target_sha256": "6866891728b5b66c9d6e1d61c4eb22927e33a105bb953af9475a37ff80c67cd5",
+      "current_contexts": [
+        {
+          "record_index": 6,
+          "field": "Title",
+          "wire_path": "root.field2[6].field2[0]",
+          "source_cn": "<color=#FFFFFF>专属昵称颜色</color>",
+          "source_sha256": "6cff76039bd2a44c07980d35d73ecb3ad198eeb3199e108ce42bbc216cc87592"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-6cff76039bd2",
+        "source_sha256": "6cff76039bd2a44c07980d35d73ecb3ad198eeb3199e108ce42bbc216cc87592",
+        "target_sha256": "6866891728b5b66c9d6e1d61c4eb22927e33a105bb953af9475a37ff80c67cd5",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>专属聊天字色</color>",
+      "source_sha256": "253557885093fcba720ea7d7f8e3dbcddadab9bcbbf8b513332f770e50de93c6",
+      "target_ru": "<color=#FFFFFF>Особый цвет текста в чате</color>",
+      "target_sha256": "9980ba6624b466ebcfca617f4a5406bcf4c8491a15135f2fcbc8ab591a972e53",
+      "current_contexts": [
+        {
+          "record_index": 5,
+          "field": "Title",
+          "wire_path": "root.field2[5].field2[0]",
+          "source_cn": "<color=#FFFFFF>专属聊天字色</color>",
+          "source_sha256": "253557885093fcba720ea7d7f8e3dbcddadab9bcbbf8b513332f770e50de93c6"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-253557885093",
+        "source_sha256": "253557885093fcba720ea7d7f8e3dbcddadab9bcbbf8b513332f770e50de93c6",
+        "target_sha256": "9980ba6624b466ebcfca617f4a5406bcf4c8491a15135f2fcbc8ab591a972e53",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>专属聊天气泡</color>",
+      "source_sha256": "316d544575e6a604976ca042ac06c5e5371c4b1feee5be115d4cff17c8975aca",
+      "target_ru": "<color=#FFFFFF>Особое оформление сообщений</color>",
+      "target_sha256": "87d66e4cde57bf50e8fd101de623e6ae03c88f1b0a37ceedffbf2baa27c5090e",
+      "current_contexts": [
+        {
+          "record_index": 12,
+          "field": "Title",
+          "wire_path": "root.field2[12].field2[0]",
+          "source_cn": "<color=#FFFFFF>专属聊天气泡</color>",
+          "source_sha256": "316d544575e6a604976ca042ac06c5e5371c4b1feee5be115d4cff17c8975aca"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-316d544575e6",
+        "source_sha256": "316d544575e6a604976ca042ac06c5e5371c4b1feee5be115d4cff17c8975aca",
+        "target_sha256": "87d66e4cde57bf50e8fd101de623e6ae03c88f1b0a37ceedffbf2baa27c5090e",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>云梦游抽奖规则</color>",
+      "source_sha256": "c1361c40ff7c3b1f5661544063bff448db6d1948e148c1c6682f146cf3c5fe9d",
+      "target_ru": "<color=#FFFFFF>Правила розыгрыша «Путешествие по Юньмэн»</color>",
+      "target_sha256": "2ce7a4855207ce3c1141ef2107abf29a847b47dcbddbc27b80701caaf05ec9b5",
+      "current_contexts": [
+        {
+          "record_index": 69,
+          "field": "Title",
+          "wire_path": "root.field2[69].field2[0]",
+          "source_cn": "<color=#FFFFFF>云梦游抽奖规则</color>",
+          "source_sha256": "c1361c40ff7c3b1f5661544063bff448db6d1948e148c1c6682f146cf3c5fe9d"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-c1361c40ff7c",
+        "source_sha256": "c1361c40ff7c3b1f5661544063bff448db6d1948e148c1c6682f146cf3c5fe9d",
+        "target_sha256": "2ce7a4855207ce3c1141ef2107abf29a847b47dcbddbc27b80701caaf05ec9b5",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>假期钻石礼活动规则</color>",
+      "source_sha256": "ff03fe5e8a3815cb44f5a0cae0d0d702cd5ae21d354222180886d18f891f97f7",
+      "target_ru": "<color=#FFFFFF>Правила события «Алмазы к празднику»</color>",
+      "target_sha256": "6fa94c64ee768d234cbf7fb10a8bd3be7aa90cd1fa444372cee7556b8465bb5a",
+      "current_contexts": [
+        {
+          "record_index": 60,
+          "field": "Title",
+          "wire_path": "root.field2[60].field2[0]",
+          "source_cn": "<color=#FFFFFF>假期钻石礼活动规则</color>",
+          "source_sha256": "ff03fe5e8a3815cb44f5a0cae0d0d702cd5ae21d354222180886d18f891f97f7"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-ff03fe5e8a38",
+        "source_sha256": "ff03fe5e8a3815cb44f5a0cae0d0d702cd5ae21d354222180886d18f891f97f7",
+        "target_sha256": "6fa94c64ee768d234cbf7fb10a8bd3be7aa90cd1fa444372cee7556b8465bb5a",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>充值规则</color>",
+      "source_sha256": "191e7e7e9b0cd34662c54e0570b3adc1b59b6cbed02d16f27ef8d7bcad8d892e",
+      "target_ru": "<color=#FFFFFF>Правила пополнения</color>",
+      "target_sha256": "8496316adfc2c0971ccf3e0da681f6edbae23ae9266c8b6fb0148653839bece3",
+      "current_contexts": [
+        {
+          "record_index": 2,
+          "field": "Title",
+          "wire_path": "root.field2[2].field2[0]",
+          "source_cn": "<color=#FFFFFF>充值规则</color>",
+          "source_sha256": "191e7e7e9b0cd34662c54e0570b3adc1b59b6cbed02d16f27ef8d7bcad8d892e"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-191e7e7e9b0c",
+        "source_sha256": "191e7e7e9b0cd34662c54e0570b3adc1b59b6cbed02d16f27ef8d7bcad8d892e",
+        "target_sha256": "8496316adfc2c0971ccf3e0da681f6edbae23ae9266c8b6fb0148653839bece3",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>全员百分百活动规则</color>",
+      "source_sha256": "a967553649d6c9e14ab07886b152a576c52b200d1ee7ab83150b6a2c43d98cda",
+      "target_ru": "<color=#FFFFFF>Правила события «Все на сто процентов»</color>",
+      "target_sha256": "c2d976fd681e03bff952a785d3263655684881c94db90fdee5d852adaa63cac5",
+      "current_contexts": [
+        {
+          "record_index": 56,
+          "field": "Title",
+          "wire_path": "root.field2[56].field2[0]",
+          "source_cn": "<color=#FFFFFF>全员百分百活动规则</color>",
+          "source_sha256": "a967553649d6c9e14ab07886b152a576c52b200d1ee7ab83150b6a2c43d98cda"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-a967553649d6",
+        "source_sha256": "a967553649d6c9e14ab07886b152a576c52b200d1ee7ab83150b6a2c43d98cda",
+        "target_sha256": "c2d976fd681e03bff952a785d3263655684881c94db90fdee5d852adaa63cac5",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>共享特权</color>",
+      "source_sha256": "a48061e573391f9d3e834d8749de8e78e299892c6c0fbe9c6c7d6f20c1bd3627",
+      "target_ru": "<color=#FFFFFF>Общие преимущества</color>",
+      "target_sha256": "edd575db56784303969d541a72edace1e034bfbab1139b852453fd67e1fbb6a5",
+      "current_contexts": [
+        {
+          "record_index": 13,
+          "field": "Title",
+          "wire_path": "root.field2[13].field2[0]",
+          "source_cn": "<color=#FFFFFF>共享特权</color>",
+          "source_sha256": "a48061e573391f9d3e834d8749de8e78e299892c6c0fbe9c6c7d6f20c1bd3627"
+        },
+        {
+          "record_index": 14,
+          "field": "Title",
+          "wire_path": "root.field2[14].field2[0]",
+          "source_cn": "<color=#FFFFFF>共享特权</color>",
+          "source_sha256": "a48061e573391f9d3e834d8749de8e78e299892c6c0fbe9c6c7d6f20c1bd3627"
+        },
+        {
+          "record_index": 15,
+          "field": "Title",
+          "wire_path": "root.field2[15].field2[0]",
+          "source_cn": "<color=#FFFFFF>共享特权</color>",
+          "source_sha256": "a48061e573391f9d3e834d8749de8e78e299892c6c0fbe9c6c7d6f20c1bd3627"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-a48061e57339",
+        "source_sha256": "a48061e573391f9d3e834d8749de8e78e299892c6c0fbe9c6c7d6f20c1bd3627",
+        "target_sha256": "edd575db56784303969d541a72edace1e034bfbab1139b852453fd67e1fbb6a5",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>冲分钻石礼活动规则</color>",
+      "source_sha256": "39a7e6fbbe5480d65e938c9eb1ebb94068f5a538d788e204f7b2891f1f3504fa",
+      "target_ru": "<color=#FFFFFF>Правила события «Алмазы за рейтинг»</color>",
+      "target_sha256": "cbf9db672cc6facd479d97484a0c076e247f4a5e39657ffd920aaab54f5d54d7",
+      "current_contexts": [
+        {
+          "record_index": 111,
+          "field": "Title",
+          "wire_path": "root.field2[111].field2[0]",
+          "source_cn": "<color=#FFFFFF>冲分钻石礼活动规则</color>",
+          "source_sha256": "39a7e6fbbe5480d65e938c9eb1ebb94068f5a538d788e204f7b2891f1f3504fa"
+        }
+      ],
+      "approval": "task-reviewed-by-root",
+      "task_review_id": "ix-39a7e6fbbe54",
+      "legacy_approval": null
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>分享活动规则</color>",
+      "source_sha256": "78588da7ffbdb3dc36290d236de67b63eb7ae0a3cc05b91f854b297c20c1abd7",
+      "target_ru": "<color=#FFFFFF>Правила события «Поделиться»</color>",
+      "target_sha256": "f8624db926eb1f9a1a27a8d65ebbbe2f88aa2f4812144345945c4cec67ce27c9",
+      "current_contexts": [
+        {
+          "record_index": 27,
+          "field": "Title",
+          "wire_path": "root.field2[27].field2[0]",
+          "source_cn": "<color=#FFFFFF>分享活动规则</color>",
+          "source_sha256": "78588da7ffbdb3dc36290d236de67b63eb7ae0a3cc05b91f854b297c20c1abd7"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-78588da7ffbd",
+        "source_sha256": "78588da7ffbdb3dc36290d236de67b63eb7ae0a3cc05b91f854b297c20c1abd7",
+        "target_sha256": "f8624db926eb1f9a1a27a8d65ebbbe2f88aa2f4812144345945c4cec67ce27c9",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>助力王牌对决活动规则</color>",
+      "source_sha256": "f3d18ff06b57fdc0419fa163ad98ca0ca4d227213728b25bbd50417703c3c28f",
+      "target_ru": "<color=#FFFFFF>Правила события «Поддержка Дуэли асов»</color>",
+      "target_sha256": "fb3f073c3b16437d0a66a6d889739c4864e0b923799108a170f84a193b49cf93",
+      "current_contexts": [
+        {
+          "record_index": 109,
+          "field": "Title",
+          "wire_path": "root.field2[109].field2[0]",
+          "source_cn": "<color=#FFFFFF>助力王牌对决活动规则</color>",
+          "source_sha256": "f3d18ff06b57fdc0419fa163ad98ca0ca4d227213728b25bbd50417703c3c28f"
+        }
+      ],
+      "approval": "task-reviewed-by-root",
+      "task_review_id": "ix-f3d18ff06b57",
+      "legacy_approval": null
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>双端互通</color>",
+      "source_sha256": "8e5d30394c121266735d50e844269521259c84a1bcf58d83c7d94c87aa0e8dcc",
+      "target_ru": "<color=#FFFFFF>Общий прогресс на двух платформах</color>",
+      "target_sha256": "e890726340f9f6609fe46e25f48c4188852f5dbcbd16e9b2e16f4ea94217d0bf",
+      "current_contexts": [
+        {
+          "record_index": 85,
+          "field": "Title",
+          "wire_path": "root.field2[85].field2[0]",
+          "source_cn": "<color=#FFFFFF>双端互通</color>",
+          "source_sha256": "8e5d30394c121266735d50e844269521259c84a1bcf58d83c7d94c87aa0e8dcc"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-8e5d30394c12",
+        "source_sha256": "8e5d30394c121266735d50e844269521259c84a1bcf58d83c7d94c87aa0e8dcc",
+        "target_sha256": "e890726340f9f6609fe46e25f48c4188852f5dbcbd16e9b2e16f4ea94217d0bf",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>周末对局活动规则</color>",
+      "source_sha256": "a852ebc18c404c25be416d94a1b5b1506ad08653b624846f83d312ede72e40ba",
+      "target_ru": "<color=#FFFFFF>Правила события «Матчи выходного дня»</color>",
+      "target_sha256": "5b36b9258bbe3e162cccf308e9438b6868c405fdde35227c2d8cdad3a6581479",
+      "current_contexts": [
+        {
+          "record_index": 32,
+          "field": "Title",
+          "wire_path": "root.field2[32].field2[0]",
+          "source_cn": "<color=#FFFFFF>周末对局活动规则</color>",
+          "source_sha256": "a852ebc18c404c25be416d94a1b5b1506ad08653b624846f83d312ede72e40ba"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-a852ebc18c40",
+        "source_sha256": "a852ebc18c404c25be416d94a1b5b1506ad08653b624846f83d312ede72e40ba",
+        "target_sha256": "5b36b9258bbe3e162cccf308e9438b6868c405fdde35227c2d8cdad3a6581479",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>周钻石上限增加</color>",
+      "source_sha256": "9311af65587a6ad0b454f9e07d7dd0540ff8f5455697154d9289605a9abb8296",
+      "target_ru": "<color=#FFFFFF>Повышение недельного лимита алмазов</color>",
+      "target_sha256": "1f1027a37a94e2e9f332bc16424342365e288e5c9238c0cf3a5c832e9212bead",
+      "current_contexts": [
+        {
+          "record_index": 8,
+          "field": "Title",
+          "wire_path": "root.field2[8].field2[0]",
+          "source_cn": "<color=#FFFFFF>周钻石上限增加</color>",
+          "source_sha256": "9311af65587a6ad0b454f9e07d7dd0540ff8f5455697154d9289605a9abb8296"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-9311af65587a",
+        "source_sha256": "9311af65587a6ad0b454f9e07d7dd0540ff8f5455697154d9289605a9abb8296",
+        "target_sha256": "1f1027a37a94e2e9f332bc16424342365e288e5c9238c0cf3a5c832e9212bead",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>咖啡小站活动规则</color>",
+      "source_sha256": "f32f14770441bfced147710b10f785da3e99e196471169d7cf52ad1164ddb089",
+      "target_ru": "<color=#FFFFFF>Правила события «Кофейный уголок»</color>",
+      "target_sha256": "7f5fd4f33297f816785da6df4f93067f0bf7030d3b807b3917f1787ae07a02f0",
+      "current_contexts": [
+        {
+          "record_index": 30,
+          "field": "Title",
+          "wire_path": "root.field2[30].field2[0]",
+          "source_cn": "<color=#FFFFFF>咖啡小站活动规则</color>",
+          "source_sha256": "f32f14770441bfced147710b10f785da3e99e196471169d7cf52ad1164ddb089"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-f32f14770441",
+        "source_sha256": "f32f14770441bfced147710b10f785da3e99e196471169d7cf52ad1164ddb089",
+        "target_sha256": "7f5fd4f33297f816785da6df4f93067f0bf7030d3b807b3917f1787ae07a02f0",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>回流棋手规则</color>",
+      "source_sha256": "e5f30c9a6daf09d507a5abb94c7c0324ee5339f060b4acb3d9fbd06e0f970522",
+      "target_ru": "<color=#FFFFFF>Правила стратегов для вернувшихся</color>",
+      "target_sha256": "091d168365c5c36e864de28b2e577986173c00231bff8582c7d71dc23db964ae",
+      "current_contexts": [
+        {
+          "record_index": 65,
+          "field": "Title",
+          "wire_path": "root.field2[65].field2[0]",
+          "source_cn": "<color=#FFFFFF>回流棋手规则</color>",
+          "source_sha256": "e5f30c9a6daf09d507a5abb94c7c0324ee5339f060b4acb3d9fbd06e0f970522"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-e5f30c9a6daf",
+        "source_sha256": "e5f30c9a6daf09d507a5abb94c7c0324ee5339f060b4acb3d9fbd06e0f970522",
+        "target_sha256": "091d168365c5c36e864de28b2e577986173c00231bff8582c7d71dc23db964ae",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>回流特权规则</color>",
+      "source_sha256": "86ad3acdceae7078f7e6804bc5f814b4c545020c80ca681d56d7139bf8cdb5f5",
+      "target_ru": "<color=#FFFFFF>Правила бонуса возвращения</color>",
+      "target_sha256": "17b606b1c6e14a26b6d66edda03d6eebdae9cb80a641584bd4cd2501cfd06c37",
+      "current_contexts": [
+        {
+          "record_index": 66,
+          "field": "Title",
+          "wire_path": "root.field2[66].field2[0]",
+          "source_cn": "<color=#FFFFFF>回流特权规则</color>",
+          "source_sha256": "86ad3acdceae7078f7e6804bc5f814b4c545020c80ca681d56d7139bf8cdb5f5"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-86ad3acdceae",
+        "source_sha256": "86ad3acdceae7078f7e6804bc5f814b4c545020c80ca681d56d7139bf8cdb5f5",
+        "target_sha256": "17b606b1c6e14a26b6d66edda03d6eebdae9cb80a641584bd4cd2501cfd06c37",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>回流阵容规则</color>",
+      "source_sha256": "653d7ae95c53cf31c185b03bea28952df24fb564da64b9e40b92780d7f3efe26",
+      "target_ru": "<color=#FFFFFF>Правила составов для вернувшихся</color>",
+      "target_sha256": "deb5706490a8d417aea87323956780e95afdbd9b29e6ec07eb081ea378440571",
+      "current_contexts": [
+        {
+          "record_index": 64,
+          "field": "Title",
+          "wire_path": "root.field2[64].field2[0]",
+          "source_cn": "<color=#FFFFFF>回流阵容规则</color>",
+          "source_sha256": "653d7ae95c53cf31c185b03bea28952df24fb564da64b9e40b92780d7f3efe26"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-653d7ae95c53",
+        "source_sha256": "653d7ae95c53cf31c185b03bea28952df24fb564da64b9e40b92780d7f3efe26",
+        "target_sha256": "deb5706490a8d417aea87323956780e95afdbd9b29e6ec07eb081ea378440571",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>天使投资人</color>",
+      "source_sha256": "18aba4f9e529f862ef09e7880d415174692cd3760927894a71750621324cce10",
+      "target_ru": "<color=#FFFFFF>Бизнес-ангел</color>",
+      "target_sha256": "a7be2aafc5b3b9d101100fc57edf9c471b957a735152911b1a2b206aec333b25",
+      "current_contexts": [
+        {
+          "record_index": 78,
+          "field": "Title",
+          "wire_path": "root.field2[78].field2[0]",
+          "source_cn": "<color=#FFFFFF>天使投资人</color>",
+          "source_sha256": "18aba4f9e529f862ef09e7880d415174692cd3760927894a71750621324cce10"
+        },
+        {
+          "record_index": 80,
+          "field": "Title",
+          "wire_path": "root.field2[80].field2[0]",
+          "source_cn": "<color=#FFFFFF>天使投资人</color>",
+          "source_sha256": "18aba4f9e529f862ef09e7880d415174692cd3760927894a71750621324cce10"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-18aba4f9e529",
+        "source_sha256": "18aba4f9e529f862ef09e7880d415174692cd3760927894a71750621324cce10",
+        "target_sha256": "a7be2aafc5b3b9d101100fc57edf9c471b957a735152911b1a2b206aec333b25",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>天使投资人活动规则</color>",
+      "source_sha256": "693cff99f1280cec7627e98887c769b4859d40432ed3ad9d101e388723694273",
+      "target_ru": "<color=#FFFFFF>Правила события «Бизнес-ангел»</color>",
+      "target_sha256": "15c7722c7b1e1f3e771a84b74f89838d134c2cb8c4b3af6b5c351392a4fac7e8",
+      "current_contexts": [
+        {
+          "record_index": 37,
+          "field": "Title",
+          "wire_path": "root.field2[37].field2[0]",
+          "source_cn": "<color=#FFFFFF>天使投资人活动规则</color>",
+          "source_sha256": "693cff99f1280cec7627e98887c769b4859d40432ed3ad9d101e388723694273"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-693cff99f128",
+        "source_sha256": "693cff99f1280cec7627e98887c769b4859d40432ed3ad9d101e388723694273",
+        "target_sha256": "15c7722c7b1e1f3e771a84b74f89838d134c2cb8c4b3af6b5c351392a4fac7e8",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>夺宝规则</color>",
+      "source_sha256": "94562e176a04e10f95d314d2073872bfa2ef62bf0ea912b6bbf4a45725d5d1a5",
+      "target_ru": "<color=#FFFFFF>Правила «Поиска сокровищ»</color>",
+      "target_sha256": "9064b41f1b7328c6741e50c2e51fd533b56954e6bfbdc3ef1eb7abee59366bcd",
+      "current_contexts": [
+        {
+          "record_index": 18,
+          "field": "Title",
+          "wire_path": "root.field2[18].field2[0]",
+          "source_cn": "<color=#FFFFFF>夺宝规则</color>",
+          "source_sha256": "94562e176a04e10f95d314d2073872bfa2ef62bf0ea912b6bbf4a45725d5d1a5"
+        },
+        {
+          "record_index": 67,
+          "field": "Title",
+          "wire_path": "root.field2[67].field2[0]",
+          "source_cn": "<color=#FFFFFF>夺宝规则</color>",
+          "source_sha256": "94562e176a04e10f95d314d2073872bfa2ef62bf0ea912b6bbf4a45725d5d1a5"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-94562e176a04",
+        "source_sha256": "94562e176a04e10f95d314d2073872bfa2ef62bf0ea912b6bbf4a45725d5d1a5",
+        "target_sha256": "9064b41f1b7328c6741e50c2e51fd533b56954e6bfbdc3ef1eb7abee59366bcd",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>契约扭蛋活动规则</color>",
+      "source_sha256": "885a25fe308c450fc5092e6762f7166d9ca6f0df9eb7d79ceda391ddfaac10bc",
+      "target_ru": "<color=#FFFFFF>Правила события «Капсула контрактов»</color>",
+      "target_sha256": "e24e082d73781e6cb6e5ce068e329fe29b4c358a1a3974ffb29a4d2f5114d7fb",
+      "current_contexts": [
+        {
+          "record_index": 61,
+          "field": "Title",
+          "wire_path": "root.field2[61].field2[0]",
+          "source_cn": "<color=#FFFFFF>契约扭蛋活动规则</color>",
+          "source_sha256": "885a25fe308c450fc5092e6762f7166d9ca6f0df9eb7d79ceda391ddfaac10bc"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-885a25fe308c",
+        "source_sha256": "885a25fe308c450fc5092e6762f7166d9ca6f0df9eb7d79ceda391ddfaac10bc",
+        "target_sha256": "e24e082d73781e6cb6e5ce068e329fe29b4c358a1a3974ffb29a4d2f5114d7fb",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>安全加码活动规则</color>",
+      "source_sha256": "8f41ade1fbd524802962b76b33a7b4c1f0ad6baef4343a08f5ec1fb8322c8f47",
+      "target_ru": "<color=#FFFFFF>Правила события «Усиление безопасности»</color>",
+      "target_sha256": "865419477730ece214c7089c343e66b84b4d9837095910901b67c367dc9240d8",
+      "current_contexts": [
+        {
+          "record_index": 100,
+          "field": "Title",
+          "wire_path": "root.field2[100].field2[0]",
+          "source_cn": "<color=#FFFFFF>安全加码活动规则</color>",
+          "source_sha256": "8f41ade1fbd524802962b76b33a7b4c1f0ad6baef4343a08f5ec1fb8322c8f47"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-8f41ade1fbd5",
+        "source_sha256": "8f41ade1fbd524802962b76b33a7b4c1f0ad6baef4343a08f5ec1fb8322c8f47",
+        "target_sha256": "865419477730ece214c7089c343e66b84b4d9837095910901b67c367dc9240d8",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>定制ID</color>",
+      "source_sha256": "845dc3252ce7ed51cc85378e5737d320c9e1c9d51298debf0b6f74f5cbf732f0",
+      "target_ru": "<color=#FFFFFF>Личный ID</color>",
+      "target_sha256": "80d527eb1f2ceba098bead7ccb49e73257fe1013fcc15f4ae4bfa4742be34a22",
+      "current_contexts": [
+        {
+          "record_index": 10,
+          "field": "Title",
+          "wire_path": "root.field2[10].field2[0]",
+          "source_cn": "<color=#FFFFFF>定制ID</color>",
+          "source_sha256": "845dc3252ce7ed51cc85378e5737d320c9e1c9d51298debf0b6f74f5cbf732f0"
+        },
+        {
+          "record_index": 11,
+          "field": "Title",
+          "wire_path": "root.field2[11].field2[0]",
+          "source_cn": "<color=#FFFFFF>定制ID</color>",
+          "source_sha256": "845dc3252ce7ed51cc85378e5737d320c9e1c9d51298debf0b6f74f5cbf732f0"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-845dc3252ce7",
+        "source_sha256": "845dc3252ce7ed51cc85378e5737d320c9e1c9d51298debf0b6f74f5cbf732f0",
+        "target_sha256": "80d527eb1f2ceba098bead7ccb49e73257fe1013fcc15f4ae4bfa4742be34a22",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>对局送礼活动规则</color>",
+      "source_sha256": "69acbd0d2d9d39b0b0c1d9f145eb7e0363a6117d65091ce107f2ca1b881d759a",
+      "target_ru": "<color=#FFFFFF>Правила события «Подарки за матчи»</color>",
+      "target_sha256": "85aaec07439541783baac6677fbac26f5f85f246fcb364d06fa8741da2826086",
+      "current_contexts": [
+        {
+          "record_index": 24,
+          "field": "Title",
+          "wire_path": "root.field2[24].field2[0]",
+          "source_cn": "<color=#FFFFFF>对局送礼活动规则</color>",
+          "source_sha256": "69acbd0d2d9d39b0b0c1d9f145eb7e0363a6117d65091ce107f2ca1b881d759a"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-69acbd0d2d9d",
+        "source_sha256": "69acbd0d2d9d39b0b0c1d9f145eb7e0363a6117d65091ce107f2ca1b881d759a",
+        "target_sha256": "85aaec07439541783baac6677fbac26f5f85f246fcb364d06fa8741da2826086",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>小菟助力活动规则</color>",
+      "source_sha256": "939a311a726cf319094117c3cca4461ae072ee13176b226030acfc371a57be6d",
+      "target_ru": "<color=#FFFFFF>Правила события «Помощь Сяоту»</color>",
+      "target_sha256": "e602e11e9c4abec41174aacc3c5e1aaf552e0b7078f4f6e29ad3164558f12356",
+      "current_contexts": [
+        {
+          "record_index": 98,
+          "field": "Title",
+          "wire_path": "root.field2[98].field2[0]",
+          "source_cn": "<color=#FFFFFF>小菟助力活动规则</color>",
+          "source_sha256": "939a311a726cf319094117c3cca4461ae072ee13176b226030acfc371a57be6d"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-939a311a726c",
+        "source_sha256": "939a311a726cf319094117c3cca4461ae072ee13176b226030acfc371a57be6d",
+        "target_sha256": "e602e11e9c4abec41174aacc3c5e1aaf552e0b7078f4f6e29ad3164558f12356",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>小鹿便利店活动规则</color>",
+      "source_sha256": "091694d84f22baf7a94823a5bc35f4ec85c26bf503017ad27c4bbb3c0ef8c8f3",
+      "target_ru": "<color=#FFFFFF>Правила события «Лавка оленёнка»</color>",
+      "target_sha256": "2ee85826e28dd6033e4917ad0038bb07c4eaac6c192f94088663e25e15416cc7",
+      "current_contexts": [
+        {
+          "record_index": 1,
+          "field": "Title",
+          "wire_path": "root.field2[1].field2[0]",
+          "source_cn": "<color=#FFFFFF>小鹿便利店活动规则</color>",
+          "source_sha256": "091694d84f22baf7a94823a5bc35f4ec85c26bf503017ad27c4bbb3c0ef8c8f3"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-091694d84f22",
+        "source_sha256": "091694d84f22baf7a94823a5bc35f4ec85c26bf503017ad27c4bbb3c0ef8c8f3",
+        "target_sha256": "2ee85826e28dd6033e4917ad0038bb07c4eaac6c192f94088663e25e15416cc7",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>巅峰试炼活动规则</color>",
+      "source_sha256": "542ccaaf2d01e3c582d5a36b5855c9dc4c66686cfaea5ce5acaf1b66945486f3",
+      "target_ru": "<color=#FFFFFF>Правила события «Испытание вершины»</color>",
+      "target_sha256": "2de3b85f340319f442b3a44e740db82b255fa775cfee12033b9fc8397799eac2",
+      "current_contexts": [
+        {
+          "record_index": 51,
+          "field": "Title",
+          "wire_path": "root.field2[51].field2[0]",
+          "source_cn": "<color=#FFFFFF>巅峰试炼活动规则</color>",
+          "source_sha256": "542ccaaf2d01e3c582d5a36b5855c9dc4c66686cfaea5ce5acaf1b66945486f3"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-542ccaaf2d01",
+        "source_sha256": "542ccaaf2d01e3c582d5a36b5855c9dc4c66686cfaea5ce5acaf1b66945486f3",
+        "target_sha256": "2de3b85f340319f442b3a44e740db82b255fa775cfee12033b9fc8397799eac2",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>巩固练习活动规则</color>",
+      "source_sha256": "16250edd2a3eb7c2650170615fd6bbe9548a83dfe55af9c7f8d808cfb4b08de1",
+      "target_ru": "<color=#FFFFFF>Правила события «Закрепление навыков»</color>",
+      "target_sha256": "675bf2d0239b1a41b40e49745c1c172c70ae02857f6451ef4a56def3aaabe219",
+      "current_contexts": [
+        {
+          "record_index": 33,
+          "field": "Title",
+          "wire_path": "root.field2[33].field2[0]",
+          "source_cn": "<color=#FFFFFF>巩固练习活动规则</color>",
+          "source_sha256": "16250edd2a3eb7c2650170615fd6bbe9548a83dfe55af9c7f8d808cfb4b08de1"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-16250edd2a3e",
+        "source_sha256": "16250edd2a3eb7c2650170615fd6bbe9548a83dfe55af9c7f8d808cfb4b08de1",
+        "target_sha256": "675bf2d0239b1a41b40e49745c1c172c70ae02857f6451ef4a56def3aaabe219",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>开服充值回馈</color>",
+      "source_sha256": "4a16a84f43b0fae797762d2b41c4933d85b07f0962ccb9bb7abacd3350d2b4d1",
+      "target_ru": "<color=#FFFFFF>Бонус за пополнение на старте сервера</color>",
+      "target_sha256": "fe8ac58d034e97446f725bb5197d1fbf7a6b7fdc6c8d2a03f5a06c5140bee05a",
+      "current_contexts": [
+        {
+          "record_index": 81,
+          "field": "Title",
+          "wire_path": "root.field2[81].field2[0]",
+          "source_cn": "<color=#FFFFFF>开服充值回馈</color>",
+          "source_sha256": "4a16a84f43b0fae797762d2b41c4933d85b07f0962ccb9bb7abacd3350d2b4d1"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-4a16a84f43b0",
+        "source_sha256": "4a16a84f43b0fae797762d2b41c4933d85b07f0962ccb9bb7abacd3350d2b4d1",
+        "target_sha256": "fe8ac58d034e97446f725bb5197d1fbf7a6b7fdc6c8d2a03f5a06c5140bee05a",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>归来挑战活动规则</color>",
+      "source_sha256": "bb77eb52e92d5b780617aabe1623f718ed455720ca4c3e66939bff40c08c34a8",
+      "target_ru": "<color=#FFFFFF>Правила события «Испытание возвращения»</color>",
+      "target_sha256": "c03e621a2c9b68e2017883da6a1696ba02d674a3a3e408e712af69e6ce4214f6",
+      "current_contexts": [
+        {
+          "record_index": 29,
+          "field": "Title",
+          "wire_path": "root.field2[29].field2[0]",
+          "source_cn": "<color=#FFFFFF>归来挑战活动规则</color>",
+          "source_sha256": "bb77eb52e92d5b780617aabe1623f718ed455720ca4c3e66939bff40c08c34a8"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-bb77eb52e92d",
+        "source_sha256": "bb77eb52e92d5b780617aabe1623f718ed455720ca4c3e66939bff40c08c34a8",
+        "target_sha256": "c03e621a2c9b68e2017883da6a1696ba02d674a3a3e408e712af69e6ce4214f6",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>归来挑战规则</color>",
+      "source_sha256": "1274cbadf928239a90aea88d7604173a288a2b6459f1ef0511921ad9127dea86",
+      "target_ru": "<color=#FFFFFF>Правила испытания возвращения</color>",
+      "target_sha256": "5dba223f705cc33fa92d57f92b758b8d82d4eb0af460841c92d6e718a54bb5a1",
+      "current_contexts": [
+        {
+          "record_index": 63,
+          "field": "Title",
+          "wire_path": "root.field2[63].field2[0]",
+          "source_cn": "<color=#FFFFFF>归来挑战规则</color>",
+          "source_sha256": "1274cbadf928239a90aea88d7604173a288a2b6459f1ef0511921ad9127dea86"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-1274cbadf928",
+        "source_sha256": "1274cbadf928239a90aea88d7604173a288a2b6459f1ef0511921ad9127dea86",
+        "target_sha256": "5dba223f705cc33fa92d57f92b758b8d82d4eb0af460841c92d6e718a54bb5a1",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>归来签到活动规则</color>",
+      "source_sha256": "3a5f217a842b021ee5b3c58952ba4bb01663b9df0e68ebb0309b28815694a0f5",
+      "target_ru": "<color=#FFFFFF>Правила события «Отметки возвращения»</color>",
+      "target_sha256": "ded460a9a9a2e586ad9dcc7f6d65709680bf1edf14f56747a4523698bd833857",
+      "current_contexts": [
+        {
+          "record_index": 28,
+          "field": "Title",
+          "wire_path": "root.field2[28].field2[0]",
+          "source_cn": "<color=#FFFFFF>归来签到活动规则</color>",
+          "source_sha256": "3a5f217a842b021ee5b3c58952ba4bb01663b9df0e68ebb0309b28815694a0f5"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-3a5f217a842b",
+        "source_sha256": "3a5f217a842b021ee5b3c58952ba4bb01663b9df0e68ebb0309b28815694a0f5",
+        "target_sha256": "ded460a9a9a2e586ad9dcc7f6d65709680bf1edf14f56747a4523698bd833857",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>归来签到规则</color>",
+      "source_sha256": "b7c60a701395e89442718a40ba972b781f0cfc041683ad654afa165f85aa1798",
+      "target_ru": "<color=#FFFFFF>Правила отметок возвращения</color>",
+      "target_sha256": "0395704c6df3894b90980a39f5754452c18fc3c7da9d5a421a07091b6b7b7958",
+      "current_contexts": [
+        {
+          "record_index": 62,
+          "field": "Title",
+          "wire_path": "root.field2[62].field2[0]",
+          "source_cn": "<color=#FFFFFF>归来签到规则</color>",
+          "source_sha256": "b7c60a701395e89442718a40ba972b781f0cfc041683ad654afa165f85aa1798"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-b7c60a701395",
+        "source_sha256": "b7c60a701395e89442718a40ba972b781f0cfc041683ad654afa165f85aa1798",
+        "target_sha256": "0395704c6df3894b90980a39f5754452c18fc3c7da9d5a421a07091b6b7b7958",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>徽章标识</color>",
+      "source_sha256": "42478727708765473ed52aa4f20e8e6b149fff12ddf60a71cb66e84391ae57ac",
+      "target_ru": "<color=#FFFFFF>Знак отличия</color>",
+      "target_sha256": "28f6c1b74985c4700a6418617222ea318b0eea6bd87164684ac9a89893dc6b16",
+      "current_contexts": [
+        {
+          "record_index": 4,
+          "field": "Title",
+          "wire_path": "root.field2[4].field2[0]",
+          "source_cn": "<color=#FFFFFF>徽章标识</color>",
+          "source_sha256": "42478727708765473ed52aa4f20e8e6b149fff12ddf60a71cb66e84391ae57ac"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-424787277087",
+        "source_sha256": "42478727708765473ed52aa4f20e8e6b149fff12ddf60a71cb66e84391ae57ac",
+        "target_sha256": "28f6c1b74985c4700a6418617222ea318b0eea6bd87164684ac9a89893dc6b16",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>我们天下第一好活动规则</color>",
+      "source_sha256": "b7472dcbf15244f79328e91fbf730dc3b63132f2579dda8d1c8a48e1df0e3d54",
+      "target_ru": "<color=#FFFFFF>Правила события «Лучшие друзья на свете»</color>",
+      "target_sha256": "5622fa2b5b5de2effee55aa6327476e92bdf3fb46e671be2a25ead0f0ca11e64",
+      "current_contexts": [
+        {
+          "record_index": 105,
+          "field": "Title",
+          "wire_path": "root.field2[105].field2[0]",
+          "source_cn": "<color=#FFFFFF>我们天下第一好活动规则</color>",
+          "source_sha256": "b7472dcbf15244f79328e91fbf730dc3b63132f2579dda8d1c8a48e1df0e3d54"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-b7472dcbf152",
+        "source_sha256": "b7472dcbf15244f79328e91fbf730dc3b63132f2579dda8d1c8a48e1df0e3d54",
+        "target_sha256": "5622fa2b5b5de2effee55aa6327476e92bdf3fb46e671be2a25ead0f0ca11e64",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>抉择之弈活动规则</color>",
+      "source_sha256": "ec2c0fa1eb476e3169fc8bd5f41e469a40c64da958dd4b6584c02c6d83145ed9",
+      "target_ru": "<color=#FFFFFF>Правила события «Игра выбора»</color>",
+      "target_sha256": "17e87470c153ef3475d3ee90f98ea786c084fca10f23e0a165500f8ead1cfa64",
+      "current_contexts": [
+        {
+          "record_index": 112,
+          "field": "Title",
+          "wire_path": "root.field2[112].field2[0]",
+          "source_cn": "<color=#FFFFFF>抉择之弈活动规则</color>",
+          "source_sha256": "ec2c0fa1eb476e3169fc8bd5f41e469a40c64da958dd4b6584c02c6d83145ed9"
+        }
+      ],
+      "approval": "task-reviewed-by-root",
+      "task_review_id": "ix-ec2c0fa1eb47",
+      "legacy_approval": null
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>投资人同行</color>",
+      "source_sha256": "ab11ce4da717d6c3561e335a26ad9dbf866e4596d6e26edaa66b685c9650f203",
+      "target_ru": "<color=#FFFFFF>Вместе с инвестором</color>",
+      "target_sha256": "e7bad841cc7045e050db0f7fc82a48c8c31eee21b9b0d67831216adcdb195cf7",
+      "current_contexts": [
+        {
+          "record_index": 79,
+          "field": "Title",
+          "wire_path": "root.field2[79].field2[0]",
+          "source_cn": "<color=#FFFFFF>投资人同行</color>",
+          "source_sha256": "ab11ce4da717d6c3561e335a26ad9dbf866e4596d6e26edaa66b685c9650f203"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-ab11ce4da717",
+        "source_sha256": "ab11ce4da717d6c3561e335a26ad9dbf866e4596d6e26edaa66b685c9650f203",
+        "target_sha256": "e7bad841cc7045e050db0f7fc82a48c8c31eee21b9b0d67831216adcdb195cf7",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>搞点摇摇币活动规则</color>",
+      "source_sha256": "ba47c3bd96cfa4d3cc26c20006d69c202ba4853e7d6455a8465c965e8181b08e",
+      "target_ru": "<color=#FFFFFF>Правила события «Получи монеты встряски»</color>",
+      "target_sha256": "4df3d644dad0243ac637165465e8d10d6a43f58120a5865f2408ee15b115647f",
+      "current_contexts": [
+        {
+          "record_index": 106,
+          "field": "Title",
+          "wire_path": "root.field2[106].field2[0]",
+          "source_cn": "<color=#FFFFFF>搞点摇摇币活动规则</color>",
+          "source_sha256": "ba47c3bd96cfa4d3cc26c20006d69c202ba4853e7d6455a8465c965e8181b08e"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-ba47c3bd96cf",
+        "source_sha256": "ba47c3bd96cfa4d3cc26c20006d69c202ba4853e7d6455a8465c965e8181b08e",
+        "target_sha256": "4df3d644dad0243ac637165465e8d10d6a43f58120a5865f2408ee15b115647f",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>新年赚钻钻活动规则</color>",
+      "source_sha256": "97f10985cf52157a71ed7d1e76ec6928d2247bb304423f972449a4c2c6c8e04d",
+      "target_ru": "<color=#FFFFFF>Правила события «Новогодние алмазы»</color>",
+      "target_sha256": "88e504f98add90d6ae4dd9977c9816b23573ea658f2054335453dac870125bb8",
+      "current_contexts": [
+        {
+          "record_index": 52,
+          "field": "Title",
+          "wire_path": "root.field2[52].field2[0]",
+          "source_cn": "<color=#FFFFFF>新年赚钻钻活动规则</color>",
+          "source_sha256": "97f10985cf52157a71ed7d1e76ec6928d2247bb304423f972449a4c2c6c8e04d"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-97f10985cf52",
+        "source_sha256": "97f10985cf52157a71ed7d1e76ec6928d2247bb304423f972449a4c2c6c8e04d",
+        "target_sha256": "88e504f98add90d6ae4dd9977c9816b23573ea658f2054335453dac870125bb8",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>新英雄王维活动规则</color>",
+      "source_sha256": "334368e652e33f5e6811bf91d3b33980d6947ea17d0eed9f6ef78d84d6067f95",
+      "target_ru": "<color=#FFFFFF>Правила события «Новый герой Ван Вэй»</color>",
+      "target_sha256": "7c3c3c3ff0425a2bd8365e723239344716993cb0a67e592ec950e83147832939",
+      "current_contexts": [
+        {
+          "record_index": 91,
+          "field": "Title",
+          "wire_path": "root.field2[91].field2[0]",
+          "source_cn": "<color=#FFFFFF>新英雄王维活动规则</color>",
+          "source_sha256": "334368e652e33f5e6811bf91d3b33980d6947ea17d0eed9f6ef78d84d6067f95"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-334368e652e3",
+        "source_sha256": "334368e652e33f5e6811bf91d3b33980d6947ea17d0eed9f6ef78d84d6067f95",
+        "target_sha256": "7c3c3c3ff0425a2bd8365e723239344716993cb0a67e592ec950e83147832939",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>日月行者祈愿规则</color>",
+      "source_sha256": "ca6fe0261e214e1ef0c8f708b86ef6d3bbeabdc9b18fce50c76f78ee101d69e8",
+      "target_ru": "<color=#FFFFFF>Правила желаний «Странника Солнца и Луны»</color>",
+      "target_sha256": "c09dfe66a21050a49989a77efa6587c3943813713f1494addebdd52cbec83944",
+      "current_contexts": [
+        {
+          "record_index": 104,
+          "field": "Title",
+          "wire_path": "root.field2[104].field2[0]",
+          "source_cn": "<color=#FFFFFF>日月行者祈愿规则</color>",
+          "source_sha256": "ca6fe0261e214e1ef0c8f708b86ef6d3bbeabdc9b18fce50c76f78ee101d69e8"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-ca6fe0261e21",
+        "source_sha256": "ca6fe0261e214e1ef0c8f708b86ef6d3bbeabdc9b18fce50c76f78ee101d69e8",
+        "target_sha256": "c09dfe66a21050a49989a77efa6587c3943813713f1494addebdd52cbec83944",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>月兔送礼活动规则</color>",
+      "source_sha256": "96ca7adcee648bf80f05bd8fa7cc21a254ab0519d031d175f646f7be4ec1e144",
+      "target_ru": "<color=#FFFFFF>Правила события «Подарки Лунного кролика»</color>",
+      "target_sha256": "9697046a32a6babb883f8e648638c8890a1dedfa25cce822648c4d7d672d0689",
+      "current_contexts": [
+        {
+          "record_index": 97,
+          "field": "Title",
+          "wire_path": "root.field2[97].field2[0]",
+          "source_cn": "<color=#FFFFFF>月兔送礼活动规则</color>",
+          "source_sha256": "96ca7adcee648bf80f05bd8fa7cc21a254ab0519d031d175f646f7be4ec1e144"
+        },
+        {
+          "record_index": 101,
+          "field": "Title",
+          "wire_path": "root.field2[101].field2[0]",
+          "source_cn": "<color=#FFFFFF>月兔送礼活动规则</color>",
+          "source_sha256": "96ca7adcee648bf80f05bd8fa7cc21a254ab0519d031d175f646f7be4ec1e144"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-96ca7adcee64",
+        "source_sha256": "96ca7adcee648bf80f05bd8fa7cc21a254ab0519d031d175f646f7be4ec1e144",
+        "target_sha256": "9697046a32a6babb883f8e648638c8890a1dedfa25cce822648c4d7d672d0689",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>月签到活动规则</color>",
+      "source_sha256": "408d90d02f018f10d2a4c896c7e0f421fdbafdd228dbbf2311d59396dca631cc",
+      "target_ru": "<color=#FFFFFF>Правила ежемесячных отметок о входе</color>",
+      "target_sha256": "ddd735b78c236d7e98d9e50dac365bb1913ff8b5ffb6f1068651ce2779ebf3e8",
+      "current_contexts": [
+        {
+          "record_index": 17,
+          "field": "Title",
+          "wire_path": "root.field2[17].field2[0]",
+          "source_cn": "<color=#FFFFFF>月签到活动规则</color>",
+          "source_sha256": "408d90d02f018f10d2a4c896c7e0f421fdbafdd228dbbf2311d59396dca631cc"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-408d90d02f01",
+        "source_sha256": "408d90d02f018f10d2a4c896c7e0f421fdbafdd228dbbf2311d59396dca631cc",
+        "target_sha256": "ddd735b78c236d7e98d9e50dac365bb1913ff8b5ffb6f1068651ce2779ebf3e8",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>有分同享活动规则</color>",
+      "source_sha256": "653a33a4e3e09368bd59db6b600611d260afc646aa5cec2749ed5b9430475f10",
+      "target_ru": "<color=#FFFFFF>Правила события «Общие очки»</color>",
+      "target_sha256": "03465c0a50d8c76fd700da4cc474386fe44f9d68709a8f278679928d06233cba",
+      "current_contexts": [
+        {
+          "record_index": 39,
+          "field": "Title",
+          "wire_path": "root.field2[39].field2[0]",
+          "source_cn": "<color=#FFFFFF>有分同享活动规则</color>",
+          "source_sha256": "653a33a4e3e09368bd59db6b600611d260afc646aa5cec2749ed5b9430475f10"
+        },
+        {
+          "record_index": 46,
+          "field": "Title",
+          "wire_path": "root.field2[46].field2[0]",
+          "source_cn": "<color=#FFFFFF>有分同享活动规则</color>",
+          "source_sha256": "653a33a4e3e09368bd59db6b600611d260afc646aa5cec2749ed5b9430475f10"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-653a33a4e3e0",
+        "source_sha256": "653a33a4e3e09368bd59db6b600611d260afc646aa5cec2749ed5b9430475f10",
+        "target_sha256": "03465c0a50d8c76fd700da4cc474386fe44f9d68709a8f278679928d06233cba",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>朋友语音包活动规则</color>",
+      "source_sha256": "2849ca0a38d4a0772bcac33038aef3618047e78aa584c1d812a7f2f6fc3e4817",
+      "target_ru": "<color=#FFFFFF>Правила события «Голосовой набор друзей»</color>",
+      "target_sha256": "b761cfcf49a70aeea07edc3d248ea4eab4c33f1d7575ba702af52b502dc61bea",
+      "current_contexts": [
+        {
+          "record_index": 93,
+          "field": "Title",
+          "wire_path": "root.field2[93].field2[0]",
+          "source_cn": "<color=#FFFFFF>朋友语音包活动规则</color>",
+          "source_sha256": "2849ca0a38d4a0772bcac33038aef3618047e78aa584c1d812a7f2f6fc3e4817"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-2849ca0a38d4",
+        "source_sha256": "2849ca0a38d4a0772bcac33038aef3618047e78aa584c1d812a7f2f6fc3e4817",
+        "target_sha256": "b761cfcf49a70aeea07edc3d248ea4eab4c33f1d7575ba702af52b502dc61bea",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>棋手安琪拉来了活动规则</color>",
+      "source_sha256": "9b3a088750d3e606e3c8c71086c111fdba56eaa3d410582243e846fbe0eeb5a2",
+      "target_ru": "<color=#FFFFFF>Правила события «Стратег Анжела прибыла»</color>",
+      "target_sha256": "75ef4984282c1593720469a4cbc45f8d220734d02647ae4d5b6da60306dcc726",
+      "current_contexts": [
+        {
+          "record_index": 103,
+          "field": "Title",
+          "wire_path": "root.field2[103].field2[0]",
+          "source_cn": "<color=#FFFFFF>棋手安琪拉来了活动规则</color>",
+          "source_sha256": "9b3a088750d3e606e3c8c71086c111fdba56eaa3d410582243e846fbe0eeb5a2"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-9b3a088750d3",
+        "source_sha256": "9b3a088750d3e606e3c8c71086c111fdba56eaa3d410582243e846fbe0eeb5a2",
+        "target_sha256": "75ef4984282c1593720469a4cbc45f8d220734d02647ae4d5b6da60306dcc726",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>棋手拼图活动规则</color>",
+      "source_sha256": "9d6860ed7c2a7ad138c5dc628d7ff5c4dafb95b6f7407c3c4c72b0772a117894",
+      "target_ru": "<color=#FFFFFF>Правила события «Пазл стратегов»</color>",
+      "target_sha256": "9472cd98e427e4ddfbc16c159a1bf0d57723870efdf7aa50b3a03df3101d357c",
+      "current_contexts": [
+        {
+          "record_index": 94,
+          "field": "Title",
+          "wire_path": "root.field2[94].field2[0]",
+          "source_cn": "<color=#FFFFFF>棋手拼图活动规则</color>",
+          "source_sha256": "9d6860ed7c2a7ad138c5dc628d7ff5c4dafb95b6f7407c3c4c72b0772a117894"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-9d6860ed7c2a",
+        "source_sha256": "9d6860ed7c2a7ad138c5dc628d7ff5c4dafb95b6f7407c3c4c72b0772a117894",
+        "target_sha256": "9472cd98e427e4ddfbc16c159a1bf0d57723870efdf7aa50b3a03df3101d357c",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>棋手攻略活动规则</color>",
+      "source_sha256": "77cecd7c45cbe142f3da4ce6025ce39be6d8c908a6e451e56c217694f193e773",
+      "target_ru": "<color=#FFFFFF>Правила события «Гайды по стратегам»</color>",
+      "target_sha256": "1a827860e75ef1dc68f4ca8809e585dbaefa60b2e5717b77aa99cb32d4add26a",
+      "current_contexts": [
+        {
+          "record_index": 96,
+          "field": "Title",
+          "wire_path": "root.field2[96].field2[0]",
+          "source_cn": "<color=#FFFFFF>棋手攻略活动规则</color>",
+          "source_sha256": "77cecd7c45cbe142f3da4ce6025ce39be6d8c908a6e451e56c217694f193e773"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-77cecd7c45cb",
+        "source_sha256": "77cecd7c45cbe142f3da4ce6025ce39be6d8c908a6e451e56c217694f193e773",
+        "target_sha256": "1a827860e75ef1dc68f4ca8809e585dbaefa60b2e5717b77aa99cb32d4add26a",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>棋手竞猜</color>",
+      "source_sha256": "1886d860ae6a4b38adbd0462b900e6ac5f99a956bdc0cb11f19a2461d56c6ec0",
+      "target_ru": "<color=#FFFFFF>Прогнозы на стратегов</color>",
+      "target_sha256": "59af86e88c31335c02037667e06388fbc18987c975d2aab04448d304ae6762cc",
+      "current_contexts": [
+        {
+          "record_index": 84,
+          "field": "Title",
+          "wire_path": "root.field2[84].field2[0]",
+          "source_cn": "<color=#FFFFFF>棋手竞猜</color>",
+          "source_sha256": "1886d860ae6a4b38adbd0462b900e6ac5f99a956bdc0cb11f19a2461d56c6ec0"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-1886d860ae6a",
+        "source_sha256": "1886d860ae6a4b38adbd0462b900e6ac5f99a956bdc0cb11f19a2461d56c6ec0",
+        "target_sha256": "59af86e88c31335c02037667e06388fbc18987c975d2aab04448d304ae6762cc",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>棋手阿离来了活动规则</color>",
+      "source_sha256": "68f18006600d0f3f1d29f3f2c4d272d82de52b18ff124d6e88efdd229a29d6be",
+      "target_ru": "<color=#FFFFFF>Правила события «Стратег А Ли прибыла»</color>",
+      "target_sha256": "ac20f6e9e6ff5ba2d0f0d54944d07fe6fc973886080b5182cdd158bb49ba6cbd",
+      "current_contexts": [
+        {
+          "record_index": 95,
+          "field": "Title",
+          "wire_path": "root.field2[95].field2[0]",
+          "source_cn": "<color=#FFFFFF>棋手阿离来了活动规则</color>",
+          "source_sha256": "68f18006600d0f3f1d29f3f2c4d272d82de52b18ff124d6e88efdd229a29d6be"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-68f18006600d",
+        "source_sha256": "68f18006600d0f3f1d29f3f2c4d272d82de52b18ff124d6e88efdd229a29d6be",
+        "target_sha256": "ac20f6e9e6ff5ba2d0f0d54944d07fe6fc973886080b5182cdd158bb49ba6cbd",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>棋手预热活动规则</color>",
+      "source_sha256": "43862e6128b74c7d0498320f89b993a20b55c60cd03396afcdd36b85ad77804a",
+      "target_ru": "<color=#FFFFFF>Правила события «Знакомство со стратегами»</color>",
+      "target_sha256": "cdfccdc7aaf6fea2800f23bf69182d34a86bc9e8f457ef14a78ee02968d922bd",
+      "current_contexts": [
+        {
+          "record_index": 26,
+          "field": "Title",
+          "wire_path": "root.field2[26].field2[0]",
+          "source_cn": "<color=#FFFFFF>棋手预热活动规则</color>",
+          "source_sha256": "43862e6128b74c7d0498320f89b993a20b55c60cd03396afcdd36b85ad77804a"
+        },
+        {
+          "record_index": 47,
+          "field": "Title",
+          "wire_path": "root.field2[47].field2[0]",
+          "source_cn": "<color=#FFFFFF>棋手预热活动规则</color>",
+          "source_sha256": "43862e6128b74c7d0498320f89b993a20b55c60cd03396afcdd36b85ad77804a"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-43862e6128b7",
+        "source_sha256": "43862e6128b74c7d0498320f89b993a20b55c60cd03396afcdd36b85ad77804a",
+        "target_sha256": "cdfccdc7aaf6fea2800f23bf69182d34a86bc9e8f457ef14a78ee02968d922bd",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>棋盘幻化规则</color>",
+      "source_sha256": "8c3013de9fe3c4108fcd45a9e7090e7f0dd3665621e73bbee55766e6104c89f7",
+      "target_ru": "<color=#FFFFFF>Правила преображения доски</color>",
+      "target_sha256": "476757c5aafcd8b56417fcb06ad4d05de23f4396ea6ee49e14dec5cd5230b750",
+      "current_contexts": [
+        {
+          "record_index": 68,
+          "field": "Title",
+          "wire_path": "root.field2[68].field2[0]",
+          "source_cn": "<color=#FFFFFF>棋盘幻化规则</color>",
+          "source_sha256": "8c3013de9fe3c4108fcd45a9e7090e7f0dd3665621e73bbee55766e6104c89f7"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-8c3013de9fe3",
+        "source_sha256": "8c3013de9fe3c4108fcd45a9e7090e7f0dd3665621e73bbee55766e6104c89f7",
+        "target_sha256": "476757c5aafcd8b56417fcb06ad4d05de23f4396ea6ee49e14dec5cd5230b750",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>每日蔷薇币活动规则</color>",
+      "source_sha256": "5f61e231d8a7052b6c1f9c9afca4da393461afbab5086bc234774ecb9ce6e182",
+      "target_ru": "<color=#FFFFFF>Правила события «Ежедневные монеты Розы»</color>",
+      "target_sha256": "2fa6b72d166ebec9bdf413ce4caa5d4af9636009fb478603d742f6be5aa3bc93",
+      "current_contexts": [
+        {
+          "record_index": 99,
+          "field": "Title",
+          "wire_path": "root.field2[99].field2[0]",
+          "source_cn": "<color=#FFFFFF>每日蔷薇币活动规则</color>",
+          "source_sha256": "5f61e231d8a7052b6c1f9c9afca4da393461afbab5086bc234774ecb9ce6e182"
+        }
+      ],
+      "approval": "task-reviewed-by-root",
+      "task_review_id": "ix-5f61e231d8a7",
+      "legacy_approval": {
+        "translation_id": "ix-5f61e231d8a7",
+        "source_sha256": "5f61e231d8a7052b6c1f9c9afca4da393461afbab5086bc234774ecb9ce6e182",
+        "target_sha256": "6d317f2f11a123766b48932c4faa55fb4411c37599f0c16f22fad69870bab8f1",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>永不言六活动规则</color>",
+      "source_sha256": "2d3f85acfc49adddc59ccb12147580a3b073c122b9b814809618745974487755",
+      "target_ru": "<color=#FFFFFF>Правила события «Никогда не шестой»</color>",
+      "target_sha256": "df844bf37055fd4c14c5759e582a051cf6a9631e42a266e624b3715b752c8302",
+      "current_contexts": [
+        {
+          "record_index": 42,
+          "field": "Title",
+          "wire_path": "root.field2[42].field2[0]",
+          "source_cn": "<color=#FFFFFF>永不言六活动规则</color>",
+          "source_sha256": "2d3f85acfc49adddc59ccb12147580a3b073c122b9b814809618745974487755"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-2d3f85acfc49",
+        "source_sha256": "2d3f85acfc49adddc59ccb12147580a3b073c122b9b814809618745974487755",
+        "target_sha256": "df844bf37055fd4c14c5759e582a051cf6a9631e42a266e624b3715b752c8302",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>点券狂欢活动规则</color>",
+      "source_sha256": "4186fa399608e613663d280cbbbec271531e847a0a07207840d53e90af9c6103",
+      "target_ru": "<color=#FFFFFF>Правила события «Праздник купонов»</color>",
+      "target_sha256": "e62f413fde08072e46dca90aa2d31d53690148de5e995382fcf4029ad14f6c67",
+      "current_contexts": [
+        {
+          "record_index": 44,
+          "field": "Title",
+          "wire_path": "root.field2[44].field2[0]",
+          "source_cn": "<color=#FFFFFF>点券狂欢活动规则</color>",
+          "source_sha256": "4186fa399608e613663d280cbbbec271531e847a0a07207840d53e90af9c6103"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-4186fa399608",
+        "source_sha256": "4186fa399608e613663d280cbbbec271531e847a0a07207840d53e90af9c6103",
+        "target_sha256": "e62f413fde08072e46dca90aa2d31d53690148de5e995382fcf4029ad14f6c67",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>点券狂欢第二弹活动规则</color>",
+      "source_sha256": "4f12e7826c7b9b65c2bb2d43e039d277afbc9109926f2dbdbd3e565774d33d8f",
+      "target_ru": "<color=#FFFFFF>Правила второго этапа «Праздника купонов»</color>",
+      "target_sha256": "1c2b7982f045b07e792a477ec09a83efa7a9e31e139043dec5e77f176f5fd59e",
+      "current_contexts": [
+        {
+          "record_index": 45,
+          "field": "Title",
+          "wire_path": "root.field2[45].field2[0]",
+          "source_cn": "<color=#FFFFFF>点券狂欢第二弹活动规则</color>",
+          "source_sha256": "4f12e7826c7b9b65c2bb2d43e039d277afbc9109926f2dbdbd3e565774d33d8f"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-4f12e7826c7b",
+        "source_sha256": "4f12e7826c7b9b65c2bb2d43e039d277afbc9109926f2dbdbd3e565774d33d8f",
+        "target_sha256": "1c2b7982f045b07e792a477ec09a83efa7a9e31e139043dec5e77f176f5fd59e",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>点券福利活动规则</color>",
+      "source_sha256": "286c6838a6f6bac1c09d47997a4616f9a92877497e9311ed5d6ad54dba9c3522",
+      "target_ru": "<color=#FFFFFF>Правила события «Бонусы купонов»</color>",
+      "target_sha256": "98311ca22a56e9f08f329f56a88ba763bdebe5ec13f760d98807f43e27a1e775",
+      "current_contexts": [
+        {
+          "record_index": 31,
+          "field": "Title",
+          "wire_path": "root.field2[31].field2[0]",
+          "source_cn": "<color=#FFFFFF>点券福利活动规则</color>",
+          "source_sha256": "286c6838a6f6bac1c09d47997a4616f9a92877497e9311ed5d6ad54dba9c3522"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-286c6838a6f6",
+        "source_sha256": "286c6838a6f6bac1c09d47997a4616f9a92877497e9311ed5d6ad54dba9c3522",
+        "target_sha256": "98311ca22a56e9f08f329f56a88ba763bdebe5ec13f760d98807f43e27a1e775",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>王中王中王活动规则</color>",
+      "source_sha256": "6f26539b3727a87a579f08da5430cacc7a7e711e7cd3ef227e078b8db559205f",
+      "target_ru": "<color=#FFFFFF>Правила события «Король всех королей»</color>",
+      "target_sha256": "89be41e503097e1d84956cb0f66af68014b3ef84b479a1a653f12264e5c7fc57",
+      "current_contexts": [
+        {
+          "record_index": 54,
+          "field": "Title",
+          "wire_path": "root.field2[54].field2[0]",
+          "source_cn": "<color=#FFFFFF>王中王中王活动规则</color>",
+          "source_sha256": "6f26539b3727a87a579f08da5430cacc7a7e711e7cd3ef227e078b8db559205f"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-6f26539b3727",
+        "source_sha256": "6f26539b3727a87a579f08da5430cacc7a7e711e7cd3ef227e078b8db559205f",
+        "target_sha256": "89be41e503097e1d84956cb0f66af68014b3ef84b479a1a653f12264e5c7fc57",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>王者里程碑活动规则</color>",
+      "source_sha256": "d6868c542e1a44ef03d10bc64fbe75edae7d3684b71740033254bebd15f151dd",
+      "target_ru": "<color=#FFFFFF>Правила события «Вехи Honor of Kings»</color>",
+      "target_sha256": "8cd6f7f689c5eebf80eaf89028170cd1163d15fbd0a55add5735faeb8440e5e1",
+      "current_contexts": [
+        {
+          "record_index": 88,
+          "field": "Title",
+          "wire_path": "root.field2[88].field2[0]",
+          "source_cn": "<color=#FFFFFF>王者里程碑活动规则</color>",
+          "source_sha256": "d6868c542e1a44ef03d10bc64fbe75edae7d3684b71740033254bebd15f151dd"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-d6868c542e1a",
+        "source_sha256": "d6868c542e1a44ef03d10bc64fbe75edae7d3684b71740033254bebd15f151dd",
+        "target_sha256": "8cd6f7f689c5eebf80eaf89028170cd1163d15fbd0a55add5735faeb8440e5e1",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>瑶妹心愿卡活动规则</color>",
+      "source_sha256": "88b0187bc9643ccb63c6cebfe842c9c466cece0e08b8ef46d278f8bd027b95c6",
+      "target_ru": "<color=#FFFFFF>Правила события «Карта желаний Ярии»</color>",
+      "target_sha256": "a349700d36f9c2247652b39f5163c73bf8c7c487fcd2f924a4e4982e45498a64",
+      "current_contexts": [
+        {
+          "record_index": 34,
+          "field": "Title",
+          "wire_path": "root.field2[34].field2[0]",
+          "source_cn": "<color=#FFFFFF>瑶妹心愿卡活动规则</color>",
+          "source_sha256": "88b0187bc9643ccb63c6cebfe842c9c466cece0e08b8ef46d278f8bd027b95c6"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-88b0187bc964",
+        "source_sha256": "88b0187bc9643ccb63c6cebfe842c9c466cece0e08b8ef46d278f8bd027b95c6",
+        "target_sha256": "a349700d36f9c2247652b39f5163c73bf8c7c487fcd2f924a4e4982e45498a64",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>疯狂赚钻乐活动规则</color>",
+      "source_sha256": "30c206bcbaecdf8b5223664387c850dddaf505e6d90faa1f6300a26ae9e2aa26",
+      "target_ru": "<color=#FFFFFF>Правила события «Зарабатывай алмазы»</color>",
+      "target_sha256": "ffcd150c285846e91a3bcd2a1643e3183d24ed1c8583f63c9dcb61011162a7cd",
+      "current_contexts": [
+        {
+          "record_index": 43,
+          "field": "Title",
+          "wire_path": "root.field2[43].field2[0]",
+          "source_cn": "<color=#FFFFFF>疯狂赚钻乐活动规则</color>",
+          "source_sha256": "30c206bcbaecdf8b5223664387c850dddaf505e6d90faa1f6300a26ae9e2aa26"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-30c206bcbaec",
+        "source_sha256": "30c206bcbaecdf8b5223664387c850dddaf505e6d90faa1f6300a26ae9e2aa26",
+        "target_sha256": "ffcd150c285846e91a3bcd2a1643e3183d24ed1c8583f63c9dcb61011162a7cd",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>登录送礼活动规则</color>",
+      "source_sha256": "f10268ce752a0312bc197f171a96d7cf7bd5c14bd34ebb649039e95df5fa235f",
+      "target_ru": "<color=#FFFFFF>Правила события «Подарки за вход»</color>",
+      "target_sha256": "718001582378ba984eb58fc5e3987b9ce91c782964ae087529f6918a23a15cd6",
+      "current_contexts": [
+        {
+          "record_index": 23,
+          "field": "Title",
+          "wire_path": "root.field2[23].field2[0]",
+          "source_cn": "<color=#FFFFFF>登录送礼活动规则</color>",
+          "source_sha256": "f10268ce752a0312bc197f171a96d7cf7bd5c14bd34ebb649039e95df5fa235f"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-f10268ce752a",
+        "source_sha256": "f10268ce752a0312bc197f171a96d7cf7bd5c14bd34ebb649039e95df5fa235f",
+        "target_sha256": "718001582378ba984eb58fc5e3987b9ce91c782964ae087529f6918a23a15cd6",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>福利传承活动规则</color>",
+      "source_sha256": "8486d6c2509f7ada35e2a951030a4767ec8e2227a4417baa6d30f2d7bb318eb9",
+      "target_ru": "<color=#FFFFFF>Правила события «Передача бонусов»</color>",
+      "target_sha256": "4ccc2e705521d69d172789da0c1cb335f728e906c1fb0ed15965433c26bc9466",
+      "current_contexts": [
+        {
+          "record_index": 40,
+          "field": "Title",
+          "wire_path": "root.field2[40].field2[0]",
+          "source_cn": "<color=#FFFFFF>福利传承活动规则</color>",
+          "source_sha256": "8486d6c2509f7ada35e2a951030a4767ec8e2227a4417baa6d30f2d7bb318eb9"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-8486d6c2509f",
+        "source_sha256": "8486d6c2509f7ada35e2a951030a4767ec8e2227a4417baa6d30f2d7bb318eb9",
+        "target_sha256": "4ccc2e705521d69d172789da0c1cb335f728e906c1fb0ed15965433c26bc9466",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>私教一对一活动规则</color>",
+      "source_sha256": "96b36abedb1a17673468ddbfaea246b21852bbc7a5e02ba9f0cc610030d45225",
+      "target_ru": "<color=#FFFFFF>Правила события «Индивидуальные занятия»</color>",
+      "target_sha256": "8e5eb01ff03c4f05667e363a1ea0fe9b3a8329e5bf720c7ae9ea485bab52a5ea",
+      "current_contexts": [
+        {
+          "record_index": 89,
+          "field": "Title",
+          "wire_path": "root.field2[89].field2[0]",
+          "source_cn": "<color=#FFFFFF>私教一对一活动规则</color>",
+          "source_sha256": "96b36abedb1a17673468ddbfaea246b21852bbc7a5e02ba9f0cc610030d45225"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-96b36abedb1a",
+        "source_sha256": "96b36abedb1a17673468ddbfaea246b21852bbc7a5e02ba9f0cc610030d45225",
+        "target_sha256": "8e5eb01ff03c4f05667e363a1ea0fe9b3a8329e5bf720c7ae9ea485bab52a5ea",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>线条小狗天幕祈愿规则</color>",
+      "source_sha256": "fb3592c8edcdf8092a138bab7c988c8b2d18af32c6a16888b3b989656152e1f1",
+      "target_ru": "<color=#FFFFFF>Правила призыва небосвода «Рисованный щенок»</color>",
+      "target_sha256": "f4ff02d363993509382624fe947fcf2391c81b79828bc267b5db56e52b055742",
+      "current_contexts": [
+        {
+          "record_index": 110,
+          "field": "Title",
+          "wire_path": "root.field2[110].field2[0]",
+          "source_cn": "<color=#FFFFFF>线条小狗天幕祈愿规则</color>",
+          "source_sha256": "fb3592c8edcdf8092a138bab7c988c8b2d18af32c6a16888b3b989656152e1f1"
+        }
+      ],
+      "approval": "task-reviewed-by-root",
+      "task_review_id": "ix-fb3592c8edcd",
+      "legacy_approval": null
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>组合之星活动规则</color>",
+      "source_sha256": "927a23911c8b4fbead3f9baeb9cce893f6e95929fa9d0bac2a810b628b2026c4",
+      "target_ru": "<color=#FFFFFF>Правила события «Звезда комбинаций»</color>",
+      "target_sha256": "1bf6e0e354c3ede0ab9970a22acd3abe04b2ce5997e2f0617b6330cb21c9123c",
+      "current_contexts": [
+        {
+          "record_index": 21,
+          "field": "Title",
+          "wire_path": "root.field2[21].field2[0]",
+          "source_cn": "<color=#FFFFFF>组合之星活动规则</color>",
+          "source_sha256": "927a23911c8b4fbead3f9baeb9cce893f6e95929fa9d0bac2a810b628b2026c4"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-927a23911c8b",
+        "source_sha256": "927a23911c8b4fbead3f9baeb9cce893f6e95929fa9d0bac2a810b628b2026c4",
+        "target_sha256": "1bf6e0e354c3ede0ab9970a22acd3abe04b2ce5997e2f0617b6330cb21c9123c",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>联合创始人招募规则</color>",
+      "source_sha256": "1771b2adf421320280456ed67ba2c7d5fa49e7fb4e0217f849f3aa1a0facf8f2",
+      "target_ru": "<color=#FFFFFF>Правила набора сооснователей</color>",
+      "target_sha256": "f967733b8edc26b3eae20a7d1fd19551836ebbef356f4f3de682d8e59d7ef63f",
+      "current_contexts": [
+        {
+          "record_index": 41,
+          "field": "Title",
+          "wire_path": "root.field2[41].field2[0]",
+          "source_cn": "<color=#FFFFFF>联合创始人招募规则</color>",
+          "source_sha256": "1771b2adf421320280456ed67ba2c7d5fa49e7fb4e0217f849f3aa1a0facf8f2"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-1771b2adf421",
+        "source_sha256": "1771b2adf421320280456ed67ba2c7d5fa49e7fb4e0217f849f3aa1a0facf8f2",
+        "target_sha256": "f967733b8edc26b3eae20a7d1fd19551836ebbef356f4f3de682d8e59d7ef63f",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>英雄升级活动规则</color>",
+      "source_sha256": "cd75f3ff5fcc49705d226d45640f666a6dbdd81e749608b225b248c31e565fef",
+      "target_ru": "<color=#FFFFFF>Правила события «Повышение уровня героев»</color>",
+      "target_sha256": "13a16384ec95827c816bd7f03b40d913932aaaf407364d3d60dc8c6a364c2ced",
+      "current_contexts": [
+        {
+          "record_index": 49,
+          "field": "Title",
+          "wire_path": "root.field2[49].field2[0]",
+          "source_cn": "<color=#FFFFFF>英雄升级活动规则</color>",
+          "source_sha256": "cd75f3ff5fcc49705d226d45640f666a6dbdd81e749608b225b248c31e565fef"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-cd75f3ff5fcc",
+        "source_sha256": "cd75f3ff5fcc49705d226d45640f666a6dbdd81e749608b225b248c31e565fef",
+        "target_sha256": "13a16384ec95827c816bd7f03b40d913932aaaf407364d3d60dc8c6a364c2ced",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>英雄皮肤</color>",
+      "source_sha256": "aca21e9ba726203cac07438381d9208d5f5c873822dbe509df07f5e5e993b59e",
+      "target_ru": "<color=#FFFFFF>Облики героев</color>",
+      "target_sha256": "783a0328ac78c45ef54a774c0aa09e2183d2b66f526281530e9a402274f09807",
+      "current_contexts": [
+        {
+          "record_index": 86,
+          "field": "Title",
+          "wire_path": "root.field2[86].field2[0]",
+          "source_cn": "<color=#FFFFFF>英雄皮肤</color>",
+          "source_sha256": "aca21e9ba726203cac07438381d9208d5f5c873822dbe509df07f5e5e993b59e"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-aca21e9ba726",
+        "source_sha256": "aca21e9ba726203cac07438381d9208d5f5c873822dbe509df07f5e5e993b59e",
+        "target_sha256": "783a0328ac78c45ef54a774c0aa09e2183d2b66f526281530e9a402274f09807",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>英雄连连看活动规则</color>",
+      "source_sha256": "ea79e807aa2ef37aa324fa7681d8121b284055928e688adea602217099c17919",
+      "target_ru": "<color=#FFFFFF>Правила события «Найди героя»</color>",
+      "target_sha256": "4c2764f42867fb443202589ff6b0bd19a64a79cd32b8731819b504cf5c538d3c",
+      "current_contexts": [
+        {
+          "record_index": 58,
+          "field": "Title",
+          "wire_path": "root.field2[58].field2[0]",
+          "source_cn": "<color=#FFFFFF>英雄连连看活动规则</color>",
+          "source_sha256": "ea79e807aa2ef37aa324fa7681d8121b284055928e688adea602217099c17919"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-ea79e807aa2e",
+        "source_sha256": "ea79e807aa2ef37aa324fa7681d8121b284055928e688adea602217099c17919",
+        "target_sha256": "4c2764f42867fb443202589ff6b0bd19a64a79cd32b8731819b504cf5c538d3c",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>荣耀会员系统规则及福利</color>",
+      "source_sha256": "a98ab9b83e42097cdf2117d7815cbc7dfeaea3cb1ef6e221be079faf219454b2",
+      "target_ru": "<color=#FFFFFF>Правила и преимущества клуба Honor of Kings</color>",
+      "target_sha256": "9b1318ae03c5871b8e1a37b955b2979c8677fea6d291a8d61a6f835a2650b2ad",
+      "current_contexts": [
+        {
+          "record_index": 3,
+          "field": "Title",
+          "wire_path": "root.field2[3].field2[0]",
+          "source_cn": "<color=#FFFFFF>荣耀会员系统规则及福利</color>",
+          "source_sha256": "a98ab9b83e42097cdf2117d7815cbc7dfeaea3cb1ef6e221be079faf219454b2"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-a98ab9b83e42",
+        "source_sha256": "a98ab9b83e42097cdf2117d7815cbc7dfeaea3cb1ef6e221be079faf219454b2",
+        "target_sha256": "9b1318ae03c5871b8e1a37b955b2979c8677fea6d291a8d61a6f835a2650b2ad",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>蔷薇之约活动说明</color>",
+      "source_sha256": "6140da675830555e7373f8f22e1725ac5fb48d0ca479c37287390a76f94bb861",
+      "target_ru": "<color=#FFFFFF>Описание события «Обещание Розы»</color>",
+      "target_sha256": "1b2039b39ea8fff68af782b30d27b9631826b5f5c02c9c4329cc8fd79d292186",
+      "current_contexts": [
+        {
+          "record_index": 19,
+          "field": "Title",
+          "wire_path": "root.field2[19].field2[0]",
+          "source_cn": "<color=#FFFFFF>蔷薇之约活动说明</color>",
+          "source_sha256": "6140da675830555e7373f8f22e1725ac5fb48d0ca479c37287390a76f94bb861"
+        }
+      ],
+      "approval": "task-reviewed-by-root",
+      "task_review_id": "ix-6140da675830",
+      "legacy_approval": {
+        "translation_id": "ix-6140da675830",
+        "source_sha256": "6140da675830555e7373f8f22e1725ac5fb48d0ca479c37287390a76f94bb861",
+        "target_sha256": "103cd9e16debace2d246599a4627de1f65248dc0e0b76ae10ffd78fe84b09766",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>蔷薇加码活动规则</color>",
+      "source_sha256": "e889472911ee07e734029bd2551fa7114ac21be2035991c64a6ed1bd56abe02b",
+      "target_ru": "<color=#FFFFFF>Правила события «Бонус Розы»</color>",
+      "target_sha256": "e19d07e17450f346111ec165514c01ef5de9906b34a23500a9203acacea9cec2",
+      "current_contexts": [
+        {
+          "record_index": 114,
+          "field": "Title",
+          "wire_path": "root.field2[114].field2[0]",
+          "source_cn": "<color=#FFFFFF>蔷薇加码活动规则</color>",
+          "source_sha256": "e889472911ee07e734029bd2551fa7114ac21be2035991c64a6ed1bd56abe02b"
+        }
+      ],
+      "approval": "task-reviewed-by-root",
+      "task_review_id": "ix-e889472911ee",
+      "legacy_approval": null
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>蔷薇挑战活动规则</color>",
+      "source_sha256": "31f82e795dcbe2005866471eb955de096cc403b52e8fc80bdaf3937f91bcd743",
+      "target_ru": "<color=#FFFFFF>Правила события «Испытание Розы»</color>",
+      "target_sha256": "9b61babe3e45ec0b437fde0c1ace3066571cda6c6e1f032a01d7fe36d21a8f5d",
+      "current_contexts": [
+        {
+          "record_index": 55,
+          "field": "Title",
+          "wire_path": "root.field2[55].field2[0]",
+          "source_cn": "<color=#FFFFFF>蔷薇挑战活动规则</color>",
+          "source_sha256": "31f82e795dcbe2005866471eb955de096cc403b52e8fc80bdaf3937f91bcd743"
+        }
+      ],
+      "approval": "task-reviewed-by-root",
+      "task_review_id": "ix-31f82e795dcb",
+      "legacy_approval": {
+        "translation_id": "ix-31f82e795dcb",
+        "source_sha256": "31f82e795dcbe2005866471eb955de096cc403b52e8fc80bdaf3937f91bcd743",
+        "target_sha256": "7f1d692103add24ac6bced4183e9f6f1e89386b42ca7aec5d7543d589329d58d",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>蔷薇阁活动规则</color>",
+      "source_sha256": "bb22ebfa207e6d7bdf20cb6765cd144413414993a3cb7d346ac5d14b0039c633",
+      "target_ru": "<color=#FFFFFF>Правила события «Павильон Розы»</color>",
+      "target_sha256": "8b4ea16d044de42e18efedac1839d5afc1dc01084ad80f4cfa9d506274be35d0",
+      "current_contexts": [
+        {
+          "record_index": 53,
+          "field": "Title",
+          "wire_path": "root.field2[53].field2[0]",
+          "source_cn": "<color=#FFFFFF>蔷薇阁活动规则</color>",
+          "source_sha256": "bb22ebfa207e6d7bdf20cb6765cd144413414993a3cb7d346ac5d14b0039c633"
+        }
+      ],
+      "approval": "task-reviewed-by-root",
+      "task_review_id": "ix-bb22ebfa207e",
+      "legacy_approval": {
+        "translation_id": "ix-bb22ebfa207e",
+        "source_sha256": "bb22ebfa207e6d7bdf20cb6765cd144413414993a3cb7d346ac5d14b0039c633",
+        "target_sha256": "9252ca1ac22f5a93e131285412c210be2a9fc6fc0a21594e866385a8bc41f839",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>账号经验加成</color>",
+      "source_sha256": "6e9c70ab8afe2654c6f8c66b38d76e2dbf734036fe65fae5f2e8078d5089670f",
+      "target_ru": "<color=#FFFFFF>Бонус к опыту аккаунта</color>",
+      "target_sha256": "59e4167565321395febd23cd39e64d4f1107faaae00e324804d890fe5dfaddf8",
+      "current_contexts": [
+        {
+          "record_index": 7,
+          "field": "Title",
+          "wire_path": "root.field2[7].field2[0]",
+          "source_cn": "<color=#FFFFFF>账号经验加成</color>",
+          "source_sha256": "6e9c70ab8afe2654c6f8c66b38d76e2dbf734036fe65fae5f2e8078d5089670f"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-6e9c70ab8afe",
+        "source_sha256": "6e9c70ab8afe2654c6f8c66b38d76e2dbf734036fe65fae5f2e8078d5089670f",
+        "target_sha256": "59e4167565321395febd23cd39e64d4f1107faaae00e324804d890fe5dfaddf8",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>超级假期规则</color>",
+      "source_sha256": "4431dbfe9e993c0c246510f6dc8ee9ca66115982bcd51693cfdc76b9bc9c0fe4",
+      "target_ru": "<color=#FFFFFF>Правила события «Суперканикулы»</color>",
+      "target_sha256": "b9d91fa670ffcff19500b1b586af612ff667321053d17356c6c19e8b3f3307f1",
+      "current_contexts": [
+        {
+          "record_index": 108,
+          "field": "Title",
+          "wire_path": "root.field2[108].field2[0]",
+          "source_cn": "<color=#FFFFFF>超级假期规则</color>",
+          "source_sha256": "4431dbfe9e993c0c246510f6dc8ee9ca66115982bcd51693cfdc76b9bc9c0fe4"
+        }
+      ],
+      "approval": "task-reviewed-by-root",
+      "task_review_id": "ix-4431dbfe9e99",
+      "legacy_approval": null
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>超级周末规则</color>",
+      "source_sha256": "a7de42f43a62140bfa036f074a43ba9a4167c056bcde83fab7546b9d77ddc447",
+      "target_ru": "<color=#FFFFFF>Правила события «Супервыходные»</color>",
+      "target_sha256": "f5653eda6c17f650d1deee98eafad86f926b23aa2e1f1fba9cb97e98baa89da4",
+      "current_contexts": [
+        {
+          "record_index": 113,
+          "field": "Title",
+          "wire_path": "root.field2[113].field2[0]",
+          "source_cn": "<color=#FFFFFF>超级周末规则</color>",
+          "source_sha256": "a7de42f43a62140bfa036f074a43ba9a4167c056bcde83fab7546b9d77ddc447"
+        }
+      ],
+      "approval": "task-reviewed-by-root",
+      "task_review_id": "ix-a7de42f43a62",
+      "legacy_approval": null
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>超级拍卖场活动规则</color>",
+      "source_sha256": "851b36f53a80580b08cecdb0f060ddbb4a86f9f779ccd9f060f868c189b6a2a3",
+      "target_ru": "<color=#FFFFFF>Правила события «Супераукцион»</color>",
+      "target_sha256": "a7261b5f48ef26a89f8eab57e6bd5751039da47d86eba075d01917fc786c0c5b",
+      "current_contexts": [
+        {
+          "record_index": 59,
+          "field": "Title",
+          "wire_path": "root.field2[59].field2[0]",
+          "source_cn": "<color=#FFFFFF>超级拍卖场活动规则</color>",
+          "source_sha256": "851b36f53a80580b08cecdb0f060ddbb4a86f9f779ccd9f060f868c189b6a2a3"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-851b36f53a80",
+        "source_sha256": "851b36f53a80580b08cecdb0f060ddbb4a86f9f779ccd9f060f868c189b6a2a3",
+        "target_sha256": "a7261b5f48ef26a89f8eab57e6bd5751039da47d86eba075d01917fc786c0c5b",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>送蔷薇币活动规则</color>",
+      "source_sha256": "6f9fb663a7812b67bb87d981567216c5761e0cb4a134cc5140690ab739e77b75",
+      "target_ru": "<color=#FFFFFF>Правила события «Монеты Розы»</color>",
+      "target_sha256": "9db887e0c5277826c789a7d941256ad1fbfa995aca68d063fc307ec51870567f",
+      "current_contexts": [
+        {
+          "record_index": 16,
+          "field": "Title",
+          "wire_path": "root.field2[16].field2[0]",
+          "source_cn": "<color=#FFFFFF>送蔷薇币活动规则</color>",
+          "source_sha256": "6f9fb663a7812b67bb87d981567216c5761e0cb4a134cc5140690ab739e77b75"
+        }
+      ],
+      "approval": "task-reviewed-by-root",
+      "task_review_id": "ix-6f9fb663a781",
+      "legacy_approval": {
+        "translation_id": "ix-6f9fb663a781",
+        "source_sha256": "6f9fb663a7812b67bb87d981567216c5761e0cb4a134cc5140690ab739e77b75",
+        "target_sha256": "b75e21298ee1bc4b66480a17ddaa30e5bb3230e56c0672c437fce60c85458557",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>钻石狂潮活动规则</color>",
+      "source_sha256": "b509454d16fcdd143c0c4167c6aabfa8c0ba8cb6d3e935d1da4902977cee94a9",
+      "target_ru": "<color=#FFFFFF>Правила события «Алмазная лихорадка»</color>",
+      "target_sha256": "08e4179a35d64f64c0f2cb781b71a9b3afe6640012b1b314953b1893a757e831",
+      "current_contexts": [
+        {
+          "record_index": 48,
+          "field": "Title",
+          "wire_path": "root.field2[48].field2[0]",
+          "source_cn": "<color=#FFFFFF>钻石狂潮活动规则</color>",
+          "source_sha256": "b509454d16fcdd143c0c4167c6aabfa8c0ba8cb6d3e935d1da4902977cee94a9"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-b509454d16fc",
+        "source_sha256": "b509454d16fcdd143c0c4167c6aabfa8c0ba8cb6d3e935d1da4902977cee94a9",
+        "target_sha256": "08e4179a35d64f64c0f2cb781b71a9b3afe6640012b1b314953b1893a757e831",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>钻石结算加成</color>",
+      "source_sha256": "09953010b453c0b44886261a5c01739c20c130c9c8598c76b6ee9d63bbac7f5f",
+      "target_ru": "<color=#FFFFFF>Бонус к алмазам по итогам матча</color>",
+      "target_sha256": "88dde77b767d97bf5a36cc5960edee67523076a70dda18bb752743166302e094",
+      "current_contexts": [
+        {
+          "record_index": 9,
+          "field": "Title",
+          "wire_path": "root.field2[9].field2[0]",
+          "source_cn": "<color=#FFFFFF>钻石结算加成</color>",
+          "source_sha256": "09953010b453c0b44886261a5c01739c20c130c9c8598c76b6ee9d63bbac7f5f"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-09953010b453",
+        "source_sha256": "09953010b453c0b44886261a5c01739c20c130c9c8598c76b6ee9d63bbac7f5f",
+        "target_sha256": "88dde77b767d97bf5a36cc5960edee67523076a70dda18bb752743166302e094",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>阵营百变活动规则</color>",
+      "source_sha256": "f97b8c5735921becbeafc9bab0c15c4df20dbbd77b0cf0e639420955ee42faa6",
+      "target_ru": "<color=#FFFFFF>Правила события «Меняющиеся фракции»</color>",
+      "target_sha256": "7587c696748df3ea1f9ffb8da5cb1d9e3ba75c8db9031196aa4145f1e6917426",
+      "current_contexts": [
+        {
+          "record_index": 50,
+          "field": "Title",
+          "wire_path": "root.field2[50].field2[0]",
+          "source_cn": "<color=#FFFFFF>阵营百变活动规则</color>",
+          "source_sha256": "f97b8c5735921becbeafc9bab0c15c4df20dbbd77b0cf0e639420955ee42faa6"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-f97b8c573592",
+        "source_sha256": "f97b8c5735921becbeafc9bab0c15c4df20dbbd77b0cf0e639420955ee42faa6",
+        "target_sha256": "7587c696748df3ea1f9ffb8da5cb1d9e3ba75c8db9031196aa4145f1e6917426",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>领国服骑手头像框活动规则</color>",
+      "source_sha256": "9e2c3eb22d3defd1dac457a9e41620489402217a95c77d33c2ecf84898771a28",
+      "target_ru": "<color=#FFFFFF>Правила получения рамки «Курьер нацсервера»</color>",
+      "target_sha256": "13661fcd5e12906fcb8837330b0ba74be20cf1c1ee532cdfc470e158e00825d3",
+      "current_contexts": [
+        {
+          "record_index": 92,
+          "field": "Title",
+          "wire_path": "root.field2[92].field2[0]",
+          "source_cn": "<color=#FFFFFF>领国服骑手头像框活动规则</color>",
+          "source_sha256": "9e2c3eb22d3defd1dac457a9e41620489402217a95c77d33c2ecf84898771a28"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-9e2c3eb22d3d",
+        "source_sha256": "9e2c3eb22d3defd1dac457a9e41620489402217a95c77d33c2ecf84898771a28",
+        "target_sha256": "13661fcd5e12906fcb8837330b0ba74be20cf1c1ee532cdfc470e158e00825d3",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>风雅假期活动规则</color>",
+      "source_sha256": "fafb206247391cc98f69f4967acd74608106c5a14a4739f6f467cfaf84ecc328",
+      "target_ru": "<color=#FFFFFF>Правила события «Изящные каникулы»</color>",
+      "target_sha256": "e9f0ed76637c2d8d6f3b87f04ce1af635f9c385625b740ce2ba0f99ac58a09cc",
+      "current_contexts": [
+        {
+          "record_index": 102,
+          "field": "Title",
+          "wire_path": "root.field2[102].field2[0]",
+          "source_cn": "<color=#FFFFFF>风雅假期活动规则</color>",
+          "source_sha256": "fafb206247391cc98f69f4967acd74608106c5a14a4739f6f467cfaf84ecc328"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-fafb20624739",
+        "source_sha256": "fafb206247391cc98f69f4967acd74608106c5a14a4739f6f467cfaf84ecc328",
+        "target_sha256": "e9f0ed76637c2d8d6f3b87f04ce1af635f9c385625b740ce2ba0f99ac58a09cc",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>首充规则</color>",
+      "source_sha256": "d3b8bd7de11610b1c9839440a652f2b66006192067db6a94c52c9a46f4559687",
+      "target_ru": "<color=#FFFFFF>Правила первого пополнения</color>",
+      "target_sha256": "17c6513a49b075c69d757128dea4ba0c664054300ed76494080b5e002b111ce2",
+      "current_contexts": [
+        {
+          "record_index": 70,
+          "field": "Title",
+          "wire_path": "root.field2[70].field2[0]",
+          "source_cn": "<color=#FFFFFF>首充规则</color>",
+          "source_sha256": "d3b8bd7de11610b1c9839440a652f2b66006192067db6a94c52c9a46f4559687"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-d3b8bd7de116",
+        "source_sha256": "d3b8bd7de11610b1c9839440a652f2b66006192067db6a94c52c9a46f4559687",
+        "target_sha256": "17c6513a49b075c69d757128dea4ba0c664054300ed76494080b5e002b111ce2",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>高手直通车活动规则</color>",
+      "source_sha256": "3bcf933f327be61906bc3080bbdbf7d17aff959bbe13306290bc41b0db774f2c",
+      "target_ru": "<color=#FFFFFF>Правила события «Путь к мастерству»</color>",
+      "target_sha256": "74dc8d46186393f1bfba8d2da1ed3a9054b02e21b95755608fa8d790b5c1d4e6",
+      "current_contexts": [
+        {
+          "record_index": 90,
+          "field": "Title",
+          "wire_path": "root.field2[90].field2[0]",
+          "source_cn": "<color=#FFFFFF>高手直通车活动规则</color>",
+          "source_sha256": "3bcf933f327be61906bc3080bbdbf7d17aff959bbe13306290bc41b0db774f2c"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-3bcf933f327b",
+        "source_sha256": "3bcf933f327be61906bc3080bbdbf7d17aff959bbe13306290bc41b0db774f2c",
+        "target_sha256": "74dc8d46186393f1bfba8d2da1ed3a9054b02e21b95755608fa8d790b5c1d4e6",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "交易规则",
+      "source_sha256": "7a04040399f91bdaa95579e6bba2d43d3a458416d883e75fa16982340d020acf",
+      "target_ru": "Правила торговли",
+      "target_sha256": "86417abec87f3f7091942a4028a69ffc03d688ff92216c778e4334b2edc9e190",
+      "current_contexts": [
+        {
+          "record_index": 72,
+          "field": "Title",
+          "wire_path": "root.field2[72].field2[0]",
+          "source_cn": "交易规则",
+          "source_sha256": "7a04040399f91bdaa95579e6bba2d43d3a458416d883e75fa16982340d020acf"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-7a04040399f9",
+        "source_sha256": "7a04040399f91bdaa95579e6bba2d43d3a458416d883e75fa16982340d020acf",
+        "target_sha256": "86417abec87f3f7091942a4028a69ffc03d688ff92216c778e4334b2edc9e190",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "交易限制",
+      "source_sha256": "264370c842f6dfb1432ee3f22fefcd7dcc7d1661101bc78ac195f9ac2314dc4a",
+      "target_ru": "Ограничения торговли",
+      "target_sha256": "7c75562ef6939fd9cb65ff90ea683734598b3cf70b3c5492adbb20aeab612c85",
+      "current_contexts": [
+        {
+          "record_index": 75,
+          "field": "Title",
+          "wire_path": "root.field2[75].field2[0]",
+          "source_cn": "交易限制",
+          "source_sha256": "264370c842f6dfb1432ee3f22fefcd7dcc7d1661101bc78ac195f9ac2314dc4a"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-264370c842f6",
+        "source_sha256": "264370c842f6dfb1432ee3f22fefcd7dcc7d1661101bc78ac195f9ac2314dc4a",
+        "target_sha256": "7c75562ef6939fd9cb65ff90ea683734598b3cf70b3c5492adbb20aeab612c85",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "尊享月卡",
+      "source_sha256": "78145178ed99c141ac5ff209e402375e720fafed03fb5a93e0009680b1d1fa6a",
+      "target_ru": "Премиальная месячная карта",
+      "target_sha256": "7a9b0f4d1b2c77fe3a16328d1daaac6c69c03b6e8b425b97e98115baec14ce77",
+      "current_contexts": [
+        {
+          "record_index": 73,
+          "field": "Title",
+          "wire_path": "root.field2[73].field2[0]",
+          "source_cn": "尊享月卡",
+          "source_sha256": "78145178ed99c141ac5ff209e402375e720fafed03fb5a93e0009680b1d1fa6a"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-78145178ed99",
+        "source_sha256": "78145178ed99c141ac5ff209e402375e720fafed03fb5a93e0009680b1d1fa6a",
+        "target_sha256": "7a9b0f4d1b2c77fe3a16328d1daaac6c69c03b6e8b425b97e98115baec14ce77",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "拍卖记录说明",
+      "source_sha256": "5c66fd35ad29e843cf3d89603af0d5ae2dff8a34b522e6eacdf0107c251fca9c",
+      "target_ru": "История аукционов: пояснение",
+      "target_sha256": "79a7cf16ed5a1e9a9140094c05c2426ecf9e7c416e67617aaaa7a10c1088cc7a",
+      "current_contexts": [
+        {
+          "record_index": 71,
+          "field": "Title",
+          "wire_path": "root.field2[71].field2[0]",
+          "source_cn": "拍卖记录说明",
+          "source_sha256": "5c66fd35ad29e843cf3d89603af0d5ae2dff8a34b522e6eacdf0107c251fca9c"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-5c66fd35ad29",
+        "source_sha256": "5c66fd35ad29e843cf3d89603af0d5ae2dff8a34b522e6eacdf0107c251fca9c",
+        "target_sha256": "79a7cf16ed5a1e9a9140094c05c2426ecf9e7c416e67617aaaa7a10c1088cc7a",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "月卡",
+      "source_sha256": "ccd53d571c2c5e2b4b6f6e15e29ff51bcac9645536f5fb14560a0ecbf097269d",
+      "target_ru": "Месячная карта",
+      "target_sha256": "c1063cc6960360becc924438a32bbe2b0988a00cb78b4c39225ae1f9a70aea5e",
+      "current_contexts": [
+        {
+          "record_index": 74,
+          "field": "Title",
+          "wire_path": "root.field2[74].field2[0]",
+          "source_cn": "月卡",
+          "source_sha256": "ccd53d571c2c5e2b4b6f6e15e29ff51bcac9645536f5fb14560a0ecbf097269d"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-ccd53d571c2c",
+        "source_sha256": "ccd53d571c2c5e2b4b6f6e15e29ff51bcac9645536f5fb14560a0ecbf097269d",
+        "target_sha256": "c1063cc6960360becc924438a32bbe2b0988a00cb78b4c39225ae1f9a70aea5e",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "Title",
+      "source_cn": "英雄皮肤预览",
+      "source_sha256": "634da7057599b8f4fd4535865703f8884937b131a52d516712d147210a60e037",
+      "target_ru": "Предпросмотр облика героя",
+      "target_sha256": "4f05c27f9bcd33f0635395791aa8f19c7ea93171021b04e0aba2e3bed32bbe66",
+      "current_contexts": [
+        {
+          "record_index": 82,
+          "field": "Title",
+          "wire_path": "root.field2[82].field2[0]",
+          "source_cn": "英雄皮肤预览",
+          "source_sha256": "634da7057599b8f4fd4535865703f8884937b131a52d516712d147210a60e037"
+        },
+        {
+          "record_index": 83,
+          "field": "Title",
+          "wire_path": "root.field2[83].field2[0]",
+          "source_cn": "英雄皮肤预览",
+          "source_sha256": "634da7057599b8f4fd4535865703f8884937b131a52d516712d147210a60e037"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-634da7057599",
+        "source_sha256": "634da7057599b8f4fd4535865703f8884937b131a52d516712d147210a60e037",
+        "target_sha256": "4f05c27f9bcd33f0635395791aa8f19c7ea93171021b04e0aba2e3bed32bbe66",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "ConfirmContent",
+      "source_cn": "前往",
+      "source_sha256": "fa96079c3b2f73415ff50926506e7b280233a068ef902aa1ae7009947cb3d723",
+      "target_ru": "Перейти",
+      "target_sha256": "91f7bab0648aa213631a7ed9b8bd705d739cade63398a106ce9fe7ad9e6fdb4b",
+      "current_contexts": [
+        {
+          "record_index": 10,
+          "field": "ConfirmContent",
+          "wire_path": "root.field2[10].field11[0]",
+          "source_cn": "前往",
+          "source_sha256": "fa96079c3b2f73415ff50926506e7b280233a068ef902aa1ae7009947cb3d723"
+        },
+        {
+          "record_index": 11,
+          "field": "ConfirmContent",
+          "wire_path": "root.field2[11].field11[0]",
+          "source_cn": "前往",
+          "source_sha256": "fa96079c3b2f73415ff50926506e7b280233a068ef902aa1ae7009947cb3d723"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-fa96079c3b2f",
+        "source_sha256": "fa96079c3b2f73415ff50926506e7b280233a068ef902aa1ae7009947cb3d723",
+        "target_sha256": "91f7bab0648aa213631a7ed9b8bd705d739cade63398a106ce9fe7ad9e6fdb4b",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "ConfirmContent",
+      "source_cn": "确认",
+      "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae",
+      "target_ru": "ОК",
+      "target_sha256": "dc0de6b1dc5cf3af3d6af6d72c34e79d3d127467d60603b33980433fde4835d9",
+      "current_contexts": [
+        {
+          "record_index": 4,
+          "field": "ConfirmContent",
+          "wire_path": "root.field2[4].field11[0]",
+          "source_cn": "确认",
+          "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+        },
+        {
+          "record_index": 5,
+          "field": "ConfirmContent",
+          "wire_path": "root.field2[5].field11[0]",
+          "source_cn": "确认",
+          "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+        },
+        {
+          "record_index": 6,
+          "field": "ConfirmContent",
+          "wire_path": "root.field2[6].field11[0]",
+          "source_cn": "确认",
+          "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+        },
+        {
+          "record_index": 7,
+          "field": "ConfirmContent",
+          "wire_path": "root.field2[7].field11[0]",
+          "source_cn": "确认",
+          "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+        },
+        {
+          "record_index": 8,
+          "field": "ConfirmContent",
+          "wire_path": "root.field2[8].field11[0]",
+          "source_cn": "确认",
+          "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+        },
+        {
+          "record_index": 9,
+          "field": "ConfirmContent",
+          "wire_path": "root.field2[9].field11[0]",
+          "source_cn": "确认",
+          "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+        },
+        {
+          "record_index": 12,
+          "field": "ConfirmContent",
+          "wire_path": "root.field2[12].field11[0]",
+          "source_cn": "确认",
+          "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+        },
+        {
+          "record_index": 13,
+          "field": "ConfirmContent",
+          "wire_path": "root.field2[13].field11[0]",
+          "source_cn": "确认",
+          "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+        },
+        {
+          "record_index": 14,
+          "field": "ConfirmContent",
+          "wire_path": "root.field2[14].field11[0]",
+          "source_cn": "确认",
+          "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+        },
+        {
+          "record_index": 15,
+          "field": "ConfirmContent",
+          "wire_path": "root.field2[15].field11[0]",
+          "source_cn": "确认",
+          "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-36f33adaf094",
+        "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae",
+        "target_sha256": "dc0de6b1dc5cf3af3d6af6d72c34e79d3d127467d60603b33980433fde4835d9",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    },
+    {
+      "field": "GroupTitle",
+      "source_cn": "交易行规则",
+      "source_sha256": "825fac407f80deb2c41744fbd5bc8daa2511116fbca3933b7686395df50f27d0",
+      "target_ru": "Правила торговой площадки",
+      "target_sha256": "a6fb78b2f4c237605e935f54ae896b8c58f855eedc92728dd6a7a466b85bc1a1",
+      "current_contexts": [
+        {
+          "record_index": 72,
+          "field": "GroupTitle",
+          "wire_path": "root.field2[72].field15[0]",
+          "source_cn": "交易行规则",
+          "source_sha256": "825fac407f80deb2c41744fbd5bc8daa2511116fbca3933b7686395df50f27d0"
+        }
+      ],
+      "approval": "historical-reviewed-map",
+      "task_review_id": null,
+      "legacy_approval": {
+        "translation_id": "ix-825fac407f80",
+        "source_sha256": "825fac407f80deb2c41744fbd5bc8daa2511116fbca3933b7686395df50f27d0",
+        "target_sha256": "a6fb78b2f4c237605e935f54ae896b8c58f855eedc92728dd6a7a466b85bc1a1",
+        "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
+        "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+      }
+    }
+  ]
+}

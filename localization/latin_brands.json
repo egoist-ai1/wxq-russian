@@ -1,0 +1,5 @@
+{
+  "_comment": "Неизменяемые бренды, платформы и обозначения в русском переводе (решение владельца 2026-10-13). Названия компаний из юридических строк сюда не входят: они разрешены только если дословно есть в исходнике.",
+  "brands": ["WeChat", "Tencent", "QQ", "Qzone", "Douyin", "Huya", "Weibo", "Xiaohongshu", "Bilibili", "Kuaishou", "WeGame", "Apple", "Android", "iOS", "HarmonyOS", "Wi-Fi", "PC", "VIP", "ID", "UI/UX"],
+  "roman_numerals": ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
+}

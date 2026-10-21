@@ -39,6 +39,7 @@ RAW_REPLACEMENT_ALLOWED = {
 # Явный белый список: пакет -> {id: SHA-256 оригинала в prime}; пины сняты с WXQ(1) 1.5.0.1. Любой другой id отклоняется.
 LUA_REPLACEMENT_ALLOWED = {
     '10': {
+        'f2e5aa01735bafb3': '8eb6648ea37cd53c9be0dd13a852f4df2681cc1a46b0586addfad50c9bb558ff',  # UIPersonaliseVoiceUseItemClass_AutoBind
         'e607e142cfd91df0': '54e9b0083f9e5f913ab41dec70836f13a38f7db2e55474563e35ace58bec04bf',  # UICardDetailHeroSkill_AutoBind
         'aeff176f093cf41d': 'dec7f4e956525c2923406638fa31fcacdae8479514afd4bd6e85f8a11d912697',  # UICommonMSGBoxSettingsitem_AutoBind
         '99527bd5e8d17767': '72bb3df4867cf6b0496fdf9619c1c3c0727bfc1da7150373993abd61ba54fe63',  # UICardDetailSkillDesItem_AutoBind
@@ -567,9 +568,9 @@ def _merge_lua_coverage_pins() -> None:
 
 _merge_lua_coverage_pins()
 
-# Два общих шаблона шапки: отдельные пины, прежние 1914 ресурса переноса остаются прежними.
+# Общие шаблоны шапки и контроллер горизонтального меню: отдельные пины, прежние 1914 ресурса переноса остаются прежними.
 LUA_HEADER_LAYOUT_PATH = PROJECT / 'source/game-wordwrap/header-layout.json'
-LUA_HEADER_LAYOUT_SHA256 = 'e78d3966fb26461d2d94ebcce24871f1ddc5a5de6f241632df6d30c32f54189c'
+LUA_HEADER_LAYOUT_SHA256 = 'ca4c8d227144d74b51ec5b918418706fd42822cd867f318854a943c8ccf90dfe'
 
 
 def _merge_lua_header_layout_pins() -> None:
@@ -580,8 +581,8 @@ def _merge_lua_header_layout_pins() -> None:
     if data.get('schema') != 'wxq-header-layout/v1' or data.get('package') != '10':
         raise ValueError('Lua header layout pin file must describe reviewed package 10 targets')
     rows = data.get('resources')
-    if not isinstance(rows, list) or len(rows) != 2:
-        raise ValueError('Lua header layout pin file must have exactly two reviewed templates')
+    if not isinstance(rows, list) or len(rows) != 3:
+        raise ValueError('Lua header layout pin file must have exactly three reviewed templates')
     allowed = LUA_REPLACEMENT_ALLOWED['10']
     seen = set()
     for row in rows:
@@ -594,6 +595,62 @@ def _merge_lua_header_layout_pins() -> None:
 
 
 _merge_lua_header_layout_pins()
+
+# Числовые подписи: только два проверенных Lua-потребителя текущей игры, отдельный файл пинов.
+LUA_NUMERIC_DISPLAY_PATH = PROJECT / 'source/game-formatting/numeric-display-v2.json'
+LUA_NUMERIC_DISPLAY_SHA256 = '037f50d550ec45739fa0a822da8e0e62e2f75a0ec52643c2b1cfa71376380a3f'
+
+
+def _merge_lua_numeric_display_pins() -> None:
+    raw = LUA_NUMERIC_DISPLAY_PATH.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != LUA_NUMERIC_DISPLAY_SHA256:
+        raise ValueError('Lua numeric display pin file differs from the SHA-256 pinned in the contract')
+    data = json.loads(raw.decode('utf-8'))
+    if data.get('schema') != 'wxq-numeric-display/v2' or data.get('package') != '10':
+        raise ValueError('Lua numeric display pin file must describe reviewed package 10 targets')
+    rows = data.get('resources')
+    if not isinstance(rows, list) or len(rows) != 2:
+        raise ValueError('Lua numeric display pin file must have exactly two reviewed formatters')
+    allowed = LUA_REPLACEMENT_ALLOWED['10']
+    seen = set()
+    for row in rows:
+        ident, digest = row.get('id_hex'), row.get('original_sha256')
+        if not isinstance(ident, str) or not isinstance(digest, str) or not re.fullmatch(r'[0-9a-f]{16}', ident) or not re.fullmatch(r'[0-9a-f]{64}', digest):
+            raise ValueError('Lua numeric display pin file has a malformed entry')
+        if ident in seen or allowed.setdefault(ident, digest) != digest:
+            raise ValueError(f'Lua numeric display pin {ident} is duplicate or differs from the pinned Lua original')
+        seen.add(ident)
+
+
+_merge_lua_numeric_display_pins()
+
+# ActivityHelp: четыре display-потребителя; cfg служит source proof сборки и не заменяется.
+LUA_ACTIVITY_DISPLAY_PATH = PROJECT / 'source/game-formatting/activity-display-v2.json'
+LUA_ACTIVITY_DISPLAY_SHA256 = 'd1d4ccb1a02c37269009571cbb3a4c0a7db579539c1fb0a58409a51cb15e38c8'
+
+
+def _merge_lua_activity_display_pins() -> None:
+    raw = LUA_ACTIVITY_DISPLAY_PATH.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != LUA_ACTIVITY_DISPLAY_SHA256:
+        raise ValueError('Lua activity display pin file differs from the SHA-256 pinned in the contract')
+    data = json.loads(raw.decode('utf-8'))
+    if data.get('schema') != 'wxq-activity-display/v2' or data.get('package') != '10':
+        raise ValueError('Lua activity display pin file must describe reviewed package 10 targets')
+    rows = data.get('resources')
+    if not isinstance(rows, list) or len(rows) != 4:
+        raise ValueError('Lua activity display pin file must have exactly four reviewed consumers')
+    allowed = LUA_REPLACEMENT_ALLOWED['10']
+    seen = set()
+    for row in rows:
+        ident, digest = row.get('id_hex'), row.get('original_sha256')
+        if not isinstance(ident, str) or not isinstance(digest, str) or not re.fullmatch(r'[0-9a-f]{16}', ident) or not re.fullmatch(r'[0-9a-f]{64}', digest):
+            raise ValueError('Lua activity display pin file has a malformed entry')
+        if ident in seen or allowed.setdefault(ident, digest) != digest:
+            raise ValueError(f'Lua activity display pin {ident} is duplicate or differs from the pinned Lua original')
+        seen.add(ident)
+
+
+_merge_lua_activity_display_pins()
 # Каждая нагрузка lua-script начинается с этой строки (помощник переноса и точечные правки сборщика build_lua_package.py).
 LUA_PAYLOAD_MARKER = b'-- ACE_REVIEWED_RU_WORDWRAP_v2'
 PACKAGE_ID = re.compile(r'[1-9][0-9]{0,9}')

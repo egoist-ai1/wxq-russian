@@ -38,17 +38,27 @@ class HeaderLayoutPatchTest(unittest.TestCase):
 
 @unittest.skipUnless(DLL.is_file() and ORIGINAL_DIR, "Нужны штатный Lua DLL и WXQ_HEADER_ORIGINALS")
 class HeaderLayoutLuaTest(unittest.TestCase):
-    def fixture(self, patched: bool = False, extended: str = "") -> str:
-        directory = Path(ORIGINAL_DIR)
-        base = (directory / "5c97dddb5dd21ee9.lua").read_bytes()
-        back = (directory / "1eaf50bae2c25fe8.lua").read_bytes()
+    def original(self, rid: str) -> bytes:
+        path = Path(ORIGINAL_DIR) / (rid + ".lua")
+        if path.is_file():
+            return path.read_bytes()
+        # Новые общие модули читаются из builtin, никогда из пользовательского Cache.
+        import build_pilot_carrier as bp
+        return bp.read_original(GAME, "10", rid)[0]
+
+    def fixture(self, patched: bool = False, extended: str = "", menu_patched: bool = True) -> str:
+        base = self.original("5c97dddb5dd21ee9")
+        back = self.original("1eaf50bae2c25fe8")
+        menu = self.original("2359e7634bf04fd1")
         if patched:
             import build_header_layout_patch as patch
             base = patch.patch_resource(base, "5c97dddb5dd21ee9")[0]
             back = patch.patch_resource(back, "1eaf50bae2c25fe8")[0]
+            if menu_patched:
+                menu = patch.patch_resource(menu, "2359e7634bf04fd1")[0]
         # return Back ограничен вложенным чанком, как при штатном import игры.
         code = FIXTURE.read_text("utf-8")
-        for placeholder, source in (("BASE", base), ("BACK", back)):
+        for placeholder, source in (("BASE", base), ("BACK", back), ("MENU", menu)):
             wrapped = "assert(load(" + "[====[" + source.decode("utf-8") + "]====], '" + placeholder + "'))()"
             code = code.replace("-- {{" + placeholder + "_MODULE}}", wrapped)
         return code.replace("-- {{EXTENDED_CASES}}", extended)
@@ -65,12 +75,100 @@ class HeaderLayoutLuaTest(unittest.TestCase):
     def test_common_template_keeps_gap_and_native_typography(self):
         self.assertEqual(self.lua().load(self.fixture(True).encode(), "header-patched", True), "3")
 
+    def test_real_original_menu_reproduces_russian_tab_overlap(self):
+        cases = '''
+local m = newMenu({ "Эффекты", "Взаимодействия", "Персонализация", "Функциональные" })
+check(menuGap(m, 2) >= 24, "TG057: fixed native menu spacing overlaps Russian captions")
+'''
+        with self.assertRaisesRegex(RuntimeError, "TG057: fixed native menu spacing"):
+            self.lua().load(self.fixture(True, cases, menu_patched=False).encode(), "native-menu-original", True)
+
+    def test_native_menu_spacing_handles_both_gap_orders_and_retains_original_labels(self):
+        count = self.run_cases('''
+for _, before in ipairs({ false, true }) do
+    local selected, unselected = function() end, function() end
+    local m, mono = newMenu({ "Эффекты", "Взаимодействия", "Персонализация", "Функциональные" },
+        { spacingBefore = before, selectCallback = selected, unselectCallback = unselected })
+    for index = 1, #m._childPrefabsList - 1 do
+        check(menuGap(m, index) >= 24, "Native spacing separates neighbour labels for either gap ordering")
+    end
+    for _, child in ipairs(m._childPrefabsList) do
+        local label = child._txt_TabName_selectShrinkText
+        check(label.fontSize == 24 and label.resizeTextForBestFit and label.font == "native-menu-font",
+            "Native caption typography and BestFit remain unchanged")
+    end
+    check(mono.onSelect == selected and mono.onUnselect == unselected, "Native selection callbacks survive")
+    check(mono.nativeSpan <= 4096, "The native stack stays within its bounded budget")
+end
+''')
+        self.assertEqual(count, 21)
+
+    def test_native_menu_spacing_keeps_other_types_and_missing_measurements_untouched(self):
+        count = self.run_cases('''
+local api = rawget(_G, "_AceRuHeaderLayoutV2")
+for _, settings in ipairs({ { foreignStyle = true }, { noMeasure = true } }) do
+    local m, mono = newMenu({ "Друзья", "Рекомендуемые тренеры" }, settings)
+    check(mono.spacing[1] == 0 and mono.spacing[2] == 0, "No type or no native metric keeps original spacing")
+end
+Localize.GetString = function() return "设置" end
+local _, chinese = newMenu({ "Друзья", "Рекомендуемые тренеры" })
+check(chinese.spacing[1] == 0 and chinese.spacing[2] == 0, "A non-Russian locale is unchanged")
+Localize.GetString = function() return "Настройки" end
+local _, short = newMenu({ "Бой", "Дом" })
+check(short.spacing[1] == 0 and short.spacing[2] == 0, "Native fitting labels retain original spacing")
+local m, mono, owner = newMenu({ "Друзья", "Рекомендуемые тренеры" })
+local original = { 0, 0 }
+owner._menuCM = false
+local result, reason = api.menuSpacing(m, original, ClassLib.UIMenuRightStyle1ItemClass)
+check(result == original and reason == "context", "A foreign owner context is never touched")
+check(original[1] == 0 and original[2] == 0, "The supplied native array is never mutated")
+''')
+        self.assertEqual(count, 9)
+
+    def test_native_menu_measurement_has_a_hard_item_budget(self):
+        count = self.run_cases('''
+local names = {}
+for _ = 1, 17 do table.insert(names, "Взаимодействия") end
+local _, mono = newMenu(names)
+for _, value in ipairs(mono.spacing) do check(value == 0, "A non-menu-size list keeps the native spacing") end
+''')
+        self.assertEqual(count, 20)
+
+    def test_hidden_parent_is_measured_on_the_native_visibility_event(self):
+        count = self.run_cases('''
+local v, r, s, d = newView()
+function v:SetTitle(text)
+    self.title.text = text
+    self.title.preferredWidth = utf8.len(text) * 22
+    -- Текст уже установлен, родитель пока скрыт; правильной native-геометрии ещё нет.
+    self.title.gameObject.activeInHierarchy = false
+end
+refresh(v)
+check(s.components.LayoutElement.preferredWidth == 180, "A hidden parent is not assigned guessed geometry")
+v.title.gameObject.activeInHierarchy = true
+v:vOnPrefabVisibleChanged(true)
+check(v.nativeVisible == true, "The original inherited visibility callback still runs")
+check(gap(v, d) >= 24, "TG062: a deferred header must be rebuilt when it actually becomes visible")
+''')
+        self.assertEqual(count, 6)
+
+    def test_native_hidden_event_restores_geometry_even_when_gameobject_stays_active(self):
+        count = self.run_cases('''
+view:vOnPrefabVisibleChanged(false)
+check(view.nativeVisible == false, "The inherited hide callback is preserved")
+check(stack.components.LayoutElement.preferredWidth == 180 and root.components.HorizontalLayoutGroup.spacing == 8,
+    "A native visibility mask hiding the active GameObject restores our values")
+view:vOnPrefabVisibleChanged(true)
+check(gap(view, dropdown) >= 24, "Native visible state recalculates the current title")
+''')
+        self.assertEqual(count, 6)
+
     def run_cases(self, cases: str) -> int:
         return int(self.lua().load(self.fixture(True, cases).encode(), "header-patched-cases", True))
 
     def test_repeated_refresh_is_bounded_and_has_no_width_drift(self):
         count = self.run_cases('''
-local api = rawget(_G, "_AceRuHeaderLayoutV1")
+local api = rawget(_G, "_AceRuHeaderLayoutV2")
 local beforeWidth = stack.rect.width
 for _ = 1, 30 do
     local before = nativeCalls
@@ -133,7 +231,7 @@ check(gap(view, dropdown) >= 24, "Russian layout returns after pooled locale reu
 
     def test_missing_horizontal_group_or_element_is_a_safe_noop(self):
         count = self.run_cases('''
-local api = rawget(_G, "_AceRuHeaderLayoutV1")
+local api = rawget(_G, "_AceRuHeaderLayoutV2")
 for _, kind in ipairs({ "no-group", "vertical-group", "no-element", "separate-control", "no-title-rect" }) do
     local v, r, s, d = newView()
     if kind == "no-group" then r.components.HorizontalLayoutGroup = nil
@@ -168,7 +266,7 @@ check(v.title.fontSize == 36 and v.title.resizeTextForBestFit, "Slow rendering n
 
     def test_large_header_does_not_push_controls_outside_the_available_row(self):
         count = self.run_cases('''
-local api = rawget(_G, "_AceRuHeaderLayoutV1")
+local api = rawget(_G, "_AceRuHeaderLayoutV2")
 local v, r, s = newView()
 refresh(v, string.rep("Мастера ", 15))
 check(s.components.LayoutElement.preferredWidth == 180 and r.components.HorizontalLayoutGroup.spacing == 8,
@@ -183,7 +281,7 @@ check(gap(v2, d2) >= 24 and s2.rect.width < r2.rect.width, "The next screen has 
 
     def test_native_override_is_not_lost_when_our_values_are_restored(self):
         count = self.run_cases('''
-local api = rawget(_G, "_AceRuHeaderLayoutV1")
+local api = rawget(_G, "_AceRuHeaderLayoutV2")
 stack.components.LayoutElement.preferredWidth = 444
 api.restore(view)
 check(stack.components.LayoutElement.preferredWidth == 444 and stack.rect.width == 444,
@@ -195,7 +293,7 @@ check(stack.components.LayoutElement.minWidth == 180 and root.components.Horizon
 
     def test_wrapper_keeps_multiple_return_values_and_original_errors(self):
         count = self.run_cases('''
-local api = rawget(_G, "_AceRuHeaderLayoutV1")
+local api = rawget(_G, "_AceRuHeaderLayoutV2")
 local class = {
     update = function(self, x) self.received = x; return "first", nil, "last" end,
     fail = function() error("native-test-error", 0) end,
@@ -214,7 +312,7 @@ check(not ok and message == "native-test-error", "A native error is not suppress
         import build_header_layout_patch as patch
         for rid, row in patch.TARGETS.items():
             with self.subTest(rid=rid):
-                original = (Path(ORIGINAL_DIR) / f"{rid}.lua").read_bytes()
+                original = self.original(rid)
                 self.assertEqual(hashlib.sha256(original).hexdigest(), row["original_sha256"])
                 payload, _ = patch.patch_resource(original, rid)
                 self.assertEqual(patch.revert_resource(payload, rid), original)

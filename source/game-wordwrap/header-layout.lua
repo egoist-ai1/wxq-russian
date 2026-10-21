@@ -1,7 +1,7 @@
 -- Общая русская шапка: штатная раскладка при изменении данных, без таймера и обхода кадров.
 -- Только существующие LayoutElement и общий HorizontalLayoutGroup. Шрифты/текст/позиции не меняются.
 do
-    local key = "_AceRuHeaderLayoutV1"
+    local key = "_AceRuHeaderLayoutV2"
     local api = rawget(_G, key)
     if api == nil then
         local states = setmetatable({}, { __mode = "k" })
@@ -175,12 +175,74 @@ do
             busy[view] = nil
             return ok and reason or "read-failed"
         end
+        -- Старое горизонтальное UIMenuRight использует UIWidgets.CMMenu, а не Unity HLG.
+        -- Его родной контракт — массив spacing в CMMenu.Init. Меняем только этот аргумент,
+        -- после создания всех items; native stack сам размещает и прокручивает элементы.
+        local function menuSpacingInner(menu, spacing, style)
+            local expectedStyle = ClassLib and ClassLib.UIMenuRightStyle1ItemClass
+            if expectedStyle == nil or style ~= expectedStyle or not russianLocale() then return spacing, "context" end
+            local owner, mono = get(menu, "_prefab"), get(menu, "_menuMono")
+            if owner == nil or mono == nil or get(owner, "_menuCM") ~= menu or get(owner, "_menu") ~= mono
+                or get(owner, "_menuRollRectTransform") == nil or get(owner, "_rollContentScrollRect") == nil then
+                return spacing, "context"
+            end
+            local children = get(menu, "_childPrefabsList")
+            if type(children) ~= "table" or type(spacing) ~= "table" or #children < 2 or #children > maxChildren
+                or #spacing ~= #children then return spacing, "budget" end
+            local maximum, nativeSpan, russian = 0, 0, false
+            for index = 1, #children do
+                local child = children[index]
+                local root = rect(get(child, "_rootTf"))
+                local gap = spacing[index]
+                if not root or not number(gap, 0, 256) then return spacing, "no-geometry" end
+                local rootWidth = get(get(root, "rect"), "width")
+                if not number(rootWidth, 16, 2048) then return spacing, "no-geometry" end
+                nativeSpan = nativeSpan + rootWidth
+                -- Два состояния имеют разные native font/style, измеряются оба без переключения состояния.
+                local captions = {
+                    get(child, "_txt_TabName_selectShrinkText"),
+                    get(child, "_txt_TabName_unSelectShrinkText"),
+                }
+                for variant = 1, 2 do
+                    local caption = captions[variant]
+                    local text = get(caption, "text")
+                    if type(text) ~= "string" or #text > 256 then return spacing, "no-caption" end
+                    if isRussian(text) then
+                        russian = true
+                        local captionRect = rect(caption)
+                        local preferred = get(caption, "preferredWidth")
+                        local width = get(get(captionRect, "rect"), "width")
+                        if not captionRect or not number(preferred, 1, 1024) or not number(width, 1, 2048) then
+                            return spacing, "no-measure"
+                        end
+                        local extra = math.max(0, preferred - width)
+                        if extra > 512 then return spacing, "budget" end
+                        maximum = math.max(maximum, extra)
+                    end
+                end
+            end
+            if not russian or maximum <= 0.5 then return spacing, "native-fit" end
+            -- Запас с обеих сторон не предполагает native выравнивание текста или порядок gap в CMMenu.
+            -- Это промежуток родной раскладки, а не запись в anchored/local/world position или размер hitbox.
+            local wanted = math.ceil(maximum * 2 + minGap)
+            if nativeSpan + wanted * #children > 4096 then return spacing, "budget" end
+            local result = {}
+            for index = 1, #children do result[index] = math.max(spacing[index], wanted) end
+            return result, "measured-spacing"
+        end
+        local function menuSpacing(menu, spacing, style)
+            local ok, result, reason = pcall(menuSpacingInner, menu, spacing, style)
+            return ok and result or spacing, ok and reason or "read-failed"
+        end
         local function install(class, hooks, unload)
             if type(class) ~= "table" then return end
             local marks = installed[class]
             if not marks then marks = {}; installed[class] = marks end
             for _, name in ipairs(hooks) do
                 local original = rawget(class, name)
+                -- Этот callback объявлен в UIPrefabClass и штатно вызывается также после init.
+                -- Остальные методы оборачиваются только у собственного класса, без перехвата чужого наследования.
+                if original == nil and name == "vOnPrefabVisibleChanged" then original = get(class, name) end
                 if type(original) == "function" and not marks[name] then
                     marks[name] = true
                     class[name] = function(self, ...)
@@ -189,7 +251,13 @@ do
                         local result = table.pack(pcall(original, self, ...))
                         busy[self] = outer
                         if not result[1] then error(result[2], 0) end
-                        if not outer then refresh(self) end
+                        if not outer then
+                            if name == "vOnPrefabVisibleChanged" and select(1, ...) ~= true then
+                                restore(self, true)
+                            else
+                                refresh(self)
+                            end
+                        end
                         return table.unpack(result, 2, result.n)
                     end
                 end
@@ -203,11 +271,12 @@ do
                 end
             end
         end
-        api = { version = 1, install = install, refresh = refresh,
+        api = { version = 2, install = install, refresh = refresh, menuSpacing = menuSpacing,
             restore = function(view) return restore(view, true) end }
         rawset(_G, key, api)
     end
-    if type(api) == "table" and api.version == 1 and type(api.install) == "function" then
-        api.install(UIFullScreenViewTemplateBase, { "ResetTitle", "RebuildUnderSubTitleLayout" }, "vOnUninitialize")
+    if type(api) == "table" and api.version == 2 and type(api.install) == "function" then
+        api.install(UIFullScreenViewTemplateBase,
+            { "ResetTitle", "RebuildUnderSubTitleLayout", "vOnPrefabVisibleChanged" }, "vOnUninitialize")
     end
 end

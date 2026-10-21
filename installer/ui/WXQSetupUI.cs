@@ -313,7 +313,7 @@ namespace WXQSetup
         public bool CanRemove;              // на приветствии есть незавершённый след прежней установки
         public bool Interrupted;            // прошлая установка прервана: экран «Установка была прервана»
         public string FailKind = "install"; // install | remove
-        public string Note = "";            // пояснение на экране «Удалено»
+        public string Note = "";            // пояснение к успешной установке или удалению
         public bool LauncherOn;             // галочка «Русский лаунчер» / ставился ли лаунчер
         public bool LauncherInstalled;
         public string FailureCode = "";
@@ -1093,6 +1093,13 @@ namespace WXQSetup
             return b;
         }
 
+        public static string DoneDescription(UiState s)
+        {
+            string text = string.IsNullOrEmpty(s.Note) ? "" : s.Note + " ";
+            text += s.LauncherInstalled ? "Перевод лаунчера подготовлен. " : "Лаунчер остаётся на китайском. ";
+            return text + "Некоторые изображения и ранние экраны игры ещё могут оставаться на китайском.";
+        }
+
         FrameworkElement Done()
         {
             Grid body, footer; var root = Frame(out body, out footer);
@@ -1101,12 +1108,7 @@ namespace WXQSetup
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(352) });
             var left = new StackPanel();
             left.Children.Add(StatusIcon("check", Tk.Success));
-            const string ImagesNote = "Некоторые изображения и ранние экраны игры ещё могут оставаться на китайском.";
-            string lede = S.LauncherInstalled
-                ? "Игра переведена, перевод лаунчера подготовлен. " + ImagesNote
-                : "Игра переведена, лаунчер остаётся на китайском. " + ImagesNote;
-            if (!string.IsNullOrEmpty(S.Note)) lede += " " + S.Note;
-            left.Children.Add(Title("Перевод установлен", lede, 420));
+            left.Children.Add(Title("Перевод установлен", DoneDescription(S), 420));
             var com = new StackPanel { Margin = new Thickness(0, 28, 0, 0) }; com.Children.Add(Tk.TB("Сообщество", 12, Tk.Muted));
             var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 0) };
             string[][] soc = { new[] { "chat", "Discord", "https://discord.gg/Zf69zsm5dQ" }, new[] { "vk", "VK", "https://vk.com/ego1stgames" }, new[] { "youtube", "YouTube", "https://www.youtube.com/@egoist_games_one" } };
@@ -1598,6 +1600,20 @@ namespace WXQSetup
             Check("quit принимается", Proto.TryApply("{\"rev\":21,\"screen\":\"quit\"}", s, ref rev, out screen, out sig) && screen == "quit");
             Check("проценты ограничены 0..100", Proto.TryApply("{\"rev\":22,\"screen\":\"progress\",\"percent\":950}", s, ref rev, out screen, out sig) && s.Percent == 100);
             Check("чужой объём: done не больше total", Proto.TryApply("{\"rev\":23,\"screen\":\"progress\",\"done_bytes\":9,\"total_bytes\":3}", s, ref rev, out screen, out sig) && s.DoneBytes == 3);
+
+            {
+                const string partial = "Применён перевод совместимых ресурсов. Новые и изменённые данные оставлены в оригинале.";
+                const string launcher = "Лаунчер не переведён: найдено несколько установок лаунчера.";
+                var done = new UiState(); long dr = 0; string ds, dg;
+                Check("частичная установка остаётся успешным итогом", Proto.TryApply("{\"rev\":1,\"screen\":\"done\",\"state\":\"finished\",\"note\":\"" + partial + "\",\"launcher_installed\":true}", done, ref dr, out ds, out dg)
+                    && ds == "done" && done.State == "finished" && MainView.DoneDescription(done).StartsWith(partial + " ")
+                    && MainView.DoneDescription(done).Contains("Перевод лаунчера подготовлен."));
+                Check("заметка лаунчера не вытесняет частичный итог", Proto.TryApply("{\"rev\":2,\"screen\":\"done\",\"state\":\"finished\",\"note\":\"" + partial + " " + launcher + "\"}", done, ref dr, out ds, out dg)
+                    && MainView.DoneDescription(done).StartsWith(partial + " " + launcher + " ")
+                    && MainView.DoneDescription(done).Contains("Лаунчер остаётся на китайском."));
+                Check("новая полная установка не сохраняет прежнюю заметку", Proto.TryApply("{\"rev\":3,\"screen\":\"done\",\"state\":\"finished\",\"launcher_installed\":true}", done, ref dr, out ds, out dg)
+                    && done.Note == "" && !MainView.DoneDescription(done).Contains(partial) && MainView.DoneDescription(done).StartsWith("Перевод лаунчера подготовлен."));
+            }
 
             {
                 var u = new UiState(); long ur = 0; string us, ug;

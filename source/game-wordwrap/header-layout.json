@@ -3,7 +3,7 @@
   "package": "10",
   "game_version": "1.6.0.1",
   "helper": "source/game-wordwrap/header-layout.lua",
-  "helper_sha256": "48a4c6c95a6f303ac9917d06a675bd9dc829f905cec93c4448dd8e68d54f7df8",
+  "helper_sha256": "ac50441b4cdaeb8159832257e8c7bebda2a73c8304ba247ba910b818c775a43c",
   "resources": [
     {
       "id_hex": "5c97dddb5dd21ee9",
@@ -13,6 +13,9 @@
         "ResetTitle",
         "RebuildUnderSubTitleLayout",
         "vOnUninitialize"
+      ],
+      "inherited_hooks": [
+        "vOnPrefabVisibleChanged"
       ]
     },
     {
@@ -28,6 +31,14 @@
         "RefreshSearchFrame",
         "RefreshTick",
         "vOnUninitialize"
+      ]
+    },
+    {
+      "id_hex": "2359e7634bf04fd1",
+      "module": "CMMenuProClass",
+      "original_sha256": "ca8bc8041b2c4135825f26a445dd7e1541a24260555fc80994945729a82d37bb",
+      "hooks": [
+        "Init"
       ]
     }
   ],
@@ -46,7 +57,12 @@
     "available-row-width",
     "no-direct-anchor-position-writes",
     "native-font-and-best-fit-preserved",
-    "restore-owned-values-on-uninitialize"
+    "restore-owned-values-on-uninitialize",
+    "inherited-native-visible-event-preserved",
+    "cm-menu-right-style-and-owner-bindings",
+    "bounded-native-caption-measurement",
+    "native-spacing-array-copy-no-hitbox-or-position-writes"
   ],
-  "qa_limit": "Game prefab hierarchy and live screen remain unverified; only source and native Lua behavioural fixture are verified."
+  "qa_limit": "Native UI callbacks and original Lua methods are source-fixture verified. Actual prefab hierarchy, ShrinkText metric availability, scrolling, clipping, hitboxes and live game result remain unverified.",
+  "runtime_registry": "_AceRuHeaderLayoutV2"
 }

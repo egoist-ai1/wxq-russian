@@ -104,7 +104,8 @@ def build_tool(work: Path) -> tuple[Path, bool]:
         print('       WXQ.exe запущен: помощник собран без остановки по запущенной игре (только для песочницы)', flush=True)
         source = source.replace(needle, 'if (false && active.Count > 0)')
     (folder / 'WXQTool.cs').write_text(source, 'utf-8-sig')
-    compile_exe(folder / 'WXQTool.cs', folder / 'WXQTool.exe', '/define:TESTBUILD', '/r:System.Web.Extensions.dll')
+    compile_exe(folder / 'WXQTool.cs', folder / 'WXQTool.exe', '/define:TESTBUILD', '/r:System.Web.Extensions.dll',
+                str(PROJECT / 'installer/WXQCompatText.cs'), str(PROJECT / 'installer/WXQCompatPack.cs'))
     return folder / 'WXQTool.exe', disabled
 
 

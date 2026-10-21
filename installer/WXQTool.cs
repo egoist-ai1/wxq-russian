@@ -372,31 +372,84 @@ namespace Egoist.WXQRussian
     }
 
     // Чтение индекса контейнера QtsVFS (порт QtsContainer из scripts/game_inspect.py, режим raw_values).
-    class Catalog
+    class Catalog : IDisposable
     {
         byte[] data;
+        FileStream mappedFile;
+        System.IO.MemoryMappedFiles.MemoryMappedFile mapped;
+        System.IO.MemoryMappedFiles.MemoryMappedViewAccessor view;
+        long Length { get { return data != null ? data.LongLength : mappedFile.Length; } }
+
+        void Range(long offset, int count)
+        {
+            if (offset < 0 || count < 0 || offset > Length - count) throw new FormatException("range");
+        }
+        byte ByteAt(long offset)
+        {
+            Range(offset, 1);
+            return data != null ? data[(int)offset] : view.ReadByte(offset);
+        }
+        byte[] BytesAt(long offset, int count)
+        {
+            Range(offset, count);
+            var bytes = new byte[count];
+            if (data != null) Buffer.BlockCopy(data, (int)offset, bytes, 0, count);
+            else if (view.ReadArray(offset, bytes, 0, count) != count) throw new FormatException("read");
+            return bytes;
+        }
+        public void Dispose()
+        {
+            if (view != null) view.Dispose();
+            if (mapped != null) mapped.Dispose();
+            if (mappedFile != null) mappedFile.Dispose();
+        }
+
+        // Отображается адресное пространство, а не гигабайтный managed-буфер.
+        // В память копируются только индекс и чанки выбранного ресурса.
+        public static Catalog OpenChunks(string path)
+        {
+            var catalog = new Catalog { chunked = true };
+            try
+            {
+                catalog.mappedFile = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                if (catalog.mappedFile.Length < 80) throw new FormatException("magic");
+                catalog.mapped = System.IO.MemoryMappedFiles.MemoryMappedFile.CreateFromFile(catalog.mappedFile,
+                    null, 0, System.IO.MemoryMappedFiles.MemoryMappedFileAccess.Read,
+                    System.IO.HandleInheritability.None, true);
+                catalog.view = catalog.mapped.CreateViewAccessor(0, 0, System.IO.MemoryMappedFiles.MemoryMappedFileAccess.Read);
+                catalog.Index();
+                catalog.SortChunks();
+                return catalog;
+            }
+            catch { catalog.Dispose(); throw; }
+        }
+        void SortChunks()
+        {
+            foreach (var list in Chunks.Values)
+                list.Sort((a, b) => a.Main != b.Main ? a.Main.CompareTo(b.Main) : a.Sub.CompareTo(b.Sub));
+        }
         public Dictionary<ulong, List<long>> Records = new Dictionary<ulong, List<long>>();
         public int Invalid;
 
         int I32(long offset)
         {
-            if (offset < 0 || offset + 4 > data.Length) throw new FormatException("range");
-            return BitConverter.ToInt32(data, (int)offset);
+            Range(offset, 4);
+            return data != null ? BitConverter.ToInt32(data, (int)offset) : view.ReadInt32(offset);
         }
         uint U32(long offset)
         {
-            if (offset < 0 || offset + 4 > data.Length) throw new FormatException("range");
-            return BitConverter.ToUInt32(data, (int)offset);
+            Range(offset, 4);
+            return data != null ? BitConverter.ToUInt32(data, (int)offset) : view.ReadUInt32(offset);
         }
         ulong U64(long offset)
         {
-            if (offset < 0 || offset + 8 > data.Length) throw new FormatException("range");
-            return BitConverter.ToUInt64(data, (int)offset);
+            Range(offset, 8);
+            return data != null ? BitConverter.ToUInt64(data, (int)offset) : view.ReadUInt64(offset);
         }
         int U16(long offset)
         {
-            if (offset < 0 || offset + 2 > data.Length) throw new FormatException("range");
-            return BitConverter.ToUInt16(data, (int)offset);
+            Range(offset, 2);
+            return data != null ? BitConverter.ToUInt16(data, (int)offset) : view.ReadUInt16(offset);
         }
 
         List<int[]> Tables(int offset)
@@ -404,7 +457,7 @@ namespace Egoist.WXQRussian
             var rows = new List<int[]>();
             if (offset == -1) return rows;
             int count = I32(offset + 4);
-            if (count < 0 || count > 1000000 || (long)offset + 24 + 24L * count > data.Length) throw new FormatException("table");
+            if (count < 0 || count > 1000000 || (long)offset + 24 + 24L * count > Length) throw new FormatException("table");
             for (int i = 0; i < count; i++)
             {
                 var row = new int[6];
@@ -427,8 +480,7 @@ namespace Egoist.WXQRussian
         {
             var catalog = new Catalog { data = bytes, chunked = true };
             catalog.Index();
-            foreach (var list in catalog.Chunks.Values)
-                list.Sort((a, b) => a.Main != b.Main ? a.Main.CompareTo(b.Main) : a.Sub.CompareTo(b.Sub));
+            catalog.SortChunks();
             return catalog;
         }
 
@@ -443,9 +495,7 @@ namespace Egoist.WXQRussian
         // Копия сжатой нагрузки чанка.
         public byte[] ChunkBytes(ChunkRef chunk)
         {
-            var value = new byte[chunk.Compressed];
-            Buffer.BlockCopy(data, (int)chunk.PayloadOffset, value, 0, chunk.Compressed);
-            return value;
+            return BytesAt(chunk.PayloadOffset, chunk.Compressed);
         }
 
         // Декодированное содержимое ресурса (порт decode_entry): только lz4, иначе FormatException.
@@ -461,7 +511,8 @@ namespace Egoist.WXQRussian
             foreach (var c in list)
             {
                 if (Codec(c.PayloadOffset, c.Compressed) != "lz4") throw new FormatException("codec");
-                Lz4.Decode(data, (int)c.PayloadOffset, c.Compressed, result, (int)at, c.Uncompressed);
+                if (data != null) Lz4.Decode(data, (int)c.PayloadOffset, c.Compressed, result, (int)at, c.Uncompressed);
+                else Lz4.Decode(ChunkBytes(c), 0, c.Compressed, result, (int)at, c.Uncompressed);
                 at += c.Uncompressed;
             }
             return result;
@@ -469,14 +520,14 @@ namespace Egoist.WXQRussian
 
         string Codec(long payload, int size)
         {
-            if (size >= 4 && data[payload] == 0x28 && data[payload + 1] == 0xb5 && data[payload + 2] == 0x2f && data[payload + 3] == 0xfd) return "zstd";
-            if (size >= 2 && (data[payload] == 0x8c || data[payload] == 0xcc) && data[payload + 1] == 0x0c) return "oodle";
+            if (size >= 4 && ByteAt(payload) == 0x28 && ByteAt(payload + 1) == 0xb5 && ByteAt(payload + 2) == 0x2f && ByteAt(payload + 3) == 0xfd) return "zstd";
+            if (size >= 2 && (ByteAt(payload) == 0x8c || ByteAt(payload) == 0xcc) && ByteAt(payload + 1) == 0x0c) return "oodle";
             return "lz4";
         }
 
         void Index()
         {
-            if (data.Length < 80 || U64(0) != 0x0403020102000001UL) throw new FormatException("magic");
+            if (Length < 80 || U64(0) != 0x0403020102000001UL) throw new FormatException("magic");
             int entries2 = I32(16 + 8 * 5), entries3 = I32(16 + 8 * 6);
             var tables = Tables(entries2).Concat(Tables(entries3)).ToList();
             var blocks = new HashSet<int>();
@@ -504,11 +555,11 @@ namespace Egoist.WXQRussian
                     long compressed = (long)I32(offset + 24) - 4;
                     long raw = I32(offset + 28);
                     long start = offset + 32;
-                    if (compressed < 0 || compressed > data.Length || raw < 0 || raw > MaxChunkBytes) throw new FormatException("chunk");
+                    if (compressed < 0 || compressed > Length || raw < 0 || raw > MaxChunkBytes) throw new FormatException("chunk");
                     long end = (start + compressed + 3) & ~3L;
                     ulong cid = U64(end);
                     int main = I32(end + 8), sub = I32(end + 12);
-                    if (start + compressed > data.Length) throw new FormatException("chunk bounds");
+                    if (start + compressed > Length) throw new FormatException("chunk bounds");
                     List<ChunkRef> chunkList;
                     if (!Chunks.TryGetValue(cid, out chunkList)) { chunkList = new List<ChunkRef>(); Chunks[cid] = chunkList; }
                     chunkList.Add(new ChunkRef { PayloadOffset = start, Compressed = (int)compressed, Uncompressed = (int)raw, Main = main, Sub = sub });
@@ -517,7 +568,7 @@ namespace Egoist.WXQRussian
                 }
                 long size = U32(offset + 24);
                 long payload = offset + 28;
-                if (payload + size > data.Length) throw new FormatException("record");
+                if (payload + size > Length) throw new FormatException("record");
                 long trailer = (payload + size + 3) & ~3L;
                 ulong id = U64(trailer);
                 List<long> list;
@@ -535,10 +586,9 @@ namespace Egoist.WXQRussian
             foreach (long offset in list)
             {
                 long size = U32(offset + 24);
-                if (offset + 28 + size > data.Length) throw new FormatException("value");
-                var value = new byte[size];
-                Buffer.BlockCopy(data, (int)(offset + 28), value, 0, (int)size);
-                values.Add(value);
+                if (offset + 28 + size > Length) throw new FormatException("value");
+                if (size > int.MaxValue) throw new FormatException("value size");
+                values.Add(BytesAt(offset + 28, (int)size));
             }
             return values;
         }
@@ -625,10 +675,11 @@ namespace Egoist.WXQRussian
     {
         public const ulong HeaderId = 0xe12bade797f29f55UL;
 
-        public static List<OverrideResource> Read(string metaPath, string dataPath, out byte[] header)
+        public static List<OverrideResource> Read(string metaPath, string dataPath, out byte[] header, bool keepPayload = true)
         {
             var meta = Catalog.Parse(File.ReadAllBytes(metaPath));
-            var data = Catalog.ParseChunks(File.ReadAllBytes(dataPath));
+            using (var data = Catalog.OpenChunks(dataPath))
+            {
             if (meta.Invalid != 0 || data.Invalid != 0) throw new FormatException("invalid records");
             if (!meta.Records.ContainsKey(HeaderId)) throw new FormatException("no header");
             var headers = meta.RawValues(HeaderId);
@@ -651,9 +702,11 @@ namespace Egoist.WXQRussian
                 }
                 resource.Payload = data.DecodeEntry(id);
                 using (var hash = new SHA256CryptoServiceProvider()) resource.Sha = Util.Hex(hash.ComputeHash(resource.Payload));
+                if (!keepPayload) resource.Payload = null;
                 result.Add(resource);
             }
             return result;
+            }
         }
 
         const int HeaderBytes = 120;
@@ -801,7 +854,13 @@ namespace Egoist.WXQRussian
 
     class FileRow { public string Name, Sha, PayloadName; public long Bytes; }
     // Ресурс пакета в install.json (поля добавлены для пересадки записей между версиями игры; в старых install.json их нет).
-    class ResRow { public string IdHex, Kind, OriginalSha, Sha; public long Bytes, Chunks; }
+    class ResRow
+    {
+        public string IdHex, Kind, OriginalSha, Sha;
+        public long Bytes, Chunks;
+        public string ReuseCodec, ReusePayload, ReuseSha;
+        public long ReuseBytes, ReuseRows;
+    }
     class PrimeRow { public string Relative, Sha; public long Bytes; }
 
     class Pkg
@@ -859,7 +918,26 @@ namespace Egoist.WXQRussian
                     foreach (object r in Util.Items(resources))
                     {
                         var res = (Dictionary<string, object>)r;
-                        p.Resources.Add(new ResRow { IdHex = Util.Str(res, "id_hex"), Kind = Util.Str(res, "kind"), OriginalSha = Util.Str(res, "original_sha256"), Sha = Util.Str(res, "sha256"), Bytes = Util.Num(res, "bytes"), Chunks = Util.Num(res, "chunks") });
+                        var resource = new ResRow { IdHex = Util.Str(res, "id_hex"), Kind = Util.Str(res, "kind"), OriginalSha = Util.Str(res, "original_sha256"), Sha = Util.Str(res, "sha256"), Bytes = Util.Num(res, "bytes"), Chunks = Util.Num(res, "chunks") };
+                        object reuseObject;
+                        if (res.TryGetValue("text_reuse", out reuseObject))
+                        {
+                            var reuse = reuseObject as Dictionary<string, object>;
+                            if (reuse == null || Util.Num(reuse, "schema") != 1) throw new StopException("payload", "Неподдерживаемое описание переносимых строк.");
+                            resource.ReuseCodec = Util.Str(reuse, "codec");
+                            resource.ReusePayload = Util.Str(reuse, "payload");
+                            resource.ReuseSha = Util.Str(reuse, "sha256");
+                            resource.ReuseBytes = Util.Num(reuse, "bytes");
+                            resource.ReuseRows = Util.Num(reuse, "rows");
+                            string expectedCodec = resource.Kind == "lang" ? "lang-map-v1" : resource.Kind == "global-localize" ? "global-map-v1" : "";
+                            if (expectedCodec == "" || resource.ReuseCodec != expectedCodec ||
+                                !Regex.IsMatch(p.Id ?? "", "^[1-9][0-9]{0,9}$") || !Regex.IsMatch(resource.IdHex ?? "", "^[0-9a-f]{16}$") ||
+                                resource.ReusePayload != "p" + p.Id + "_text_" + resource.IdHex + ".json" ||
+                                !Regex.IsMatch(resource.ReuseSha ?? "", "^[0-9a-f]{64}$") || resource.ReuseBytes < 1 || resource.ReuseBytes > 32L * 1024 * 1024 ||
+                                resource.ReuseRows < 0 || resource.ReuseRows > 32768)
+                                throw new StopException("payload", "Некорректное описание переносимых строк.");
+                        }
+                        p.Resources.Add(resource);
                     }
                 m.Pkgs.Add(p);
             }
@@ -1197,7 +1275,11 @@ namespace Egoist.WXQRussian
                     int pid = process.Id;
                     if (pid <= 4 || keep.Contains(pid)) continue;
                     string name = process.ProcessName, path = Util.LongPath(ImagePath(pid)), why;
-                    if (Denied(pid, name, path, parents, windir) || !Eligible(name, path, roots, own, testRoot, out why)) continue;
+                    // Сначала дешёвое правило выбора: live-проверка имени родителя
+                    // нужна лишь кандидатам, а не каждому процессу Windows.
+                    // На .NET Framework повторный ProcessName может снова читать
+                    // всю таблицу процессов; запрет services сохраняется живым.
+                    if (!Eligible(name, path, roots, own, testRoot, out why) || Denied(pid, name, path, parents, windir)) continue;
                     var t = Open(pid, name, path, why, mySession);
                     if (t == null) continue;
                     result.Add(t); seen.Add(pid);
@@ -1345,6 +1427,7 @@ namespace Egoist.WXQRussian
     {
         public string Payload, Data, Game, Cache, Launcher;
         public Manifest M;
+        public bool? CompatibilityMode;
         public Dictionary<string, string> Result = new Dictionary<string, string>();
         public string BackupRoot { get { return Path.Combine(Data, "backup"); } }
         public string StateFile { get { return Path.Combine(Data, "state.json"); } }
@@ -2071,6 +2154,7 @@ namespace Egoist.WXQRussian
         static void Status(Context ctx, string gameArg)
         {
             ctx.Result["installed"] = "no";
+            ctx.Result["needs_reapply"] = "no";
             ctx.Result["pending"] = "no";
             ctx.Result["interrupted"] = "no";
             // Прерванная установка: есть receipt не в состоянии restored/prepared. Считаем только свою игру (или существующие папки игры).
@@ -2097,8 +2181,60 @@ namespace Egoist.WXQRussian
                 ctx.Result["built"] = Util.Str(state, "built") ?? "";
                 ctx.Result["game_version"] = Util.Str(state, "game_version") ?? "";
                 ctx.Result["game"] = Util.Str(state, "game_root") ?? "";
+                if (ctx.Result["installed"] == "yes")
+                {
+                    string root = Util.Str(state, "game_root");
+                    string saved = Util.Str(state, "quick_game_stamp");
+                    bool changed = string.IsNullOrEmpty(root) || !Directory.Exists(root);
+                    if (!changed)
+                    {
+                        try
+                        {
+                            ctx.Game = Util.NormPath(root);
+                            ctx.Cache = Path.Combine(ctx.Game, "QtsDataFolder", "QtsVFSCache", "packages");
+                            var ids = Util.Items(state["packages"]).Select(x => Convert.ToString(x)).ToList();
+                            if (saved != null) changed = saved != QuickGameStamp(ctx, ids);
+                            else changed = ids.Any(id => ReadVersion(Path.Combine(ctx.Cache, id, id + ".info")) != Util.Str(state, "game_version"));
+                        }
+                        catch (Exception) { changed = true; }
+                    }
+                    if (changed) { ctx.Result["installed"] = "no"; ctx.Result["needs_reapply"] = "yes"; }
+                }
             }
             catch (Exception) { }
+        }
+
+        // Быстрый индикатор обновления для окна: только имена, размеры и время.
+        // Полную проверку содержимого выполняет установка, до записи в игру.
+        static string QuickGameStamp(Context ctx, IEnumerable<string> packages)
+        {
+            var rows = new List<string>();
+            Action<string, string> add = (path, relative) =>
+            {
+                RequireNoLinks(ctx, path);
+                var info = new FileInfo(path);
+                rows.Add(relative.ToLowerInvariant() + "|" + (info.Exists ? info.Length.ToString(CultureInfo.InvariantCulture) + "|" +
+                    info.LastWriteTimeUtc.Ticks.ToString(CultureInfo.InvariantCulture) : "missing"));
+            };
+            add(Path.Combine(ctx.Cache, "builtin", "Globalindex", "GlobalIndexPrime.data"), "index");
+            foreach (string name in new[] { "QtskDB.dll", "QtsVFS.dll" })
+                add(SdkSource(ctx, name), "sdk/" + name);
+            foreach (string id in packages.Distinct().OrderBy(x => x, StringComparer.Ordinal))
+            {
+                if (!Regex.IsMatch(id ?? "", @"^[1-9][0-9]{0,9}$")) throw new FormatException("package");
+                foreach (bool prime in new[] { false, true })
+                {
+                    string dir = prime ? Path.Combine(ctx.Game, "WXQ_Data", "Package", "builtin", id) : Path.Combine(ctx.Cache, id);
+                    RequireNoLinks(ctx, dir);
+                    string prefix = (prime ? "prime/" : "cache/") + id + "/";
+                    if (!Directory.Exists(dir)) { rows.Add(prefix + "missing"); continue; }
+                    foreach (string path in Directory.GetFiles(dir))
+                        if (Regex.IsMatch(Path.GetFileName(path), "^" + id + @"(?:_[0-9]+)?\.(?:db|info)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+                            add(path, prefix + Path.GetFileName(path));
+                }
+            }
+            rows.Sort(StringComparer.Ordinal);
+            return Sha256Of(Encoding.UTF8.GetBytes(string.Join("\n", rows)));
         }
 
         // ---- проверки ---------------------------------------------------------------------
@@ -2551,14 +2687,47 @@ namespace Egoist.WXQRussian
 
         static bool TransplantMode(Context ctx)
         {
+            if (ctx.CompatibilityMode.HasValue) return ctx.CompatibilityMode.Value;
+            bool changed = false;
             foreach (var p in ctx.M.Pkgs)
             {
                 string info = Path.Combine(ctx.Cache, p.Id, p.Id + ".info");
-                if (!File.Exists(info)) return true;
+                if (!File.Exists(info)) { changed = true; break; }
                 string version = ReadVersion(info);
-                if (version == null || version != ctx.M.GameVersion || version != p.InfoVersion) return true;
+                if (version == null || version != ctx.M.GameVersion || version != p.InfoVersion || PlainFileSha(ctx, info) != p.InfoSha)
+                { changed = true; break; }
             }
-            return false;
+            if (!changed)
+            {
+                // Hotfix может сохранить номер версии. Изменившийся индекс или SDK тоже
+                // выбирает проверку отдельных ресурсов, а не старый пакет целиком.
+                string index = Path.Combine(ctx.Cache, "builtin", "Globalindex", "GlobalIndexPrime.data");
+                changed = !File.Exists(index) || PlainFileSha(ctx, index) != ctx.M.IndexSha;
+                if (!changed)
+                    foreach (var sdk in ctx.M.Sdk)
+                    {
+                        string path = Path.Combine(ctx.Game, "WXQ_Data", "Plugins", "x86_64", sdk.Key);
+                        if (!File.Exists(path) || PlainFileSha(ctx, path) != sdk.Value) { changed = true; break; }
+                    }
+                if (!changed)
+                    foreach (var package in ctx.M.Pkgs)
+                    {
+                        var expected = new HashSet<string>(ctx.M.Prime.Where(r => Regex.IsMatch(r.Relative,
+                            "^" + package.Id + "/" + package.Id + @"_[0-9]+\.db$")).Select(r => r.Relative), StringComparer.OrdinalIgnoreCase);
+                        var current = new HashSet<string>(PrimeStoragePaths(ctx, package.Id).Select(path => package.Id + "/" + Path.GetFileName(path)), StringComparer.OrdinalIgnoreCase);
+                        if (!expected.SetEquals(current)) { changed = true; break; }
+                    }
+            }
+            ctx.CompatibilityMode = changed;
+            return changed;
+        }
+
+        // Короткие служебные файлы проверяются до подсчёта общего прогресса.
+        static string PlainFileSha(Context ctx, string path)
+        {
+            RequireNoLinks(ctx, path);
+            using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var hash = new SHA256CryptoServiceProvider()) return Util.Hex(hash.ComputeHash(stream));
         }
 
         static bool IsTransplantReceipt(Dictionary<string, object> receipt)
@@ -2599,15 +2768,15 @@ namespace Egoist.WXQRussian
             return null;
         }
 
-        static string SdkSource(Context ctx)
+        static string SdkSource(Context ctx, string name = "QtskDB.dll")
         {
-            return Path.Combine(ctx.Game, "WXQ_Data", "Plugins", "x86_64", "QtskDB.dll");
+            return Path.Combine(ctx.Game, "WXQ_Data", "Plugins", "x86_64", name);
         }
 
         // Без загрузки: файл есть, не ссылка, не больше 64 МиБ, заголовок MZ / PE\0\0, машина x64. Хеш в списке install.json — только пометка в журнале.
         static void RequirePe(string path)
         {
-            const string bad = "QtskDB.dll игры не похожа на 64-разрядную библиотеку Windows. Перевод не установлен, ничего не изменено.";
+            const string bad = "Библиотека ресурсов игры не похожа на 64-разрядную библиотеку Windows. Перевод не установлен, ничего не изменено.";
             try
             {
                 var info = new FileInfo(path);
@@ -2636,16 +2805,18 @@ namespace Egoist.WXQRussian
         }
 
         // Копия QtskDB.dll в защищённую папку данных; SHA копии равен SHA источника, в списке install.json он только помечается в журнале. Возвращает путь копии.
-        static string StageSdk(Context ctx)
+        static string StageSdk(Context ctx, string name = "QtskDB.dll")
         {
+            if (name != "QtskDB.dll" && name != "QtsVFS.dll") throw new StopException("internal", "Неподдерживаемая библиотека ресурсов.");
             string work = Path.Combine(ctx.Data, "work"), folder = Path.Combine(work, "sdk");
             Directory.CreateDirectory(folder);
             if (Util.IsReparse(work) || Util.IsReparse(folder))
                 throw new StopException("acl", "Папка данных русификатора содержит ссылку (" + folder + "), установщик такой папке не доверяет.");
-            string copy = Path.Combine(folder, "QtskDB.dll");
+            string copy = Path.Combine(folder, name);
             Util.RequireNotLink(copy);
             if (File.Exists(copy)) File.Delete(copy);
-            string source = SdkSource(ctx);
+            string source = SdkSource(ctx, name);
+            RequireNoLinks(ctx, source);
             RequirePe(source);
             string sourceSha = Util.Sha(source);
             Util.Copy(source, copy, true);
@@ -2657,7 +2828,7 @@ namespace Egoist.WXQRussian
                 throw new StopException("sdk", "QtskDB.dll игры изменилась во время копирования. Перевод не установлен, ничего не изменено; повторите установку.");
             }
             RequirePe(copy);
-            Log.Write("QtskDB.dll " + copySha + ", " + (ctx.M.SdkKnown.Contains(copySha) ? "известная" : "неизвестная") + " установщику (список только для журнала); результат сборки проверяется независимо");
+            Log.Write(name + " " + copySha + ", " + (ctx.M.SdkKnown.Contains(copySha) ? "известная" : "неизвестная") + " установщику (список только для журнала); результат сборки проверяется независимо");
             return copy;
         }
 
@@ -2770,6 +2941,9 @@ namespace Egoist.WXQRussian
         {
             public List<string> Applied = new List<string>(), Skipped = new List<string>();
             public string CatalogSha, StorageSha;
+            public Dictionary<string, object> TextReuse = new Dictionary<string, object>();
+            public Dictionary<string, string> ResourceHashes = new Dictionary<string, string>();
+            public List<object> PrimeStamps = new List<object>();
         }
 
         static string Sha256Of(byte[] data)
@@ -2777,40 +2951,184 @@ namespace Egoist.WXQRussian
             using (var hash = new SHA256CryptoServiceProvider()) return Util.Hex(hash.ComputeHash(data));
         }
 
-        // SHA декодированных оригиналов из prime игры (WXQ_Data\Package\builtin\<N>\<N>_k.db) для нужных id. Файлы prime только читаются.
-        static Dictionary<string, string> PrimeShas(Context ctx, Pkg p, HashSet<string> wanted, Dictionary<string, string> reasons, List<string> stamps)
+        // После патча ресурсы могут переехать в новый storage. Перебираем весь
+        // подтверждённый набор, в том числе номера с промежутками.
+        static List<string> PrimeStoragePaths(Context ctx, string id)
         {
-            string dir = Path.Combine(ctx.Game, "WXQ_Data", "Package", "builtin", p.Id);
-            var result = new Dictionary<string, string>();
-            for (int k = 0; ; k++)
+            string dir = Path.Combine(ctx.Game, "WXQ_Data", "Package", "builtin", id);
+            RequireNoLinks(ctx, dir);
+            if (!Directory.Exists(dir))
+                throw new StopException("version", "Не найден пакет оригинальных ресурсов игры " + id + ". Ничего не изменено.");
+            var names = new List<KeyValuePair<ulong, string>>();
+            foreach (string path in Directory.GetFiles(dir))
             {
-                string path = Path.Combine(dir, p.Id + "_" + k.ToString(CultureInfo.InvariantCulture) + ".db");
-                if (!File.Exists(path))
-                {
-                    if (k == 0) throw new StopException("version", "Не найден файл игры " + p.Id + "\\" + p.Id + "_0.db (prime). Ничего не изменено.");
-                    break;
-                }
+                var match = Regex.Match(Path.GetFileName(path), "^" + id + @"_([0-9]+)\.db$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                if (!match.Success) continue;
+                ulong index;
+                if (!ulong.TryParse(match.Groups[1].Value, NumberStyles.None, CultureInfo.InvariantCulture, out index) || names.Count >= 4096)
+                    throw new StopException("version", "Неподдерживаемый набор оригинальных файлов пакета " + id + ". Ничего не изменено.");
                 RequireNoLinks(ctx, path);
-                var fileInfo = new FileInfo(path);
-                stamps.Add(path + "|" + fileInfo.Length + "|" + fileInfo.LastWriteTimeUtc.Ticks);
+                names.Add(new KeyValuePair<ulong, string>(index, path));
+            }
+            if (!names.Any(pair => pair.Key == 0) || names.Select(pair => pair.Key).Distinct().Count() != names.Count)
+                throw new StopException("version", "Не найден основной storage или повторяется номер файла пакета " + id + ". Ничего не изменено.");
+            return names.OrderBy(pair => pair.Key).Select(pair => pair.Value).ToList();
+        }
+
+        // SHA декодированных оригиналов из prime игры (WXQ_Data\Package\builtin\<N>\<N>_k.db) для нужных id. Файлы prime только читаются.
+        static Dictionary<string, string> PrimeShas(Context ctx, Pkg p, HashSet<string> wanted, Dictionary<string, string> reasons, List<object> stamps,
+            Dictionary<string, string> textOriginals, string spool)
+        {
+            var result = new Dictionary<string, string>();
+            var seen = new HashSet<string>();
+            foreach (string path in PrimeStoragePaths(ctx, p.Id))
+            {
                 Catalog chunks;
-                try { chunks = Catalog.ParseChunks(File.ReadAllBytes(path)); }
-                catch (FormatException error) { throw new StopException("version", "Файл игры " + p.Id + "_" + k + ".db не удалось разобрать (" + error.Message + "): формат изменился. Ничего не изменено."); }
+                try { chunks = Catalog.OpenChunks(path); }
+                catch (FormatException error) { throw new StopException("version", "Файл игры " + Path.GetFileName(path) + " не удалось разобрать (" + error.Message + "): формат изменился. Ничего не изменено."); }
+                using (chunks)
+                {
+                // SHA и декодирование относятся к одному открытому файлу:
+                // FileShare.Read запрещает запись/подмену до конца чтения.
+                var fileInfo = new FileInfo(path);
+                stamps.Add(new Dictionary<string, object> { { "relative", p.Id + "/" + Path.GetFileName(path).ToLowerInvariant() },
+                    { "bytes", fileInfo.Length }, { "mtime", fileInfo.LastWriteTimeUtc.Ticks }, { "sha256", Util.Sha(path) } });
                 foreach (string id in wanted)
                 {
-                    if (result.ContainsKey(id)) continue;
                     ulong number = Convert.ToUInt64(id, 16);
                     if (!chunks.Chunks.ContainsKey(number)) continue;
-                    try { result[id] = Sha256Of(chunks.DecodeEntry(number)); }
+                    if (!seen.Add(id))
+                    {
+                        result.Remove(id);
+                        textOriginals.Remove(id);
+                        reasons[id] = "ресурс встречается в нескольких storage; схема не подтверждена";
+                        continue;
+                    }
+                    try
+                    {
+                        byte[] original = chunks.DecodeEntry(number);
+                        result[id] = Sha256Of(original);
+                        var row = p.Resources.First(r => r.IdHex == id);
+                        if (row.ReusePayload != null && result[id] != row.OriginalSha)
+                        {
+                            var scratchSpace = new SpaceNeeds();
+                            scratchSpace.Add(ctx.Data, original.LongLength * 5 + 1048576);
+                            scratchSpace.Require();
+                            string saved = Path.Combine(spool, id + ".original");
+                            File.WriteAllBytes(saved, original);
+                            textOriginals[id] = saved;
+                        }
+                    }
                     catch (FormatException error) { reasons[id] = "оригинал не прочитан (" + error.Message + ")"; }
+                }
                 }
             }
             return result;
         }
 
+        static List<CompatTextRow> ReadReuseRows(Context ctx, ResRow row)
+        {
+            string path = Path.Combine(ctx.Payload, row.ReusePayload);
+            if (!File.Exists(path) || Util.IsReparse(path) || new FileInfo(path).Length != row.ReuseBytes)
+                throw new StopException("payload", "Файл переносимых строк отсутствует или повреждён. Скачайте установщик заново.");
+            byte[] bytes;
+            using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                if (stream.Length != row.ReuseBytes) throw new StopException("payload", "Размер переносимых строк изменился.");
+                bytes = new byte[(int)row.ReuseBytes];
+                int offset = 0, read;
+                while (offset < bytes.Length && (read = stream.Read(bytes, offset, bytes.Length - offset)) > 0) offset += read;
+                if (offset != bytes.Length) throw new StopException("payload", "Не удалось прочитать переносимые строки.");
+            }
+            if (Sha256Of(bytes) != row.ReuseSha) throw new StopException("payload", "SHA переносимых строк не совпал. Скачайте установщик заново.");
+            try
+            {
+                var json = new JavaScriptSerializer { MaxJsonLength = 32 * 1024 * 1024, RecursionLimit = 16 };
+                var data = json.DeserializeObject(new UTF8Encoding(false, true).GetString(bytes)) as Dictionary<string, object>;
+                if (data == null || Util.Num(data, "schema") != 1 || Util.Str(data, "codec") != row.ReuseCodec)
+                    throw new FormatException("text metadata schema");
+                object rawRows;
+                if (!data.TryGetValue("rows", out rawRows) || !(rawRows is object[])) throw new FormatException("text rows");
+                var entries = (object[])rawRows;
+                if (entries.Length != row.ReuseRows) throw new FormatException("text row count");
+                var result = new List<CompatTextRow>();
+                foreach (object item in entries)
+                {
+                    var record = item as Dictionary<string, object>;
+                    if (record == null || !(record["key"] is string) || !(record["source_sha256"] is string) || !(record["target"] is string))
+                        throw new FormatException("text row types");
+                    result.Add(new CompatTextRow { Key = (string)record["key"], SourceSha = (string)record["source_sha256"], Target = (string)record["target"] });
+                }
+                CompatTextMap.ValidateRows(row.ReuseCodec, result);
+                return result;
+            }
+            catch (Exception error)
+            {
+                if (!(error is FormatException || error is ArgumentException || error is InvalidOperationException || error is KeyNotFoundException)) throw;
+                throw new StopException("payload", "Описание переносимых строк повреждено. Скачайте установщик заново.");
+            }
+        }
+
+        static void VerifyPrimeStamps(Context ctx, IEnumerable<object> stamps)
+        {
+            var expected = new Dictionary<string, HashSet<string>>();
+            foreach (var stamp in stamps.Cast<Dictionary<string, object>>())
+            {
+                string relative = Util.Str(stamp, "relative");
+                if (!Regex.IsMatch(relative ?? "", @"^([1-9][0-9]{0,9})/\1_[0-9]+\.db$"))
+                    throw new StopException("changed", "Некорректное описание оригинальных файлов в резервной копии.");
+                string package = relative.Substring(0, relative.IndexOf('/'));
+                HashSet<string> names;
+                if (!expected.TryGetValue(package, out names)) expected[package] = names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                if (!names.Add(relative)) throw new StopException("changed", "Повторяется оригинальный файл в резервной копии.");
+                string path = Path.Combine(ctx.Game, "WXQ_Data", "Package", "builtin", relative.Replace('/', '\\'));
+                RequireNoLinks(ctx, path);
+                var info = new FileInfo(path);
+                if (!info.Exists || info.Length != Util.Num(stamp, "bytes") || info.LastWriteTimeUtc.Ticks != Util.Num(stamp, "mtime") ||
+                    Util.Sha(path) != Util.Str(stamp, "sha256"))
+                    throw new StopException("changed", "Файлы игры изменились после подготовки перевода. Ничего не заменено; повторите установку.");
+            }
+            foreach (var package in expected)
+                if (!package.Value.SetEquals(PrimeStoragePaths(ctx, package.Key).Select(path => package.Key + "/" + Path.GetFileName(path))))
+                    throw new StopException("changed", "Набор файлов игры изменился после подготовки перевода. Ничего не заменено; повторите установку.");
+        }
+
         static StopException BadBuild(string id, string reason)
         {
             return new StopException("transplant", "Собранный пакет " + id + " не прошёл проверку (" + reason + "). В игру ничего не записано.");
+        }
+
+        // Только собственные промежуточные файлы текущей защищённой сборки.
+        // Проверяем каждый каталог до перечисления и не следуем по ссылкам.
+        static void RemoveBuildScratch(Context ctx, string directory)
+        {
+            if (!Directory.Exists(directory)) return;
+            string root = Util.NormPath(ctx.BackupRoot), full = Util.NormPath(directory);
+            if (!full.StartsWith(root + "\\", StringComparison.OrdinalIgnoreCase))
+                throw new StopException("internal", "Путь промежуточной сборки вне резервной копии.");
+            string current = root;
+            Util.RequireNotLink(current);
+            foreach (string part in full.Substring(root.Length + 1).Split('\\'))
+            {
+                current = Path.Combine(current, part);
+                Util.RequireNotLink(current);
+            }
+            foreach (string file in Directory.GetFiles(directory))
+            {
+                Util.RequireNotLink(file);
+                File.Delete(file);
+            }
+            foreach (string child in Directory.GetDirectories(directory)) RemoveBuildScratch(ctx, child);
+            Directory.Delete(directory, false);
+        }
+
+        static void TryRemoveBuildScratch(Context ctx, string directory)
+        {
+            try { RemoveBuildScratch(ctx, directory); }
+            catch (IOException error)
+            { Log.Write("очистка промежуточной сборки отложена до проверки: " + directory + " (" + error.Message + ")"); }
+            catch (UnauthorizedAccessException error)
+            { Log.Write("очистка промежуточной сборки отложена до проверки: " + directory + " (" + error.Message + ")"); }
         }
 
         // Собирает <N>.db и <N>_0.db в builtDir. Applied пуст — у пакета нет ни одного подходящего ресурса (файлы не создаются).
@@ -2822,7 +3140,7 @@ namespace Egoist.WXQRussian
                 throw new StopException("payload", "В данных установщика нет списка ресурсов пакета " + p.Id + " (install.json старого формата): перенос на другую версию игры невозможен. Скачайте установщик заново.");
             byte[] ignored;
             List<OverrideResource> payload;
-            try { payload = OverridePackage.Read(Path.Combine(ctx.Payload, p.File(p.Id + ".db").PayloadName), Path.Combine(ctx.Payload, p.File(p.Id + "_0.db").PayloadName), out ignored); }
+            try { payload = OverridePackage.Read(Path.Combine(ctx.Payload, p.File(p.Id + ".db").PayloadName), Path.Combine(ctx.Payload, p.File(p.Id + "_0.db").PayloadName), out ignored, false); }
             catch (FormatException error) { throw new StopException("payload", "Файлы перевода пакета " + p.Id + " в установщике не разобрались (" + error.Message + "). Скачайте установщик заново."); }
             var byId = payload.ToDictionary(r => r.Id.ToString("x16", CultureInfo.InvariantCulture));
             var wanted = new HashSet<string>();
@@ -2834,9 +3152,13 @@ namespace Egoist.WXQRussian
                 wanted.Add(row.IdHex);
             }
             var reasons = new Dictionary<string, string>();
-            var stamps = new List<string>();
-            var prime = PrimeShas(ctx, p, wanted, reasons, stamps);
+            Directory.CreateDirectory(builtDir);
+            string spool = Path.Combine(builtDir, "text-spool");
+            Directory.CreateDirectory(spool);
+            var textOriginals = new Dictionary<string, string>();
+            var prime = PrimeShas(ctx, p, wanted, reasons, result.PrimeStamps, textOriginals, spool);
             var matched = new List<OverrideResource>();
+            var adapted = new Dictionary<ulong, string>();
             foreach (var row in p.Resources)
             {
                 string sha;
@@ -2846,16 +3168,65 @@ namespace Egoist.WXQRussian
                     result.Skipped.Add(row.IdHex + ": " + (reasons.TryGetValue(row.IdHex, out reason) ? reason : "нет в оригинальных ресурсах этой версии игры"));
                 }
                 else if (!string.Equals(sha, row.OriginalSha, StringComparison.OrdinalIgnoreCase))
-                    result.Skipped.Add(row.IdHex + ": оригинал в игре изменился");
+                {
+                    string currentPath;
+                    if (row.ReusePayload == null || !textOriginals.TryGetValue(row.IdHex, out currentPath))
+                    { result.Skipped.Add(row.IdHex + ": оригинал в игре изменился"); continue; }
+                    var translations = ReadReuseRows(ctx, row);
+                    CompatTextResult reused;
+                    try { reused = CompatTextMap.Reuse(File.ReadAllBytes(currentPath), row.ReuseCodec, translations); }
+                    catch (FormatException)
+                    { result.Skipped.Add(row.IdHex + ": формат текстового ресурса изменился"); continue; }
+                    textOriginals.Remove(row.IdHex);
+                    if (reused.Applied == 0)
+                    { result.Skipped.Add(row.IdHex + ": нет строк с совпавшим исходным текстом"); continue; }
+                    string adaptedPath = Path.Combine(spool, row.IdHex + ".translated");
+                    File.WriteAllBytes(adaptedPath, reused.Payload);
+                    adapted[Convert.ToUInt64(row.IdHex, 16)] = adaptedPath;
+                    result.TextReuse[row.IdHex] = new Dictionary<string, object> { { "source_sha256", sha },
+                        { "sha256", Sha256Of(reused.Payload) }, { "applied_rows", reused.Applied },
+                        { "changed_source_rows", reused.SourceChanged }, { "missing_rows", reused.Missing },
+                        { "preserved_rows", reused.CurrentRows - reused.Applied } };
+                }
                 else
                 {
                     result.Applied.Add(row.IdHex);
                     matched.Add(byId[row.IdHex]);
                 }
             }
+            textOriginals.Clear();
+            if (adapted.Count > 0)
+            {
+                var needs = new SpaceNeeds();
+                needs.Add(ctx.Data, adapted.Values.Sum(v => new FileInfo(v).Length) * 5 + 1048576);
+                needs.Require();
+                string vfs = StageSdk(ctx, "QtsVFS.dll");
+                var info = Util.ReadJson(Path.Combine(ctx.Cache, p.Id, p.Id + ".info"));
+                int revision;
+                if (!int.TryParse(Util.Str(info, "revision") ?? "0", NumberStyles.None, CultureInfo.InvariantCulture, out revision) || revision < 0)
+                    throw BadBuild(p.Id, "неподдерживаемая revision игры");
+                // Как в штатном SDK-воркере: DB загружается раньше VFS.
+                Sdk.Load(sdkCopy);
+                var packed = CompatPacker.PackFiles(vfs, Path.Combine(builtDir, "text-pack"), p.Id, Util.Str(info, "version"), revision, adapted);
+                foreach (var pair in packed)
+                {
+                    string id = pair.Key.ToString("x16", CultureInfo.InvariantCulture);
+                    if (pair.Value.Sha != Util.Str((Dictionary<string, object>)result.TextReuse[id], "sha256"))
+                        throw BadBuild(p.Id, "упакованный текст не совпал с подготовленным переводом");
+                    result.Applied.Add(id);
+                    pair.Value.Payload = null;
+                    matched.Add(pair.Value);
+                }
+                adapted.Clear();
+            }
+            foreach (var resource in matched) result.ResourceHashes[resource.Id.ToString("x16", CultureInfo.InvariantCulture)] = resource.Sha;
             Log.Write("пакет " + p.Id + ": подошло ресурсов " + result.Applied.Count + ", пропущено " + result.Skipped.Count);
             foreach (string line in result.Skipped.Take(50)) Log.Write("пакет " + p.Id + " пропущен ресурс " + line);
-            if (matched.Count == 0) return result;
+            if (matched.Count == 0)
+            {
+                TryRemoveBuildScratch(ctx, spool);
+                return result;
+            }
 
             // Сборка в защищённой папке копии над копией скелета; результат дальше проверяется независимо (заголовок == скелет, набор записей,
             // SHA нагрузок заново из собранных файлов), любое исключение разбора — stop transplant.
@@ -2886,7 +3257,7 @@ namespace Egoist.WXQRussian
 
             byte[] header;
             List<OverrideResource> back;
-            try { back = OverridePackage.Read(dbPath, storagePath, out header); }
+            try { back = OverridePackage.Read(dbPath, storagePath, out header, false); }
             catch (StopException) { throw; }
             catch (Exception error) { throw BadBuild(p.Id, "повторный разбор: " + error.Message); }
             if (!header.SequenceEqual(item.Header)) throw BadBuild(p.Id, "заголовок не равен скелету");
@@ -2902,15 +3273,11 @@ namespace Egoist.WXQRussian
                     if (!r.ChunkData[i].SequenceEqual(e.ChunkData[i]) || !r.ChunkInfo[i].SequenceEqual(e.ChunkInfo[i]))
                         throw BadBuild(p.Id, "чанки записи " + r.Id.ToString("x16", CultureInfo.InvariantCulture) + " не совпали с исходными");
             }
-            foreach (string stamp in stamps)
-            {
-                string[] parts = stamp.Split('|');
-                var now = new FileInfo(parts[0]);
-                if (!now.Exists || now.Length.ToString(CultureInfo.InvariantCulture) != parts[1] || now.LastWriteTimeUtc.Ticks.ToString(CultureInfo.InvariantCulture) != parts[2])
-                    throw BadBuild(p.Id, "файл prime игры изменился во время сборки");
-            }
             result.CatalogSha = Util.Sha(dbPath);
             result.StorageSha = Util.Sha(storagePath);
+            // Для установки/отката нужны только проверенные итоговые .db.
+            TryRemoveBuildScratch(ctx, spool);
+            TryRemoveBuildScratch(ctx, Path.Combine(builtDir, "text-pack"));
             return result;
         }
 
@@ -2961,6 +3328,9 @@ namespace Egoist.WXQRussian
             var rows = new List<object>();
             var applied = new Dictionary<string, object>();
             var skipped = new Dictionary<string, object>();
+            var resourceHashes = new Dictionary<string, object>();
+            var textReuse = new Dictionary<string, object>();
+            var primeStamps = new List<object>();
             var skippedPackages = new List<object>();
             bool receiptWritten = false;
             try
@@ -2969,6 +3339,9 @@ namespace Egoist.WXQRussian
                 {
                     string id = item.Package.Id;
                     var built = BuildTransplant(ctx, item, Path.Combine(labelDir, "built", id), sdk);
+                    resourceHashes[id] = built.ResourceHashes;
+                    textReuse[id] = built.TextReuse;
+                    primeStamps.AddRange(built.PrimeStamps);
                     skipped[id] = built.Skipped.Cast<object>().ToList();
                     if (built.Applied.Count == 0)
                     {
@@ -3024,12 +3397,15 @@ namespace Egoist.WXQRussian
                     }
                     rows.Add(TransplantRow(op.Relative, op.Target, op.BeforeExists, op.BeforeSha, op.Candidate));
                 }
+                VerifyPrimeStamps(ctx, primeStamps);
                 var receipt = new Dictionary<string, object>
                 {
                     { "schema", 1 }, { "status", "prepared" }, { "label", label }, { "product", ctx.M.Product }, { "version", ctx.M.Version }, { "built", ctx.M.Built },
                     { "created_utc", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture) }, { "game_root", ctx.Game }, { "cache_root", ctx.Cache },
-                    { "game_version", ctx.M.GameVersion }, { "operations", rows },
-                    { "transplant", true }, { "applied_resources", applied }, { "skipped_resources", skipped }, { "skipped_packages", skippedPackages }
+                    { "game_version", ReadVersion(Path.Combine(ctx.Cache, items[0].Package.Id, items[0].Package.Id + ".info")) ?? ctx.M.GameVersion }, { "operations", rows },
+                    { "transplant", true }, { "applied_resources", applied }, { "skipped_resources", skipped }, { "skipped_packages", skippedPackages },
+                    { "resource_hashes", resourceHashes }, { "text_reuse", textReuse }, { "source_primes", primeStamps },
+                    { "build_game_version", ctx.M.GameVersion }
                 };
                 WriteReceipt(ctx, label, receipt);
                 receiptWritten = true;
@@ -3082,6 +3458,8 @@ namespace Egoist.WXQRussian
 
         static void CheckTransplantShape(Context ctx, Dictionary<string, object> receipt, bool installed)
         {
+            object stamps;
+            if (receipt.TryGetValue("source_primes", out stamps)) VerifyPrimeStamps(ctx, Util.Items(stamps));
             var rows = Util.Items(receipt["operations"]).Cast<Dictionary<string, object>>().ToDictionary(r => Util.Str(r, "relative"), StringComparer.OrdinalIgnoreCase);
             var ids = new HashSet<string>(ctx.M.Pkgs.Select(p => p.Id));
             foreach (string relative in rows.Keys) ids.Add(RelativeName.Match(relative).Groups[1].Value);
@@ -3123,10 +3501,18 @@ namespace Egoist.WXQRussian
                 try
                 {
                     byte[] header;
-                    var resources = OverridePackage.Read(meta, data, out header);
+                    var resources = OverridePackage.Read(meta, data, out header, false);
                     var have = new HashSet<string>(resources.Select(r => r.Id.ToString("x16", CultureInfo.InvariantCulture)));
                     var want = new HashSet<string>(Util.Items(pair.Value).Select(x => Convert.ToString(x)));
                     if (!have.SetEquals(want)) throw new StopException("verify", "Набор записей пакета " + pair.Key + " в игре не совпал с установленным. Выполните удаление перевода и повторите.");
+                    object hashes;
+                    if (receipt.TryGetValue("resource_hashes", out hashes))
+                    {
+                        var packages = (Dictionary<string, object>)hashes;
+                        var expected = (Dictionary<string, object>)packages[pair.Key];
+                        if (resources.Any(r => Util.Str(expected, r.Id.ToString("x16", CultureInfo.InvariantCulture)) != r.Sha))
+                            throw new StopException("verify", "Текст или ресурс в игре не совпал с подготовленным переводом. Повторите установку.");
+                    }
                 }
                 catch (FormatException)
                 {
@@ -3146,6 +3532,37 @@ namespace Egoist.WXQRussian
                 { "game_root", ctx.Game }, { "label", label ?? "" }, { "installed_utc", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture) },
                 { "packages", appliedAll.Keys.Select(k => (object)k).ToList() }, { "candidates", ctx.M.Candidates.Cast<object>().ToList() }, { "transplant", true }
             };
+            int appliedCount = appliedAll.Values.Sum(value => Util.Items(value).Count());
+            object skippedValue;
+            int skippedCount = receipt.TryGetValue("skipped_resources", out skippedValue)
+                ? ((Dictionary<string, object>)skippedValue).Values.Sum(value => Util.Items(value).Count()) : 0;
+            stateFile["applied_resources"] = appliedCount;
+            stateFile["skipped_resources"] = skippedCount;
+            ctx.Result["applied_resources"] = appliedCount.ToString(CultureInfo.InvariantCulture);
+            ctx.Result["skipped_resources"] = skippedCount.ToString(CultureInfo.InvariantCulture);
+            stateFile["quick_game_stamp"] = QuickGameStamp(ctx, appliedAll.Keys);
+            object reused;
+            if (receipt.TryGetValue("text_reuse", out reused))
+            {
+                int count = ((Dictionary<string, object>)reused).Values.Cast<Dictionary<string, object>>()
+                    .Sum(package => package.Values.Cast<Dictionary<string, object>>().Sum(row => (int)Util.Num(row, "applied_rows")));
+                stateFile["reused_text_rows"] = count;
+                ctx.Result["reused_text_rows"] = count.ToString(CultureInfo.InvariantCulture);
+                int preserved = ((Dictionary<string, object>)reused).Values.Cast<Dictionary<string, object>>()
+                    .Sum(package => package.Values.Cast<Dictionary<string, object>>().Sum(row => (int)Util.Num(row, "preserved_rows")));
+                stateFile["preserved_text_rows"] = preserved;
+                ctx.Result["preserved_text_rows"] = preserved.ToString(CultureInfo.InvariantCulture);
+            }
+            // Это уже отдельный CLI-процесс без работавшего packer: его фоновые
+            // handles не мешают повторной уборке проверенных промежуточных файлов.
+            string scratchLabel = Util.Str(receipt, "label");
+            if (scratchLabel != null && LabelFormat.IsMatch(scratchLabel))
+                foreach (var package in ctx.M.Pkgs)
+                {
+                    string directory = Path.Combine(ctx.BackupRoot, scratchLabel, "built", package.Id);
+                    TryRemoveBuildScratch(ctx, Path.Combine(directory, "text-spool"));
+                    TryRemoveBuildScratch(ctx, Path.Combine(directory, "text-pack"));
+                }
             Util.WriteJson(ctx.StateFile, stateFile);
             try { File.Delete(ctx.MemoFile); } catch (IOException) { }
             ctx.Result["game"] = ctx.Game;
@@ -3418,6 +3835,7 @@ namespace Egoist.WXQRussian
                 { "game_root", ctx.Game }, { "label", label ?? "" }, { "installed_utc", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture) },
                 { "packages", ctx.M.Pkgs.Select(p => (object)p.Id).ToList() }, { "candidates", ctx.M.Candidates.Cast<object>().ToList() }
             };
+            stateFile["quick_game_stamp"] = QuickGameStamp(ctx, ctx.M.Pkgs.Select(p => p.Id));
             Util.WriteJson(ctx.StateFile, stateFile);
             try { File.Delete(ctx.MemoFile); } catch (IOException) { }
             ctx.Result["game"] = ctx.Game;

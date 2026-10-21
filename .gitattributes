@@ -1,0 +1,4 @@
+# Собственные runtime-файлы имеют закреплённые побайтовые SHA.
+source/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+localization/profiles/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+scripts/tests_release/vectors/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

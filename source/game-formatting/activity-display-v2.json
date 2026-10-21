@@ -1,0 +1,1001 @@
+{
+  "schema": "wxq-activity-display/v2",
+  "package": "10",
+  "game_version": "1.6.0.1",
+  "helper_sha256": "45c2c4550e5f95149dbd22a4361b60ffe7234d6c3b1b9fa4eb0f0b8eb49d9064",
+  "resources": [
+    {
+      "id_hex": "556806005bdb0a12",
+      "module": "UICommonHelpSystemWithImageClass",
+      "original_sha256": "7ff8ab154019147e8b4e734fad11a9905087faf01ac5cc9ba9eb216c35447565",
+      "hooks": [
+        "RefreshUI",
+        "UpdateData"
+      ]
+    },
+    {
+      "id_hex": "d1d773d80964cf4a",
+      "module": "UICommonHelpSystemVariousStyle2Class",
+      "original_sha256": "f9c192dff8c65de63db90ea9112dd5e7169d1354ba96e5b8bc57f4d7a5df39e0",
+      "hooks": [
+        "InitBySystemID"
+      ]
+    },
+    {
+      "id_hex": "251491390511c74b",
+      "module": "UICommonHelpSystemVariousStylesClass",
+      "original_sha256": "fedbfbdbde2b7a7c8e6412ebd27ceb06dbd74a7f55a7b1e870549f6f5881842c",
+      "hooks": [
+        "InitBySystemID"
+      ]
+    },
+    {
+      "id_hex": "25fadada8c5fc508",
+      "module": "UICommonHelpSystemGroupClass",
+      "original_sha256": "75ba11d5c2104c045aecd94013bb26ca5c93731debd8d08ffffe3fddda92c2ce",
+      "hooks": [
+        "vOnInitialize"
+      ]
+    }
+  ],
+  "current_config": {
+    "package": "1",
+    "id_hex": "b5d856bfdf22400d",
+    "source_sha256": "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266",
+    "bytes": 26030,
+    "records": 115,
+    "display_contexts": 128
+  },
+  "current_contexts_sha256": "d5ae661d4c6f2d7b89694634c3fe85125a167621b7e2eca394a01cd4a9ccc3c8",
+  "current_contexts": [
+    {
+      "record_index": 0,
+      "field": "Title",
+      "wire_path": "root.field2[0].field2[0]",
+      "source_cn": "<color=#FFFFFF>万象启程规则</color>",
+      "source_sha256": "cd091fa0a9f10b36f3f0682c6adeb1f660378b258474b228f250634c40acc940"
+    },
+    {
+      "record_index": 1,
+      "field": "Title",
+      "wire_path": "root.field2[1].field2[0]",
+      "source_cn": "<color=#FFFFFF>小鹿便利店活动规则</color>",
+      "source_sha256": "091694d84f22baf7a94823a5bc35f4ec85c26bf503017ad27c4bbb3c0ef8c8f3"
+    },
+    {
+      "record_index": 2,
+      "field": "Title",
+      "wire_path": "root.field2[2].field2[0]",
+      "source_cn": "<color=#FFFFFF>充值规则</color>",
+      "source_sha256": "191e7e7e9b0cd34662c54e0570b3adc1b59b6cbed02d16f27ef8d7bcad8d892e"
+    },
+    {
+      "record_index": 3,
+      "field": "Title",
+      "wire_path": "root.field2[3].field2[0]",
+      "source_cn": "<color=#FFFFFF>荣耀会员系统规则及福利</color>",
+      "source_sha256": "a98ab9b83e42097cdf2117d7815cbc7dfeaea3cb1ef6e221be079faf219454b2"
+    },
+    {
+      "record_index": 4,
+      "field": "Title",
+      "wire_path": "root.field2[4].field2[0]",
+      "source_cn": "<color=#FFFFFF>徽章标识</color>",
+      "source_sha256": "42478727708765473ed52aa4f20e8e6b149fff12ddf60a71cb66e84391ae57ac"
+    },
+    {
+      "record_index": 4,
+      "field": "ConfirmContent",
+      "wire_path": "root.field2[4].field11[0]",
+      "source_cn": "确认",
+      "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+    },
+    {
+      "record_index": 5,
+      "field": "Title",
+      "wire_path": "root.field2[5].field2[0]",
+      "source_cn": "<color=#FFFFFF>专属聊天字色</color>",
+      "source_sha256": "253557885093fcba720ea7d7f8e3dbcddadab9bcbbf8b513332f770e50de93c6"
+    },
+    {
+      "record_index": 5,
+      "field": "ConfirmContent",
+      "wire_path": "root.field2[5].field11[0]",
+      "source_cn": "确认",
+      "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+    },
+    {
+      "record_index": 6,
+      "field": "Title",
+      "wire_path": "root.field2[6].field2[0]",
+      "source_cn": "<color=#FFFFFF>专属昵称颜色</color>",
+      "source_sha256": "6cff76039bd2a44c07980d35d73ecb3ad198eeb3199e108ce42bbc216cc87592"
+    },
+    {
+      "record_index": 6,
+      "field": "ConfirmContent",
+      "wire_path": "root.field2[6].field11[0]",
+      "source_cn": "确认",
+      "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+    },
+    {
+      "record_index": 7,
+      "field": "Title",
+      "wire_path": "root.field2[7].field2[0]",
+      "source_cn": "<color=#FFFFFF>账号经验加成</color>",
+      "source_sha256": "6e9c70ab8afe2654c6f8c66b38d76e2dbf734036fe65fae5f2e8078d5089670f"
+    },
+    {
+      "record_index": 7,
+      "field": "ConfirmContent",
+      "wire_path": "root.field2[7].field11[0]",
+      "source_cn": "确认",
+      "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+    },
+    {
+      "record_index": 8,
+      "field": "Title",
+      "wire_path": "root.field2[8].field2[0]",
+      "source_cn": "<color=#FFFFFF>周钻石上限增加</color>",
+      "source_sha256": "9311af65587a6ad0b454f9e07d7dd0540ff8f5455697154d9289605a9abb8296"
+    },
+    {
+      "record_index": 8,
+      "field": "ConfirmContent",
+      "wire_path": "root.field2[8].field11[0]",
+      "source_cn": "确认",
+      "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+    },
+    {
+      "record_index": 9,
+      "field": "Title",
+      "wire_path": "root.field2[9].field2[0]",
+      "source_cn": "<color=#FFFFFF>钻石结算加成</color>",
+      "source_sha256": "09953010b453c0b44886261a5c01739c20c130c9c8598c76b6ee9d63bbac7f5f"
+    },
+    {
+      "record_index": 9,
+      "field": "ConfirmContent",
+      "wire_path": "root.field2[9].field11[0]",
+      "source_cn": "确认",
+      "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+    },
+    {
+      "record_index": 10,
+      "field": "Title",
+      "wire_path": "root.field2[10].field2[0]",
+      "source_cn": "<color=#FFFFFF>定制ID</color>",
+      "source_sha256": "845dc3252ce7ed51cc85378e5737d320c9e1c9d51298debf0b6f74f5cbf732f0"
+    },
+    {
+      "record_index": 10,
+      "field": "ConfirmContent",
+      "wire_path": "root.field2[10].field11[0]",
+      "source_cn": "前往",
+      "source_sha256": "fa96079c3b2f73415ff50926506e7b280233a068ef902aa1ae7009947cb3d723"
+    },
+    {
+      "record_index": 11,
+      "field": "Title",
+      "wire_path": "root.field2[11].field2[0]",
+      "source_cn": "<color=#FFFFFF>定制ID</color>",
+      "source_sha256": "845dc3252ce7ed51cc85378e5737d320c9e1c9d51298debf0b6f74f5cbf732f0"
+    },
+    {
+      "record_index": 11,
+      "field": "ConfirmContent",
+      "wire_path": "root.field2[11].field11[0]",
+      "source_cn": "前往",
+      "source_sha256": "fa96079c3b2f73415ff50926506e7b280233a068ef902aa1ae7009947cb3d723"
+    },
+    {
+      "record_index": 12,
+      "field": "Title",
+      "wire_path": "root.field2[12].field2[0]",
+      "source_cn": "<color=#FFFFFF>专属聊天气泡</color>",
+      "source_sha256": "316d544575e6a604976ca042ac06c5e5371c4b1feee5be115d4cff17c8975aca"
+    },
+    {
+      "record_index": 12,
+      "field": "ConfirmContent",
+      "wire_path": "root.field2[12].field11[0]",
+      "source_cn": "确认",
+      "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+    },
+    {
+      "record_index": 13,
+      "field": "Title",
+      "wire_path": "root.field2[13].field2[0]",
+      "source_cn": "<color=#FFFFFF>共享特权</color>",
+      "source_sha256": "a48061e573391f9d3e834d8749de8e78e299892c6c0fbe9c6c7d6f20c1bd3627"
+    },
+    {
+      "record_index": 13,
+      "field": "ConfirmContent",
+      "wire_path": "root.field2[13].field11[0]",
+      "source_cn": "确认",
+      "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+    },
+    {
+      "record_index": 14,
+      "field": "Title",
+      "wire_path": "root.field2[14].field2[0]",
+      "source_cn": "<color=#FFFFFF>共享特权</color>",
+      "source_sha256": "a48061e573391f9d3e834d8749de8e78e299892c6c0fbe9c6c7d6f20c1bd3627"
+    },
+    {
+      "record_index": 14,
+      "field": "ConfirmContent",
+      "wire_path": "root.field2[14].field11[0]",
+      "source_cn": "确认",
+      "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+    },
+    {
+      "record_index": 15,
+      "field": "Title",
+      "wire_path": "root.field2[15].field2[0]",
+      "source_cn": "<color=#FFFFFF>共享特权</color>",
+      "source_sha256": "a48061e573391f9d3e834d8749de8e78e299892c6c0fbe9c6c7d6f20c1bd3627"
+    },
+    {
+      "record_index": 15,
+      "field": "ConfirmContent",
+      "wire_path": "root.field2[15].field11[0]",
+      "source_cn": "确认",
+      "source_sha256": "36f33adaf0942634a8ece1eec4a6f30d44dec73e1ef8704b29d983a57f2e09ae"
+    },
+    {
+      "record_index": 16,
+      "field": "Title",
+      "wire_path": "root.field2[16].field2[0]",
+      "source_cn": "<color=#FFFFFF>送蔷薇币活动规则</color>",
+      "source_sha256": "6f9fb663a7812b67bb87d981567216c5761e0cb4a134cc5140690ab739e77b75"
+    },
+    {
+      "record_index": 17,
+      "field": "Title",
+      "wire_path": "root.field2[17].field2[0]",
+      "source_cn": "<color=#FFFFFF>月签到活动规则</color>",
+      "source_sha256": "408d90d02f018f10d2a4c896c7e0f421fdbafdd228dbbf2311d59396dca631cc"
+    },
+    {
+      "record_index": 18,
+      "field": "Title",
+      "wire_path": "root.field2[18].field2[0]",
+      "source_cn": "<color=#FFFFFF>夺宝规则</color>",
+      "source_sha256": "94562e176a04e10f95d314d2073872bfa2ef62bf0ea912b6bbf4a45725d5d1a5"
+    },
+    {
+      "record_index": 19,
+      "field": "Title",
+      "wire_path": "root.field2[19].field2[0]",
+      "source_cn": "<color=#FFFFFF>蔷薇之约活动说明</color>",
+      "source_sha256": "6140da675830555e7373f8f22e1725ac5fb48d0ca479c37287390a76f94bb861"
+    },
+    {
+      "record_index": 20,
+      "field": "Title",
+      "wire_path": "root.field2[20].field2[0]",
+      "source_cn": "<color=#FFFFFF>7步成局活动规则</color>",
+      "source_sha256": "d4cc513b0bfab24155cfae82e169f4006426e15348aeaec961956df69306c31b"
+    },
+    {
+      "record_index": 21,
+      "field": "Title",
+      "wire_path": "root.field2[21].field2[0]",
+      "source_cn": "<color=#FFFFFF>组合之星活动规则</color>",
+      "source_sha256": "927a23911c8b4fbead3f9baeb9cce893f6e95929fa9d0bac2a810b628b2026c4"
+    },
+    {
+      "record_index": 22,
+      "field": "Title",
+      "wire_path": "root.field2[22].field2[0]",
+      "source_cn": "<color=#FFFFFF>万象流年活动规则</color>",
+      "source_sha256": "790500957db7d21f51ebcbe0b28023bbdb334c62bff5eef6896794e5ca2c7472"
+    },
+    {
+      "record_index": 23,
+      "field": "Title",
+      "wire_path": "root.field2[23].field2[0]",
+      "source_cn": "<color=#FFFFFF>登录送礼活动规则</color>",
+      "source_sha256": "f10268ce752a0312bc197f171a96d7cf7bd5c14bd34ebb649039e95df5fa235f"
+    },
+    {
+      "record_index": 24,
+      "field": "Title",
+      "wire_path": "root.field2[24].field2[0]",
+      "source_cn": "<color=#FFFFFF>对局送礼活动规则</color>",
+      "source_sha256": "69acbd0d2d9d39b0b0c1d9f145eb7e0363a6117d65091ce107f2ca1b881d759a"
+    },
+    {
+      "record_index": 25,
+      "field": "Title",
+      "wire_path": "root.field2[25].field2[0]",
+      "source_cn": "<color=#FFFFFF>万象映画活动规则</color>",
+      "source_sha256": "1ebd3d0a31a880c4ad49f5281c43037e7ec45c283dc6c3d609ed77ffcdd1e661"
+    },
+    {
+      "record_index": 26,
+      "field": "Title",
+      "wire_path": "root.field2[26].field2[0]",
+      "source_cn": "<color=#FFFFFF>棋手预热活动规则</color>",
+      "source_sha256": "43862e6128b74c7d0498320f89b993a20b55c60cd03396afcdd36b85ad77804a"
+    },
+    {
+      "record_index": 27,
+      "field": "Title",
+      "wire_path": "root.field2[27].field2[0]",
+      "source_cn": "<color=#FFFFFF>分享活动规则</color>",
+      "source_sha256": "78588da7ffbdb3dc36290d236de67b63eb7ae0a3cc05b91f854b297c20c1abd7"
+    },
+    {
+      "record_index": 28,
+      "field": "Title",
+      "wire_path": "root.field2[28].field2[0]",
+      "source_cn": "<color=#FFFFFF>归来签到活动规则</color>",
+      "source_sha256": "3a5f217a842b021ee5b3c58952ba4bb01663b9df0e68ebb0309b28815694a0f5"
+    },
+    {
+      "record_index": 29,
+      "field": "Title",
+      "wire_path": "root.field2[29].field2[0]",
+      "source_cn": "<color=#FFFFFF>归来挑战活动规则</color>",
+      "source_sha256": "bb77eb52e92d5b780617aabe1623f718ed455720ca4c3e66939bff40c08c34a8"
+    },
+    {
+      "record_index": 30,
+      "field": "Title",
+      "wire_path": "root.field2[30].field2[0]",
+      "source_cn": "<color=#FFFFFF>咖啡小站活动规则</color>",
+      "source_sha256": "f32f14770441bfced147710b10f785da3e99e196471169d7cf52ad1164ddb089"
+    },
+    {
+      "record_index": 31,
+      "field": "Title",
+      "wire_path": "root.field2[31].field2[0]",
+      "source_cn": "<color=#FFFFFF>点券福利活动规则</color>",
+      "source_sha256": "286c6838a6f6bac1c09d47997a4616f9a92877497e9311ed5d6ad54dba9c3522"
+    },
+    {
+      "record_index": 32,
+      "field": "Title",
+      "wire_path": "root.field2[32].field2[0]",
+      "source_cn": "<color=#FFFFFF>周末对局活动规则</color>",
+      "source_sha256": "a852ebc18c404c25be416d94a1b5b1506ad08653b624846f83d312ede72e40ba"
+    },
+    {
+      "record_index": 33,
+      "field": "Title",
+      "wire_path": "root.field2[33].field2[0]",
+      "source_cn": "<color=#FFFFFF>巩固练习活动规则</color>",
+      "source_sha256": "16250edd2a3eb7c2650170615fd6bbe9548a83dfe55af9c7f8d808cfb4b08de1"
+    },
+    {
+      "record_index": 34,
+      "field": "Title",
+      "wire_path": "root.field2[34].field2[0]",
+      "source_cn": "<color=#FFFFFF>瑶妹心愿卡活动规则</color>",
+      "source_sha256": "88b0187bc9643ccb63c6cebfe842c9c466cece0e08b8ef46d278f8bd027b95c6"
+    },
+    {
+      "record_index": 35,
+      "field": "Title",
+      "wire_path": "root.field2[35].field2[0]",
+      "source_cn": "<color=#FFFFFF>7日累登送好礼活动规则</color>",
+      "source_sha256": "36ba0866d5474fe2360e97551fd1a9bd7c19f2d186ac4d2ce6e9e502f990fca6"
+    },
+    {
+      "record_index": 36,
+      "field": "Title",
+      "wire_path": "root.field2[36].field2[0]",
+      "source_cn": "<color=#FFFFFF>万象竞答活动规则</color>",
+      "source_sha256": "62bd0a875670a3d3644b3309f981b1e3c079b14d74c6b2805a6732dd132c8eb8"
+    },
+    {
+      "record_index": 37,
+      "field": "Title",
+      "wire_path": "root.field2[37].field2[0]",
+      "source_cn": "<color=#FFFFFF>天使投资人活动规则</color>",
+      "source_sha256": "693cff99f1280cec7627e98887c769b4859d40432ed3ad9d101e388723694273"
+    },
+    {
+      "record_index": 38,
+      "field": "Title",
+      "wire_path": "root.field2[38].field2[0]",
+      "source_cn": "<color=#FFFFFF>万象竞答活动规则</color>",
+      "source_sha256": "62bd0a875670a3d3644b3309f981b1e3c079b14d74c6b2805a6732dd132c8eb8"
+    },
+    {
+      "record_index": 39,
+      "field": "Title",
+      "wire_path": "root.field2[39].field2[0]",
+      "source_cn": "<color=#FFFFFF>有分同享活动规则</color>",
+      "source_sha256": "653a33a4e3e09368bd59db6b600611d260afc646aa5cec2749ed5b9430475f10"
+    },
+    {
+      "record_index": 40,
+      "field": "Title",
+      "wire_path": "root.field2[40].field2[0]",
+      "source_cn": "<color=#FFFFFF>福利传承活动规则</color>",
+      "source_sha256": "8486d6c2509f7ada35e2a951030a4767ec8e2227a4417baa6d30f2d7bb318eb9"
+    },
+    {
+      "record_index": 41,
+      "field": "Title",
+      "wire_path": "root.field2[41].field2[0]",
+      "source_cn": "<color=#FFFFFF>联合创始人招募规则</color>",
+      "source_sha256": "1771b2adf421320280456ed67ba2c7d5fa49e7fb4e0217f849f3aa1a0facf8f2"
+    },
+    {
+      "record_index": 42,
+      "field": "Title",
+      "wire_path": "root.field2[42].field2[0]",
+      "source_cn": "<color=#FFFFFF>永不言六活动规则</color>",
+      "source_sha256": "2d3f85acfc49adddc59ccb12147580a3b073c122b9b814809618745974487755"
+    },
+    {
+      "record_index": 43,
+      "field": "Title",
+      "wire_path": "root.field2[43].field2[0]",
+      "source_cn": "<color=#FFFFFF>疯狂赚钻乐活动规则</color>",
+      "source_sha256": "30c206bcbaecdf8b5223664387c850dddaf505e6d90faa1f6300a26ae9e2aa26"
+    },
+    {
+      "record_index": 44,
+      "field": "Title",
+      "wire_path": "root.field2[44].field2[0]",
+      "source_cn": "<color=#FFFFFF>点券狂欢活动规则</color>",
+      "source_sha256": "4186fa399608e613663d280cbbbec271531e847a0a07207840d53e90af9c6103"
+    },
+    {
+      "record_index": 45,
+      "field": "Title",
+      "wire_path": "root.field2[45].field2[0]",
+      "source_cn": "<color=#FFFFFF>点券狂欢第二弹活动规则</color>",
+      "source_sha256": "4f12e7826c7b9b65c2bb2d43e039d277afbc9109926f2dbdbd3e565774d33d8f"
+    },
+    {
+      "record_index": 46,
+      "field": "Title",
+      "wire_path": "root.field2[46].field2[0]",
+      "source_cn": "<color=#FFFFFF>有分同享活动规则</color>",
+      "source_sha256": "653a33a4e3e09368bd59db6b600611d260afc646aa5cec2749ed5b9430475f10"
+    },
+    {
+      "record_index": 47,
+      "field": "Title",
+      "wire_path": "root.field2[47].field2[0]",
+      "source_cn": "<color=#FFFFFF>棋手预热活动规则</color>",
+      "source_sha256": "43862e6128b74c7d0498320f89b993a20b55c60cd03396afcdd36b85ad77804a"
+    },
+    {
+      "record_index": 48,
+      "field": "Title",
+      "wire_path": "root.field2[48].field2[0]",
+      "source_cn": "<color=#FFFFFF>钻石狂潮活动规则</color>",
+      "source_sha256": "b509454d16fcdd143c0c4167c6aabfa8c0ba8cb6d3e935d1da4902977cee94a9"
+    },
+    {
+      "record_index": 49,
+      "field": "Title",
+      "wire_path": "root.field2[49].field2[0]",
+      "source_cn": "<color=#FFFFFF>英雄升级活动规则</color>",
+      "source_sha256": "cd75f3ff5fcc49705d226d45640f666a6dbdd81e749608b225b248c31e565fef"
+    },
+    {
+      "record_index": 50,
+      "field": "Title",
+      "wire_path": "root.field2[50].field2[0]",
+      "source_cn": "<color=#FFFFFF>阵营百变活动规则</color>",
+      "source_sha256": "f97b8c5735921becbeafc9bab0c15c4df20dbbd77b0cf0e639420955ee42faa6"
+    },
+    {
+      "record_index": 51,
+      "field": "Title",
+      "wire_path": "root.field2[51].field2[0]",
+      "source_cn": "<color=#FFFFFF>巅峰试炼活动规则</color>",
+      "source_sha256": "542ccaaf2d01e3c582d5a36b5855c9dc4c66686cfaea5ce5acaf1b66945486f3"
+    },
+    {
+      "record_index": 52,
+      "field": "Title",
+      "wire_path": "root.field2[52].field2[0]",
+      "source_cn": "<color=#FFFFFF>新年赚钻钻活动规则</color>",
+      "source_sha256": "97f10985cf52157a71ed7d1e76ec6928d2247bb304423f972449a4c2c6c8e04d"
+    },
+    {
+      "record_index": 53,
+      "field": "Title",
+      "wire_path": "root.field2[53].field2[0]",
+      "source_cn": "<color=#FFFFFF>蔷薇阁活动规则</color>",
+      "source_sha256": "bb22ebfa207e6d7bdf20cb6765cd144413414993a3cb7d346ac5d14b0039c633"
+    },
+    {
+      "record_index": 54,
+      "field": "Title",
+      "wire_path": "root.field2[54].field2[0]",
+      "source_cn": "<color=#FFFFFF>王中王中王活动规则</color>",
+      "source_sha256": "6f26539b3727a87a579f08da5430cacc7a7e711e7cd3ef227e078b8db559205f"
+    },
+    {
+      "record_index": 55,
+      "field": "Title",
+      "wire_path": "root.field2[55].field2[0]",
+      "source_cn": "<color=#FFFFFF>蔷薇挑战活动规则</color>",
+      "source_sha256": "31f82e795dcbe2005866471eb955de096cc403b52e8fc80bdaf3937f91bcd743"
+    },
+    {
+      "record_index": 56,
+      "field": "Title",
+      "wire_path": "root.field2[56].field2[0]",
+      "source_cn": "<color=#FFFFFF>全员百分百活动规则</color>",
+      "source_sha256": "a967553649d6c9e14ab07886b152a576c52b200d1ee7ab83150b6a2c43d98cda"
+    },
+    {
+      "record_index": 57,
+      "field": "Title",
+      "wire_path": "root.field2[57].field2[0]",
+      "source_cn": "<color=#FFFFFF>万象召集令活动规则</color>",
+      "source_sha256": "d955ea1694efcc08abe0e762729d2279a61253b7e84ae74db369eb107cc079bf"
+    },
+    {
+      "record_index": 58,
+      "field": "Title",
+      "wire_path": "root.field2[58].field2[0]",
+      "source_cn": "<color=#FFFFFF>英雄连连看活动规则</color>",
+      "source_sha256": "ea79e807aa2ef37aa324fa7681d8121b284055928e688adea602217099c17919"
+    },
+    {
+      "record_index": 59,
+      "field": "Title",
+      "wire_path": "root.field2[59].field2[0]",
+      "source_cn": "<color=#FFFFFF>超级拍卖场活动规则</color>",
+      "source_sha256": "851b36f53a80580b08cecdb0f060ddbb4a86f9f779ccd9f060f868c189b6a2a3"
+    },
+    {
+      "record_index": 60,
+      "field": "Title",
+      "wire_path": "root.field2[60].field2[0]",
+      "source_cn": "<color=#FFFFFF>假期钻石礼活动规则</color>",
+      "source_sha256": "ff03fe5e8a3815cb44f5a0cae0d0d702cd5ae21d354222180886d18f891f97f7"
+    },
+    {
+      "record_index": 61,
+      "field": "Title",
+      "wire_path": "root.field2[61].field2[0]",
+      "source_cn": "<color=#FFFFFF>契约扭蛋活动规则</color>",
+      "source_sha256": "885a25fe308c450fc5092e6762f7166d9ca6f0df9eb7d79ceda391ddfaac10bc"
+    },
+    {
+      "record_index": 62,
+      "field": "Title",
+      "wire_path": "root.field2[62].field2[0]",
+      "source_cn": "<color=#FFFFFF>归来签到规则</color>",
+      "source_sha256": "b7c60a701395e89442718a40ba972b781f0cfc041683ad654afa165f85aa1798"
+    },
+    {
+      "record_index": 63,
+      "field": "Title",
+      "wire_path": "root.field2[63].field2[0]",
+      "source_cn": "<color=#FFFFFF>归来挑战规则</color>",
+      "source_sha256": "1274cbadf928239a90aea88d7604173a288a2b6459f1ef0511921ad9127dea86"
+    },
+    {
+      "record_index": 64,
+      "field": "Title",
+      "wire_path": "root.field2[64].field2[0]",
+      "source_cn": "<color=#FFFFFF>回流阵容规则</color>",
+      "source_sha256": "653d7ae95c53cf31c185b03bea28952df24fb564da64b9e40b92780d7f3efe26"
+    },
+    {
+      "record_index": 65,
+      "field": "Title",
+      "wire_path": "root.field2[65].field2[0]",
+      "source_cn": "<color=#FFFFFF>回流棋手规则</color>",
+      "source_sha256": "e5f30c9a6daf09d507a5abb94c7c0324ee5339f060b4acb3d9fbd06e0f970522"
+    },
+    {
+      "record_index": 66,
+      "field": "Title",
+      "wire_path": "root.field2[66].field2[0]",
+      "source_cn": "<color=#FFFFFF>回流特权规则</color>",
+      "source_sha256": "86ad3acdceae7078f7e6804bc5f814b4c545020c80ca681d56d7139bf8cdb5f5"
+    },
+    {
+      "record_index": 67,
+      "field": "Title",
+      "wire_path": "root.field2[67].field2[0]",
+      "source_cn": "<color=#FFFFFF>夺宝规则</color>",
+      "source_sha256": "94562e176a04e10f95d314d2073872bfa2ef62bf0ea912b6bbf4a45725d5d1a5"
+    },
+    {
+      "record_index": 68,
+      "field": "Title",
+      "wire_path": "root.field2[68].field2[0]",
+      "source_cn": "<color=#FFFFFF>棋盘幻化规则</color>",
+      "source_sha256": "8c3013de9fe3c4108fcd45a9e7090e7f0dd3665621e73bbee55766e6104c89f7"
+    },
+    {
+      "record_index": 69,
+      "field": "Title",
+      "wire_path": "root.field2[69].field2[0]",
+      "source_cn": "<color=#FFFFFF>云梦游抽奖规则</color>",
+      "source_sha256": "c1361c40ff7c3b1f5661544063bff448db6d1948e148c1c6682f146cf3c5fe9d"
+    },
+    {
+      "record_index": 70,
+      "field": "Title",
+      "wire_path": "root.field2[70].field2[0]",
+      "source_cn": "<color=#FFFFFF>首充规则</color>",
+      "source_sha256": "d3b8bd7de11610b1c9839440a652f2b66006192067db6a94c52c9a46f4559687"
+    },
+    {
+      "record_index": 71,
+      "field": "Title",
+      "wire_path": "root.field2[71].field2[0]",
+      "source_cn": "拍卖记录说明",
+      "source_sha256": "5c66fd35ad29e843cf3d89603af0d5ae2dff8a34b522e6eacdf0107c251fca9c"
+    },
+    {
+      "record_index": 72,
+      "field": "Title",
+      "wire_path": "root.field2[72].field2[0]",
+      "source_cn": "交易规则",
+      "source_sha256": "7a04040399f91bdaa95579e6bba2d43d3a458416d883e75fa16982340d020acf"
+    },
+    {
+      "record_index": 72,
+      "field": "GroupTitle",
+      "wire_path": "root.field2[72].field15[0]",
+      "source_cn": "交易行规则",
+      "source_sha256": "825fac407f80deb2c41744fbd5bc8daa2511116fbca3933b7686395df50f27d0"
+    },
+    {
+      "record_index": 73,
+      "field": "Title",
+      "wire_path": "root.field2[73].field2[0]",
+      "source_cn": "尊享月卡",
+      "source_sha256": "78145178ed99c141ac5ff209e402375e720fafed03fb5a93e0009680b1d1fa6a"
+    },
+    {
+      "record_index": 74,
+      "field": "Title",
+      "wire_path": "root.field2[74].field2[0]",
+      "source_cn": "月卡",
+      "source_sha256": "ccd53d571c2c5e2b4b6f6e15e29ff51bcac9645536f5fb14560a0ecbf097269d"
+    },
+    {
+      "record_index": 75,
+      "field": "Title",
+      "wire_path": "root.field2[75].field2[0]",
+      "source_cn": "交易限制",
+      "source_sha256": "264370c842f6dfb1432ee3f22fefcd7dcc7d1661101bc78ac195f9ac2314dc4a"
+    },
+    {
+      "record_index": 76,
+      "field": "Title",
+      "wire_path": "root.field2[76].field2[0]",
+      "source_cn": "<color=#FFFFFF>万象金库</color>",
+      "source_sha256": "cb37de0558ef21de99bec4db1adb412d116419af66bbdd5be385a8b4b338f2f2"
+    },
+    {
+      "record_index": 77,
+      "field": "Title",
+      "wire_path": "root.field2[77].field2[0]",
+      "source_cn": "<color=#FFFFFF>万象宝匣</color>",
+      "source_sha256": "e859774ba2c455f4298bbf98994a9f6c9e319c988b66e864fc77d22edd9b8a68"
+    },
+    {
+      "record_index": 78,
+      "field": "Title",
+      "wire_path": "root.field2[78].field2[0]",
+      "source_cn": "<color=#FFFFFF>天使投资人</color>",
+      "source_sha256": "18aba4f9e529f862ef09e7880d415174692cd3760927894a71750621324cce10"
+    },
+    {
+      "record_index": 79,
+      "field": "Title",
+      "wire_path": "root.field2[79].field2[0]",
+      "source_cn": "<color=#FFFFFF>投资人同行</color>",
+      "source_sha256": "ab11ce4da717d6c3561e335a26ad9dbf866e4596d6e26edaa66b685c9650f203"
+    },
+    {
+      "record_index": 80,
+      "field": "Title",
+      "wire_path": "root.field2[80].field2[0]",
+      "source_cn": "<color=#FFFFFF>天使投资人</color>",
+      "source_sha256": "18aba4f9e529f862ef09e7880d415174692cd3760927894a71750621324cce10"
+    },
+    {
+      "record_index": 81,
+      "field": "Title",
+      "wire_path": "root.field2[81].field2[0]",
+      "source_cn": "<color=#FFFFFF>开服充值回馈</color>",
+      "source_sha256": "4a16a84f43b0fae797762d2b41c4933d85b07f0962ccb9bb7abacd3350d2b4d1"
+    },
+    {
+      "record_index": 82,
+      "field": "Title",
+      "wire_path": "root.field2[82].field2[0]",
+      "source_cn": "英雄皮肤预览",
+      "source_sha256": "634da7057599b8f4fd4535865703f8884937b131a52d516712d147210a60e037"
+    },
+    {
+      "record_index": 83,
+      "field": "Title",
+      "wire_path": "root.field2[83].field2[0]",
+      "source_cn": "英雄皮肤预览",
+      "source_sha256": "634da7057599b8f4fd4535865703f8884937b131a52d516712d147210a60e037"
+    },
+    {
+      "record_index": 84,
+      "field": "Title",
+      "wire_path": "root.field2[84].field2[0]",
+      "source_cn": "<color=#FFFFFF>棋手竞猜</color>",
+      "source_sha256": "1886d860ae6a4b38adbd0462b900e6ac5f99a956bdc0cb11f19a2461d56c6ec0"
+    },
+    {
+      "record_index": 85,
+      "field": "Title",
+      "wire_path": "root.field2[85].field2[0]",
+      "source_cn": "<color=#FFFFFF>双端互通</color>",
+      "source_sha256": "8e5d30394c121266735d50e844269521259c84a1bcf58d83c7d94c87aa0e8dcc"
+    },
+    {
+      "record_index": 86,
+      "field": "Title",
+      "wire_path": "root.field2[86].field2[0]",
+      "source_cn": "<color=#FFFFFF>英雄皮肤</color>",
+      "source_sha256": "aca21e9ba726203cac07438381d9208d5f5c873822dbe509df07f5e5e993b59e"
+    },
+    {
+      "record_index": 87,
+      "field": "Title",
+      "wire_path": "root.field2[87].field2[0]",
+      "source_cn": "<color=#FFFFFF>万象结伴</color>",
+      "source_sha256": "22a60618862bd16a8282ffedd89d72faf34bc898441cba2729d98944221fe882"
+    },
+    {
+      "record_index": 88,
+      "field": "Title",
+      "wire_path": "root.field2[88].field2[0]",
+      "source_cn": "<color=#FFFFFF>王者里程碑活动规则</color>",
+      "source_sha256": "d6868c542e1a44ef03d10bc64fbe75edae7d3684b71740033254bebd15f151dd"
+    },
+    {
+      "record_index": 89,
+      "field": "Title",
+      "wire_path": "root.field2[89].field2[0]",
+      "source_cn": "<color=#FFFFFF>私教一对一活动规则</color>",
+      "source_sha256": "96b36abedb1a17673468ddbfaea246b21852bbc7a5e02ba9f0cc610030d45225"
+    },
+    {
+      "record_index": 90,
+      "field": "Title",
+      "wire_path": "root.field2[90].field2[0]",
+      "source_cn": "<color=#FFFFFF>高手直通车活动规则</color>",
+      "source_sha256": "3bcf933f327be61906bc3080bbdbf7d17aff959bbe13306290bc41b0db774f2c"
+    },
+    {
+      "record_index": 91,
+      "field": "Title",
+      "wire_path": "root.field2[91].field2[0]",
+      "source_cn": "<color=#FFFFFF>新英雄王维活动规则</color>",
+      "source_sha256": "334368e652e33f5e6811bf91d3b33980d6947ea17d0eed9f6ef78d84d6067f95"
+    },
+    {
+      "record_index": 92,
+      "field": "Title",
+      "wire_path": "root.field2[92].field2[0]",
+      "source_cn": "<color=#FFFFFF>领国服骑手头像框活动规则</color>",
+      "source_sha256": "9e2c3eb22d3defd1dac457a9e41620489402217a95c77d33c2ecf84898771a28"
+    },
+    {
+      "record_index": 93,
+      "field": "Title",
+      "wire_path": "root.field2[93].field2[0]",
+      "source_cn": "<color=#FFFFFF>朋友语音包活动规则</color>",
+      "source_sha256": "2849ca0a38d4a0772bcac33038aef3618047e78aa584c1d812a7f2f6fc3e4817"
+    },
+    {
+      "record_index": 94,
+      "field": "Title",
+      "wire_path": "root.field2[94].field2[0]",
+      "source_cn": "<color=#FFFFFF>棋手拼图活动规则</color>",
+      "source_sha256": "9d6860ed7c2a7ad138c5dc628d7ff5c4dafb95b6f7407c3c4c72b0772a117894"
+    },
+    {
+      "record_index": 95,
+      "field": "Title",
+      "wire_path": "root.field2[95].field2[0]",
+      "source_cn": "<color=#FFFFFF>棋手阿离来了活动规则</color>",
+      "source_sha256": "68f18006600d0f3f1d29f3f2c4d272d82de52b18ff124d6e88efdd229a29d6be"
+    },
+    {
+      "record_index": 96,
+      "field": "Title",
+      "wire_path": "root.field2[96].field2[0]",
+      "source_cn": "<color=#FFFFFF>棋手攻略活动规则</color>",
+      "source_sha256": "77cecd7c45cbe142f3da4ce6025ce39be6d8c908a6e451e56c217694f193e773"
+    },
+    {
+      "record_index": 97,
+      "field": "Title",
+      "wire_path": "root.field2[97].field2[0]",
+      "source_cn": "<color=#FFFFFF>月兔送礼活动规则</color>",
+      "source_sha256": "96ca7adcee648bf80f05bd8fa7cc21a254ab0519d031d175f646f7be4ec1e144"
+    },
+    {
+      "record_index": 98,
+      "field": "Title",
+      "wire_path": "root.field2[98].field2[0]",
+      "source_cn": "<color=#FFFFFF>小菟助力活动规则</color>",
+      "source_sha256": "939a311a726cf319094117c3cca4461ae072ee13176b226030acfc371a57be6d"
+    },
+    {
+      "record_index": 99,
+      "field": "Title",
+      "wire_path": "root.field2[99].field2[0]",
+      "source_cn": "<color=#FFFFFF>每日蔷薇币活动规则</color>",
+      "source_sha256": "5f61e231d8a7052b6c1f9c9afca4da393461afbab5086bc234774ecb9ce6e182"
+    },
+    {
+      "record_index": 100,
+      "field": "Title",
+      "wire_path": "root.field2[100].field2[0]",
+      "source_cn": "<color=#FFFFFF>安全加码活动规则</color>",
+      "source_sha256": "8f41ade1fbd524802962b76b33a7b4c1f0ad6baef4343a08f5ec1fb8322c8f47"
+    },
+    {
+      "record_index": 101,
+      "field": "Title",
+      "wire_path": "root.field2[101].field2[0]",
+      "source_cn": "<color=#FFFFFF>月兔送礼活动规则</color>",
+      "source_sha256": "96ca7adcee648bf80f05bd8fa7cc21a254ab0519d031d175f646f7be4ec1e144"
+    },
+    {
+      "record_index": 102,
+      "field": "Title",
+      "wire_path": "root.field2[102].field2[0]",
+      "source_cn": "<color=#FFFFFF>风雅假期活动规则</color>",
+      "source_sha256": "fafb206247391cc98f69f4967acd74608106c5a14a4739f6f467cfaf84ecc328"
+    },
+    {
+      "record_index": 103,
+      "field": "Title",
+      "wire_path": "root.field2[103].field2[0]",
+      "source_cn": "<color=#FFFFFF>棋手安琪拉来了活动规则</color>",
+      "source_sha256": "9b3a088750d3e606e3c8c71086c111fdba56eaa3d410582243e846fbe0eeb5a2"
+    },
+    {
+      "record_index": 104,
+      "field": "Title",
+      "wire_path": "root.field2[104].field2[0]",
+      "source_cn": "<color=#FFFFFF>日月行者祈愿规则</color>",
+      "source_sha256": "ca6fe0261e214e1ef0c8f708b86ef6d3bbeabdc9b18fce50c76f78ee101d69e8"
+    },
+    {
+      "record_index": 105,
+      "field": "Title",
+      "wire_path": "root.field2[105].field2[0]",
+      "source_cn": "<color=#FFFFFF>我们天下第一好活动规则</color>",
+      "source_sha256": "b7472dcbf15244f79328e91fbf730dc3b63132f2579dda8d1c8a48e1df0e3d54"
+    },
+    {
+      "record_index": 106,
+      "field": "Title",
+      "wire_path": "root.field2[106].field2[0]",
+      "source_cn": "<color=#FFFFFF>搞点摇摇币活动规则</color>",
+      "source_sha256": "ba47c3bd96cfa4d3cc26c20006d69c202ba4853e7d6455a8465c965e8181b08e"
+    },
+    {
+      "record_index": 107,
+      "field": "Title",
+      "wire_path": "root.field2[107].field2[0]",
+      "source_cn": "<color=#FFFFFF>“秋”你别摇活动规则</color>",
+      "source_sha256": "f5d99041990b7667f5501b2374c171986d0fe84e4e9a5295f7bedc1ddff27e0e"
+    },
+    {
+      "record_index": 108,
+      "field": "Title",
+      "wire_path": "root.field2[108].field2[0]",
+      "source_cn": "<color=#FFFFFF>超级假期规则</color>",
+      "source_sha256": "4431dbfe9e993c0c246510f6dc8ee9ca66115982bcd51693cfdc76b9bc9c0fe4"
+    },
+    {
+      "record_index": 109,
+      "field": "Title",
+      "wire_path": "root.field2[109].field2[0]",
+      "source_cn": "<color=#FFFFFF>助力王牌对决活动规则</color>",
+      "source_sha256": "f3d18ff06b57fdc0419fa163ad98ca0ca4d227213728b25bbd50417703c3c28f"
+    },
+    {
+      "record_index": 110,
+      "field": "Title",
+      "wire_path": "root.field2[110].field2[0]",
+      "source_cn": "<color=#FFFFFF>线条小狗天幕祈愿规则</color>",
+      "source_sha256": "fb3592c8edcdf8092a138bab7c988c8b2d18af32c6a16888b3b989656152e1f1"
+    },
+    {
+      "record_index": 111,
+      "field": "Title",
+      "wire_path": "root.field2[111].field2[0]",
+      "source_cn": "<color=#FFFFFF>冲分钻石礼活动规则</color>",
+      "source_sha256": "39a7e6fbbe5480d65e938c9eb1ebb94068f5a538d788e204f7b2891f1f3504fa"
+    },
+    {
+      "record_index": 112,
+      "field": "Title",
+      "wire_path": "root.field2[112].field2[0]",
+      "source_cn": "<color=#FFFFFF>抉择之弈活动规则</color>",
+      "source_sha256": "ec2c0fa1eb476e3169fc8bd5f41e469a40c64da958dd4b6584c02c6d83145ed9"
+    },
+    {
+      "record_index": 113,
+      "field": "Title",
+      "wire_path": "root.field2[113].field2[0]",
+      "source_cn": "<color=#FFFFFF>超级周末规则</color>",
+      "source_sha256": "a7de42f43a62140bfa036f074a43ba9a4167c056bcde83fab7546b9d77ddc447"
+    },
+    {
+      "record_index": 114,
+      "field": "Title",
+      "wire_path": "root.field2[114].field2[0]",
+      "source_cn": "<color=#FFFFFF>蔷薇加码活动规则</color>",
+      "source_sha256": "e889472911ee07e734029bd2551fa7114ac21be2035991c64a6ed1bd56abe02b"
+    }
+  ],
+  "approved_inputs": [
+    {
+      "path": "source/game-activity-display-proof/activity-help-queue.json",
+      "sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2"
+    },
+    {
+      "path": "source/game-activity-display-proof/manifest.json",
+      "sha256": "e45222d8345c244243460266f20a295fd023d63b3f38435944b9ddc642f565f4"
+    },
+    {
+      "path": "translations/game-inline/activity-help.ru.json",
+      "sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
+    },
+    {
+      "path": "translations/game-inline/activity-help.qa.json",
+      "sha256": "256a7669785d8347ec9e7c03c44fff87c019747268544cde2bc77cfda19e91d3"
+    }
+  ],
+  "task_reviewed_input": {
+    "path": "source/game-formatting/activity-display-v2.reviewed.json",
+    "sha256": "98ee4b0f4ccdbd3d6b9f5216103b78d952367f760f4e791d6eef318d1cc535ce"
+  },
+  "coverage": {
+    "source_strings": 108,
+    "source_contexts": 128,
+    "historical_approved_strings_present": 101,
+    "historical_approved_contexts_present": 121,
+    "task_reviewed_strings": 12,
+    "field_contexts": {
+      "Title": 115,
+      "ConfirmContent": 12,
+      "GroupTitle": 1
+    },
+    "dictionary_entries": {
+      "Title": 105,
+      "ConfirmContent": 2,
+      "GroupTitle": 1
+    },
+    "task_new_title_strings": 7,
+    "task_canon_override_strings": 5
+  },
+  "constraints": [
+    "Только девять подтверждённых cfg-to-display выражений в четырёх Lua-модулях.",
+    "Конфигурация, callback, ветви выбора, аргументы и идентификаторы не изменяются.",
+    "Другой язык, неизвестные поля/строки/новый источник и недоступный marker возвращают исходное значение.",
+    "Семь новых Title и пять точных Title overrides утверждены root как перевод задачи; полные названия не выдаются за прежний канон."
+  ],
+  "installed": false,
+  "live_layout_verified": false,
+  "proof_snapshot": {
+    "path": "source/game-formatting/activity-display-v2.proof.json",
+    "sha256": "ea018f1494cbb8e57441eeea0bad938573e7704a64177f8203a7ea2aa508fc65"
+  }
+}

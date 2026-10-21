@@ -1,0 +1,128 @@
+{
+  "schema": "wxq-numeric-display/v2",
+  "package": "10",
+  "game_version": "1.6.0.1",
+  "helper": "source/game-formatting/ru-display-v2.lua",
+  "helper_sha256": "c01e7a595c9c54b62162997550abeff65e685fc041ec8ef9443d633dd79c650b",
+  "scope": "Только представление чисел в проверенных Lua-потребителях; данные игры не изменяются.",
+  "resources": [
+    {
+      "id_hex": "06831ac11637ca73",
+      "module": "Localize",
+      "original_sha256": "d99c2caa0fc56dd508752e3005b1c3bc73aa88d2ba91cd22e0264b3225f43de8",
+      "hooks": [
+        "GetString"
+      ]
+    },
+    {
+      "id_hex": "b7039a45af1c9df7",
+      "module": "UITalkOSHProgitShareContentClass",
+      "original_sha256": "870361dbabf57789e9c12463560824ab2ce92b0d9a38bfdddd46308fed4f7825",
+      "hooks": [
+        "FormatDamage"
+      ],
+      "native_quantum": 100
+    }
+  ],
+  "scaled_keys": [
+    {
+      "key": "InMillionsOfUnit",
+      "scale": 10000,
+      "output_kind": "number",
+      "current_source_calls": [
+        "ddff2f82ab2c4bd0:73",
+        "26246663921998d1:348",
+        "2aa6e0613fa44093:1623",
+        "7370c8e4e44bb9d6:129"
+      ]
+    },
+    {
+      "key": "InHundredMillionOfUnit",
+      "scale": 100000000,
+      "output_kind": "number",
+      "current_source_calls": [
+        "ddff2f82ab2c4bd0:75",
+        "26246663921998d1:350"
+      ]
+    },
+    {
+      "key": "Operation_Rank_BigNumAbbreviation_TenThousand",
+      "scale": 10000,
+      "output_kind": "number",
+      "current_source_calls": [
+        "cadb9b058f8df8b7:162"
+      ]
+    },
+    {
+      "key": "GamePreviewCntFormat",
+      "scale": 10000,
+      "output_kind": "number",
+      "current_source_calls": [
+        "5501d5581cc7c50a:49",
+        "6f92799aad0ab248:36",
+        "6f92799aad0ab248:43"
+      ]
+    },
+    {
+      "key": "OperationNewbinMarkerOfW",
+      "scale": 10000,
+      "output_kind": "number",
+      "current_source_calls": [
+        "17f0bd68d01dceda:446",
+        "17f0bd68d01dceda:448",
+        "17f0bd68d01dceda:450"
+      ]
+    },
+    {
+      "key": "OperationGlobalRankItemDesc1",
+      "scale": 10000,
+      "output_kind": "players",
+      "current_source_calls": [
+        "58f61988158bf8fa:287",
+        "58f61988158bf8fa:346"
+      ]
+    },
+    {
+      "key": "SeasonJourney_KingNeed",
+      "scale": 10000,
+      "output_kind": "server_kings",
+      "current_source_calls": [
+        "420af098909162ea:524"
+      ]
+    }
+  ],
+  "native_template_guards": {
+    "language_key": "TitleSetting",
+    "language_value": "Настройки",
+    "probe_argument": "_AceRuNumericDisplayV2_",
+    "known_templates": "Только две явно перечисленные в помощнике ревизии русских шаблонов: выпущенная 0.6.5 и текущий корпус."
+  },
+  "preservation": [
+    "Количество, floor/ceil, пороги и ограничения каждого вызывающего кода не меняются.",
+    "FormatDamage сохраняет floor(damage / 100) * 100; буквальный w заменяется только на русские единицы отображения.",
+    "OperationGlobalRankItemDesc остаётся штатным немасштабированным ключом.",
+    "Плюс к лимиту добавляет исходный вызов 58f61988158bf8fa:346, не помощник.",
+    "Ровно один аргумент: конечное число с целым результатом масштаба либо точная десятичная строка.",
+    "Ники, чат, неизвестные ключи/шаблоны, другой язык, дополнительные аргументы и неподдержанные значения возвращаются в исходную функцию.",
+    "Строковые числа сдвигаются десятично без преобразования в double. После удаления конечных нулей допускается до двух дробных цифр компактной единицы; иначе возвращается точное базовое целое с пробелами между тысячами, без добавочного округления.",
+    "Share получает общий API при каждом вызове и допускает загрузку Localize после самого модуля Share.",
+    "Неизвестные и нестроковые ключи идут непосредственно в исходный GetString; pcall числового formatter используется только для семи известных ключей."
+  ],
+  "excluded_unproven_shared_text_keys": [
+    "ShopAuctionNumber",
+    "OSH_MONEY_TEXT_WA",
+    "AnswerQuestionRulew"
+  ],
+  "limitations": [
+    "Фактическая геометрия и вид игровых экранов требуют отдельной проверки в игре."
+  ],
+  "display_policy": {
+    "compact_fraction_digits_max": 2,
+    "trim_trailing_fraction_zeros": true,
+    "overflow_fraction": "exact-grouped-base-integer",
+    "group_separator": " ",
+    "rounding_added": false,
+    "native_share_quantum": 100,
+    "unknown_key_fast_path": true
+  }
+}

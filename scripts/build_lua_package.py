@@ -41,7 +41,9 @@ for _path in (str(PROJECT), str(PROJECT / 'scripts')):
         sys.path.insert(0, _path)
 
 import build_carrier as bc  # noqa: E402
+import build_activity_display_patch as activity_display  # noqa: E402
 import build_header_layout_patch as header_layout  # noqa: E402
+import build_numeric_display_patch as numeric_display  # noqa: E402
 import build_pilot_carrier as bp  # noqa: E402
 import pilot_contract  # noqa: E402
 import wxq_install  # noqa: E402
@@ -54,6 +56,7 @@ DIAG_RESOURCE_PLACEHOLDER = '@@AceRuDiagResource@@'
 MARKER = pilot_contract.LUA_PAYLOAD_MARKER.decode('ascii')
 # ресурс -> (модуль AutoBind, поля TimiText, которые переносит помощник). Только поля с точкой присваивания `self.<поле>.text = arg`.
 TARGETS = {
+    'f2e5aa01735bafb3': ('UIPersonaliseVoiceUseItemClass_AutoBind', ('voiceContent',)),
     'e607e142cfd91df0': ('UICardDetailHeroSkillClass_AutoBind', ('newSkillDescription', 'oldSkillDescription')),
     'aeff176f093cf41d': ('UICommonMSGBoxSettingsitemClass_AutoBind', ('title', 'infoTxt1', 'infoTxt2')),
     '99527bd5e8d17767': ('UICardDetailSkillDesItemClass_AutoBind', ('skillsDescription',)),
@@ -341,7 +344,11 @@ def load_coverage(path: Path = COVERAGE_FILE) -> tuple[str | None, dict[str, tup
 
 SHARED_ID, COVERAGE, COVERAGE_PINS = load_coverage()
 HEADER_TARGETS = frozenset(header_layout.TARGETS)
-ALL_IDS = frozenset(TARGETS) | frozenset(COVERAGE) | HEADER_TARGETS | ({SHARED_ID} if SHARED_ID else frozenset())
+NUMERIC_TARGETS = frozenset(numeric_display.TARGETS)
+ACTIVITY_TARGETS = frozenset(activity_display.TARGETS)
+ALL_IDS = frozenset(TARGETS) | frozenset(COVERAGE) | HEADER_TARGETS | NUMERIC_TARGETS | ACTIVITY_TARGETS | ({SHARED_ID} if SHARED_ID else frozenset())
+# Эти переиспользуемые поля освобождаются уже при uninitialize, до возможной native-выгрузки.
+RESTORE_ON_UNINITIALIZE = frozenset({'f2e5aa01735bafb3'})
 # Пины оригиналов покрытия вливаются в белый список контракта на время процесса (как BC7-пины); постоянная запись - в pilot_contract.py.
 for _rid, _sha in COVERAGE_PINS.items():
     if pilot_contract.LUA_REPLACEMENT_ALLOWED[PACKAGE].setdefault(_rid, _sha) != _sha:
@@ -445,6 +452,12 @@ def patch_lua(original: bytes, rid: str, diag: bool, helper: str) -> tuple[bytes
     edit = anchor.group(0) + release
     edits.append({'id': restore_id, 'original': anchor.group(0), 'replacement': edit})
     modified = modified[:anchor.start()] + edit + modified[anchor.end():]
+    if rid in RESTORE_ON_UNINITIALIZE:
+        anchor = _line(modified, r'^function ' + re.escape(module) + r':vOnUninitialize\(\)(?P<eol>\r?\n)', f'{rid} vOnUninitialize')
+        release = ''.join('    pcall(_AceRuWrapRestore, self.' + f + ')' + anchor.group('eol') for f in fields)
+        edit = anchor.group(0) + release
+        edits.append({'id': 'restore-own-text-fields-on-uninitialize', 'original': anchor.group(0), 'replacement': edit})
+        modified = modified[:anchor.start()] + edit + modified[anchor.end():]
     prefix = MARKER + eol + helper.replace('\n', eol) + eol
     # Обратная правка: убрать префикс и вставки -> побайтно исходный ресурс.
     payload = (prefix + modified).encode('utf-8')
@@ -545,8 +558,17 @@ def read_resources(game: Path, diag: bool, diag_log: bool = False, only: frozens
         raise LuaPackageError('TARGETS/покрытие расходится с белым списком pilot_contract.LUA_REPLACEMENT_ALLOWED')
     if COVERAGE and not SHARED_ID:
         raise LuaPackageError('Есть покрытые модули, но нет общего чанка')
+    selected = ALL_IDS if only is None else ALL_IDS & set(only)
+    activity_config_proof = None
+    if selected & ACTIVITY_TARGETS:
+        try:
+            source_config = activity_display.verify_metadata()['current_config']
+            config_original, _ = bp.read_original(game, source_config['package'], source_config['id_hex'])
+            activity_config_proof = activity_display.verify_current_config(config_original)
+        except activity_display.ActivityDisplayError as error:
+            raise LuaPackageError(str(error)) from error
     resources = []
-    for rid in sorted(ALL_IDS if only is None else ALL_IDS & set(only)):
+    for rid in sorted(selected):
         original, path = bp.read_original(game, PACKAGE, rid)
         if sha_bytes(original) != pilot_contract.LUA_REPLACEMENT_ALLOWED[PACKAGE][rid]:
             raise LuaPackageError(f'{rid}: оригинал в игре отличается от закреплённого (другая сборка?)')
@@ -556,6 +578,18 @@ def read_resources(game: Path, diag: bool, diag_log: bool = False, only: frozens
             except header_layout.HeaderLayoutError as error:
                 raise LuaPackageError(str(error)) from error
             module, fields = header_layout.TARGETS[rid]['module'], ()
+        elif rid in NUMERIC_TARGETS:
+            try:
+                payload, edits = numeric_display.patch_resource(original, rid)
+            except numeric_display.NumericDisplayError as error:
+                raise LuaPackageError(str(error)) from error
+            module, fields = numeric_display.TARGETS[rid]['module'], ()
+        elif rid in ACTIVITY_TARGETS:
+            try:
+                payload, edits = activity_display.patch_resource(original, rid)
+            except activity_display.ActivityDisplayError as error:
+                raise LuaPackageError(str(error)) from error
+            module, fields = activity_display.TARGETS[rid]['module'], ()
         elif rid in TARGETS:
             own_helper = helper.replace(DIAG_MODULE_PLACEHOLDER, TARGETS[rid][0]).replace(DIAG_RESOURCE_PLACEHOLDER, rid) if diag_log else helper
             payload, edits = patch_lua(original, rid, diag, own_helper)
@@ -570,6 +604,8 @@ def read_resources(game: Path, diag: bool, diag_log: bool = False, only: frozens
         resources.append({'package': PACKAGE, 'id_hex': rid, 'kind': 'lua-script', 'original': original, 'original_sha256': sha_bytes(original),
                           'items': [], 'data_file': path.name, 'alias': f'/Pilot/{rid}.lua', 'payload': payload, 'sha256': sha_bytes(payload),
                           'module': module, 'fields': list(fields), 'edits': edits})
+        if rid in ACTIVITY_TARGETS:
+            resources[-1]['activity_current_config_proof'] = activity_config_proof
     return resources
 
 
@@ -594,19 +630,60 @@ def finalize(output: Path, manifest: dict, resources: list[dict], diag: bool, se
             'metadata': str(header_layout.METADATA.relative_to(PROJECT)),
             'metadata_sha256': sha_bytes(header_layout.METADATA.read_bytes()),
             'targets': [{'id_hex': r['id_hex'], 'module': r['module']} for r in header_resources],
-            'trigger': 'native-title-or-left-control-update',
-            'runtime_guard': 'russian-locale-cyrillic-title-common-horizontal-layout-group-existing-layout-element',
+            'trigger': 'native-title-left-control-or-visibility-update-and-native-cmmenu-init',
+            'runtime_guard': 'russian-locale-measured-common-hlg-with-existing-layout-element-or-owned-uimenuright-style1-menu',
             'native_prefab_hierarchy_verified': False,
+            'in_game_verified': False,
+        }
+    numeric_resources = [r for r in resources if r['id_hex'] in NUMERIC_TARGETS]
+    if numeric_resources:
+        numeric_metadata = numeric_display.verify_metadata()
+        manifest['numeric_display'] = {
+            'helper': str(numeric_display.HELPER.relative_to(PROJECT)),
+            'helper_sha256': sha_bytes(numeric_display.HELPER.read_bytes()),
+            'metadata': str(numeric_display.METADATA.relative_to(PROJECT)),
+            'metadata_sha256': sha_bytes(numeric_display.METADATA.read_bytes()),
+            'targets': [{'id_hex': r['id_hex'], 'module': r['module']} for r in numeric_resources],
+            'scaled_keys': [row['key'] for row in numeric_metadata['scaled_keys']],
+            'runtime_guard': 'reviewed-russian-template-known-scaled-key-one-finite-number-or-exact-decimal-string',
+            'in_game_verified': False,
+        }
+    activity_resources = [r for r in resources if r['id_hex'] in ACTIVITY_TARGETS]
+    if activity_resources:
+        activity_metadata = activity_display.verify_metadata()
+        config = activity_metadata['current_config']
+        expected_proof = {key: config[key] for key in ('source_sha256', 'records', 'display_contexts')}
+        expected_proof['modified'] = False
+        if any(r.get('activity_current_config_proof') != expected_proof for r in activity_resources):
+            raise LuaPackageError('ActivityHelp: нет подтверждения текущего cfg из prime при сборке')
+        manifest['activity_display'] = {
+            'helper': str(activity_display.HELPER.relative_to(PROJECT)),
+            'helper_sha256': sha_bytes(activity_display.HELPER.read_bytes()),
+            'metadata': str(activity_display.METADATA.relative_to(PROJECT)),
+            'metadata_sha256': sha_bytes(activity_display.METADATA.read_bytes()),
+            'reviewed_input': str(activity_display.REVIEWED.relative_to(PROJECT)),
+            'reviewed_sha256': sha_bytes(activity_display.REVIEWED.read_bytes()),
+            'proof_snapshot': str(activity_display.PROOF.relative_to(PROJECT)),
+            'proof_sha256': sha_bytes(activity_display.PROOF.read_bytes()),
+            'targets': [{'id_hex': r['id_hex'], 'module': r['module']} for r in activity_resources],
+            'display_sites': sum(len(activity_display.SOURCES[r['id_hex']]) for r in activity_resources),
+            'current_config': config,
+            'current_config_proof': expected_proof,
+            'coverage': activity_metadata['coverage'],
+            'runtime_guard': 'reviewed-exact-title-grouptitle-confirmcontent-pairs-and-russian-setting-marker',
             'in_game_verified': False,
         }
     manifest['limitations'] = [
         'Игра и лаунчер не запускались: загрузит ли игра/ACE Lua из override пакета 10 и сработает ли подгонка на реальных окнах, не проверено',
         'Перенос работает только при locale-guard: Localize.GetString("TitleSetting") содержит кириллицу (v12; «Настройки» и «Опции» проходят), и только для кириллицы в поле; иначе поле остаётся как есть',
-        'Слово шире строки режется внутри себя (до 40 замеров на слово); несбалансированная известная разметка, нехватка высоты фиксированного поля (наш текст выше штатного более чем на 1,5 кегля) или бюджет измерений возвращают исходный текст поля',
+        'Помощник v15 не режет слова: если целое слово не помещается, разметка несбалансирована, не хватает высоты или исчерпан бюджет измерений, возвращается штатный текст поля; побуквенный перенос в таком исходном поле остаётся непроверенной проблемой',
         'Диагностика отказов: строки «модуль поле причина» в %TEMP%\\ace-ru-wrap.log (до 200 за сессию); работает, только если io/os доступны в Lua игры',
         'Общее покрытие: помощник стоит в чанке UIPrefabClass и выставляет _G._AceRuWrap; порядок загрузки (UIPrefabClass раньше любого UI-модуля) выведен из кода, в игре не проверен; в журнале ace-ru-wrap.log модуль вызывающего у таких полей показан как [C] (вызов через pcall)',
         'Явные LF внутри поля с HorizontalWrapMode.Overflow и сохранение <c>/<size> между строками в Timi mesh не проверены в Unity',
         'Общая русская шапка: только существующий общий HorizontalLayoutGroup и LayoutElement, preferredWidth после штатного rebuild, не более 16 соседей и 4 уровней родителей; нет подходящей раскладки — штатная геометрия. Иерархия настоящего prefab и итоговый зазор в игре не проверены',
+        'Общее горизонтальное меню: spacing меняется до родного CMMenu.Init только у подтверждённого UIMenuRight Style1 с измеримыми русскими подписями; нет метрик, контекста или бюджета — штатный spacing. ShrinkText, clipping, прокрутка и реальные hitbox проверены только source-fixture, в игре не проверены',
+        'Числовые подписи: только семь подтверждённых ключей и FormatDamage; остальные шаблоны, языки и неподдержанные аргументы вызывают исходный форматтер. Игровые данные и пороги не меняются',
+        'ActivityHelp: только точные утверждённые Title/GroupTitle/ConfirmContent на девяти display-границах четырёх контроллеров; текущий cfg проверен из prime при сборке и не заменяется. Неизвестные строки и другие языки остаются штатными; фактический layout не проверен',
     ] + (['ДИАГНОСТИЧЕСКАЯ сборка: к заголовку окна подсказок настроек и к имени умения в карточке героя дописывается «·»; для релиза пересобрать без --diag-marker'] if diag else []) \
       + (['ДИАГНОСТИЧЕСКАЯ сборка журнала (--diag-log): слой ru-space-wrap-diag.lua пишет %TEMP%\\ace-ru-diag.log (chunk/call/err, только числа и коды); для релиза пересобрать без --diag-log. Игра не запускалась'] if diag_log else [])
     (output / 'manifest.json').write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\n', 'utf-8')

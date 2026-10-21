@@ -79,7 +79,8 @@ def build_harness(work: Path) -> Path:
     done = subprocess.run([str(CSC), '/nologo', '/target:exe', '/platform:x64', '/optimize+', '/codepage:65001',
                            '/define:TESTBUILD', '/r:System.Web.Extensions.dll', '/r:Microsoft.CSharp.dll',
                            '/main:Egoist.WXQRussian.LauncherDiscoveryHarness', f'/out:{output}',
-                           str(PROJECT / 'installer/WXQTool.cs'), str(source)], capture_output=True, timeout=120)
+                           str(PROJECT / 'installer/WXQTool.cs'), str(PROJECT / 'installer/WXQCompatText.cs'),
+                           str(PROJECT / 'installer/WXQCompatPack.cs'), str(source)], capture_output=True, timeout=120)
     if done.returncode:
         raise RuntimeError('csc не собрал reflection-стенд: ' + (done.stdout + done.stderr).decode('cp866', errors='replace'))
     return output

@@ -1,0 +1,357 @@
+{
+ "schema": "wxq-public-protocol-aliases/v1",
+ "protected_cjk_nt_ids": [
+  "nt-00d7d3f4479a",
+  "nt-0222825b001f",
+  "nt-02541ee6fdd8",
+  "nt-02df1e132e2d",
+  "nt-043900f8ca74",
+  "nt-049e345b87cf",
+  "nt-057d35c0b2ec",
+  "nt-17887230788b",
+  "nt-183f2bc61167",
+  "nt-1bb490b54eef",
+  "nt-221b2e2ee7c5",
+  "nt-2d63fbf9617e",
+  "nt-2d6c4b3a60d7",
+  "nt-2eaead800e15",
+  "nt-3cf6eebd04ce",
+  "nt-43f3778bb76a",
+  "nt-451e0a5547d0",
+  "nt-4536d2c2d90d",
+  "nt-45b6cb250ec4",
+  "nt-4d07cdbb5813",
+  "nt-5de90a4039da",
+  "nt-630110c99376",
+  "nt-66a737a6070d",
+  "nt-69556cf6f855",
+  "nt-6991aafc9df0",
+  "nt-699b7373a15c",
+  "nt-6c9daf4447b0",
+  "nt-6edd781c1764",
+  "nt-6fa32ccb834b",
+  "nt-7b8a43d26a88",
+  "nt-7f112c0b6e64",
+  "nt-873af23cce6e",
+  "nt-887a28b65ed2",
+  "nt-8919ae81ae84",
+  "nt-8f9c06abd21f",
+  "nt-911298d62bfb",
+  "nt-9138465c84f2",
+  "nt-9b788bca23ec",
+  "nt-9c98c81a27bc",
+  "nt-ae06df669994",
+  "nt-b907bb292cfd",
+  "nt-b97fb104d88a",
+  "nt-bb9affc015d2",
+  "nt-be38e784c722",
+  "nt-bed8cd3260db",
+  "nt-bfc87e343b8e",
+  "nt-c34ae9798052",
+  "nt-c367f3f9f539",
+  "nt-c65cc786e49a",
+  "nt-cd01de8c6c43",
+  "nt-cd2c46d12e9a",
+  "nt-ceaf181b15b0",
+  "nt-d042a8010be8",
+  "nt-d06d52601ba6",
+  "nt-d22614f317f0",
+  "nt-d510efd7b881",
+  "nt-d5c02a550f4f",
+  "nt-d80a7b54d5b1",
+  "nt-d86754a15f1e",
+  "nt-dc1cb8606dc8",
+  "nt-de288dc05091",
+  "nt-e005f2ac4f48",
+  "nt-e54883606618",
+  "nt-e605a224219d",
+  "nt-e81bee0afbe7",
+  "nt-ea0ba1bd4d0a",
+  "nt-ec15d64129a0",
+  "nt-ee8b4d7a3a1b",
+  "nt-f315f72bfc49",
+  "nt-f3b0960e36de"
+ ],
+ "entries": [
+  {
+   "nt_id": "nt-00d7d3f4479a",
+   "source": "[弱]"
+  },
+  {
+   "nt_id": "nt-0222825b001f",
+   "source": "[出糗]"
+  },
+  {
+   "nt_id": "nt-02541ee6fdd8",
+   "source": "[月亮]"
+  },
+  {
+   "nt_id": "nt-02df1e132e2d",
+   "source": "[太阳]"
+  },
+  {
+   "nt_id": "nt-043900f8ca74",
+   "source": "[问号]"
+  },
+  {
+   "nt_id": "nt-049e345b87cf",
+   "source": "[晕]"
+  },
+  {
+   "nt_id": "nt-057d35c0b2ec",
+   "source": "[嘘]"
+  },
+  {
+   "nt_id": "nt-17887230788b",
+   "source": "[傲慢]"
+  },
+  {
+   "nt_id": "nt-183f2bc61167",
+   "source": "[呲牙]"
+  },
+  {
+   "nt_id": "nt-1bb490b54eef",
+   "source": "[委屈]"
+  },
+  {
+   "nt_id": "nt-221b2e2ee7c5",
+   "source": "[大骂]"
+  },
+  {
+   "nt_id": "nt-2d63fbf9617e",
+   "source": "[泪目]"
+  },
+  {
+   "nt_id": "nt-2d6c4b3a60d7",
+   "source": "[阴险]"
+  },
+  {
+   "nt_id": "nt-2eaead800e15",
+   "source": "[坏笑]"
+  },
+  {
+   "nt_id": "nt-3cf6eebd04ce",
+   "source": "[困]"
+  },
+  {
+   "nt_id": "nt-43f3778bb76a",
+   "source": "[胜利]"
+  },
+  {
+   "nt_id": "nt-451e0a5547d0",
+   "source": "[差劲]"
+  },
+  {
+   "nt_id": "nt-4536d2c2d90d",
+   "source": "[强]"
+  },
+  {
+   "nt_id": "nt-45b6cb250ec4",
+   "source": "[舔嘴]"
+  },
+  {
+   "nt_id": "nt-4d07cdbb5813",
+   "source": "[猪]"
+  },
+  {
+   "nt_id": "nt-5de90a4039da",
+   "source": "[礼物]"
+  },
+  {
+   "nt_id": "nt-630110c99376",
+   "source": "[尴尬]"
+  },
+  {
+   "nt_id": "nt-66a737a6070d",
+   "source": "[便便]"
+  },
+  {
+   "nt_id": "nt-69556cf6f855",
+   "source": "[得意]"
+  },
+  {
+   "nt_id": "nt-6991aafc9df0",
+   "source": "[爱你]"
+  },
+  {
+   "nt_id": "nt-699b7373a15c",
+   "source": "[怒]"
+  },
+  {
+   "nt_id": "nt-6c9daf4447b0",
+   "source": "[西瓜]"
+  },
+  {
+   "nt_id": "nt-6edd781c1764",
+   "source": "[抓狂]"
+  },
+  {
+   "nt_id": "nt-6fa32ccb834b",
+   "source": "[鼓掌]"
+  },
+  {
+   "nt_id": "nt-7b8a43d26a88",
+   "source": "[惊恐]"
+  },
+  {
+   "nt_id": "nt-7f112c0b6e64",
+   "source": "[惊讶]"
+  },
+  {
+   "nt_id": "nt-873af23cce6e",
+   "source": "[左哼]"
+  },
+  {
+   "nt_id": "nt-887a28b65ed2",
+   "source": "[流汗]"
+  },
+  {
+   "nt_id": "nt-8919ae81ae84",
+   "source": "[奋斗]"
+  },
+  {
+   "nt_id": "nt-8f9c06abd21f",
+   "source": "[蓝瘦]"
+  },
+  {
+   "nt_id": "nt-911298d62bfb",
+   "source": "[微笑]"
+  },
+  {
+   "nt_id": "nt-9138465c84f2",
+   "source": "[瞪眼]"
+  },
+  {
+   "nt_id": "nt-9b788bca23ec",
+   "source": "[右哼]"
+  },
+  {
+   "nt_id": "nt-9c98c81a27bc",
+   "source": "[篮球]"
+  },
+  {
+   "nt_id": "nt-ae06df669994",
+   "source": "[闭嘴]"
+  },
+  {
+   "nt_id": "nt-b907bb292cfd",
+   "source": "[吓]"
+  },
+  {
+   "nt_id": "nt-b97fb104d88a",
+   "source": "[再见]"
+  },
+  {
+   "nt_id": "nt-bb9affc015d2",
+   "source": "[心碎]"
+  },
+  {
+   "nt_id": "nt-be38e784c722",
+   "source": "[流泪]"
+  },
+  {
+   "nt_id": "nt-bed8cd3260db",
+   "source": "[睡]"
+  },
+  {
+   "nt_id": "nt-bfc87e343b8e",
+   "source": "[捂嘴]"
+  },
+  {
+   "nt_id": "nt-c34ae9798052",
+   "source": "[抠鼻]"
+  },
+  {
+   "nt_id": "nt-c367f3f9f539",
+   "source": "[白眼]"
+  },
+  {
+   "nt_id": "nt-c65cc786e49a",
+   "source": "[害羞]"
+  },
+  {
+   "nt_id": "nt-cd01de8c6c43",
+   "source": "[玫瑰]"
+  },
+  {
+   "nt_id": "nt-cd2c46d12e9a",
+   "source": "[拥抱]"
+  },
+  {
+   "nt_id": "nt-ceaf181b15b0",
+   "source": "[喜欢]"
+  },
+  {
+   "nt_id": "nt-d042a8010be8",
+   "source": "[勾引]"
+  },
+  {
+   "nt_id": "nt-d06d52601ba6",
+   "source": "[吐]"
+  },
+  {
+   "nt_id": "nt-d22614f317f0",
+   "source": "[衰]"
+  },
+  {
+   "nt_id": "nt-d510efd7b881",
+   "source": "[握手]"
+  },
+  {
+   "nt_id": "nt-d5c02a550f4f",
+   "source": "[呵欠]"
+  },
+  {
+   "nt_id": "nt-d80a7b54d5b1",
+   "source": "[亲亲]"
+  },
+  {
+   "nt_id": "nt-d86754a15f1e",
+   "source": "[鄙视]"
+  },
+  {
+   "nt_id": "nt-dc1cb8606dc8",
+   "source": "[拳头]"
+  },
+  {
+   "nt_id": "nt-de288dc05091",
+   "source": "[爱心]"
+  },
+  {
+   "nt_id": "nt-e005f2ac4f48",
+   "source": "[抹汗]"
+  },
+  {
+   "nt_id": "nt-e54883606618",
+   "source": "[伤心]"
+  },
+  {
+   "nt_id": "nt-e605a224219d",
+   "source": "[凋谢]"
+  },
+  {
+   "nt_id": "nt-e81bee0afbe7",
+   "source": "[难过]"
+  },
+  {
+   "nt_id": "nt-ea0ba1bd4d0a",
+   "source": "[调皮]"
+  },
+  {
+   "nt_id": "nt-ec15d64129a0",
+   "source": "[汗]"
+  },
+  {
+   "nt_id": "nt-ee8b4d7a3a1b",
+   "source": "[可怜]"
+  },
+  {
+   "nt_id": "nt-f315f72bfc49",
+   "source": "[憨笑]"
+  },
+  {
+   "nt_id": "nt-f3b0960e36de",
+   "source": "[抱拳]"
+  }
+ ]
+}

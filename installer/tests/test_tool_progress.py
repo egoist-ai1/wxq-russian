@@ -204,7 +204,8 @@ def neutralize_running_check(tool: rt.Tool, work: Path) -> None:
     folder.mkdir(exist_ok=True)
     (folder / 'WXQTool.cs').write_text(source.replace(needle, 'if (false && active.Count > 0)'), 'utf-8-sig')
     done = subprocess.run([str(bi.CSC), '/nologo', '/target:exe', '/platform:x64', '/optimize+', '/codepage:65001', '/r:System.Web.Extensions.dll',
-                           f'/out:{tool.exe}', str(folder / 'WXQTool.cs')], capture_output=True)
+                           f'/out:{tool.exe}', str(folder / 'WXQTool.cs'), str(HERE.parent / 'WXQCompatText.cs'),
+                           str(HERE.parent / 'WXQCompatPack.cs')], capture_output=True)
     if done.returncode:
         raise SystemExit('не собралась копия помощника: ' + done.stdout.decode('cp866', errors='replace'))
 

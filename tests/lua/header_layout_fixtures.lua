@@ -4,7 +4,11 @@ local function check(value, message)
     assert(value, message)
     count = count + 1
 end
-ClassLib = { UIPrefabClass = { vOnUninitialize = function() end } }
+ClassLib = { UIPrefabClass = {
+    vOnUninitialize = function() end,
+    -- Реальный UIPrefabClass вызывает этот callback после init и при изменении native-visible mask.
+    vOnPrefabVisibleChanged = function(self, visible) self.nativeVisible = visible end,
+} }
 super = ClassLib.UIPrefabClass
 function DeclareClass(name, base)
     local class = setmetatable({}, { __index = base })
@@ -15,6 +19,9 @@ function import(_, base) return base end
 function auto_bind() end
 function EnumEnd(value) return value end
 function typeof(value) return value end
+function bind(object, method) return function(...) return method(object, ...) end end
+table.append = function(target, value) target[#target + 1] = value end
+table.clear = function(target) for key in pairs(target) do target[key] = nil end end
 local nativeCalls, marks = 0, 0
 local function isActive(node)
     return node ~= nil and node ~= false and node.gameObject.activeInHierarchy
@@ -55,7 +62,7 @@ local function nativeRebuild(rect)
     -- preferredWidth становится доступен после штатного rebuild, а не через таймер.
     if rect.afterRebuild then rect.afterRebuild(); rect.afterRebuild = nil end
 end
-CS = { UnityEngine = { UI = {
+CS = { UIWidgets = { CMMenuItem = "CMMenuItem" }, UnityEngine = { UI = {
     LayoutElement = "LayoutElement", HorizontalLayoutGroup = "HorizontalLayoutGroup",
     LayoutRebuilder = {
         ForceRebuildLayoutImmediate = nativeRebuild,
@@ -68,6 +75,8 @@ CS = { UnityEngine = { UI = {
 
 -- {{BASE_MODULE}}
 -- {{BACK_MODULE}}
+ClassLib.UIMenuRightStyle1ItemClass = {}
+-- {{MENU_MODULE}}
 
 local Base = ClassLib.UIFullScreenViewTemplateBase
 local Back = ClassLib.UIFullScreenViewTemplate_BackClass
@@ -150,6 +159,54 @@ local function refresh(view, text, mask)
 end
 local function gap(view, dropdown)
     return dropdown.nativeX - (view.stack.rectTransform.nativeX + view.title.preferredWidth)
+end
+local function newMenu(titles, settings)
+    settings = settings or {}
+    local menu = setmetatable({ _inited = false, _childPrefabsList = {} }, { __index = ClassLib.CMMenuProClass })
+    local mono = {}
+    local owner = {
+        _rootTf = rect(nil, 1400, false), _menuCM = menu, _menu = mono,
+        _menuRollRectTransform = rect(nil, 600, false), _rollContentScrollRect = {},
+    }
+    function owner:CreateChildPrefabClass(_, parent, data)
+        local rt = rect(parent, 90, false)
+        local item = { _rootTf = rt, _rootGo = {} }
+        local native = { transform = rt, childItemList = {} }
+        rt.components.CMMenuItem = native
+        for _, field in ipairs({ "_txt_TabName_selectShrinkText", "_txt_TabName_unSelectShrinkText" }) do
+            local label = component(rect(rt, 70, false))
+            label.text = data.Content
+            label.preferredWidth = utf8.len(data.Content) * 12
+            label.fontSize, label.resizeTextForBestFit, label.font = 24, true, "native-menu-font"
+            if settings.noMeasure then label.preferredWidth = nil end
+            item[field] = label
+        end
+        native.fixtureItem = item
+        return item
+    end
+    function mono:Init(spacing, selected, onSelect, onUnselect)
+        self.spacing, self.selectedCallback, self.onSelect, self.onUnselect = spacing, selected, onSelect, onUnselect
+        local x = 0
+        for index, native in ipairs(self.itemList) do
+            if settings.spacingBefore then x = x + spacing[index] end
+            native.transform.nativeX = x
+            x = x + native.transform.rect.width
+            if not settings.spacingBefore then x = x + spacing[index] end
+        end
+        self.nativeSpan = x
+    end
+    local tree = {}
+    for _, title in ipairs(titles) do table.insert(tree, { Title = title }) end
+    local style = settings.foreignStyle and {} or ClassLib.UIMenuRightStyle1ItemClass
+    menu:Init(owner, tree, mono, style, {}, settings.selectCallback, settings.unselectCallback)
+    return menu, mono, owner
+end
+local function menuGap(menu, index)
+    local first, second = menu._childPrefabsList[index], menu._childPrefabsList[index + 1]
+    local a, b = first._txt_TabName_selectShrinkText, second._txt_TabName_selectShrinkText
+    local aRight = first._rootTf.nativeX + first._rootTf.rect.width / 2 + a.preferredWidth / 2
+    local bLeft = second._rootTf.nativeX + second._rootTf.rect.width / 2 - b.preferredWidth / 2
+    return bLeft - aRight
 end
 local view, root, stack, dropdown = newView()
 refresh(view)
