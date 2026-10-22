@@ -348,6 +348,7 @@ var
   UiCmdSize, UiLastSeq, SvRev, SvStep: Integer;
   SvScreen, SvOp, SvState, SvDetail, SvFile, SvEta, SvStepState, SvFailKind, SvFailMsg, SvFailCode, SvNote: String;
   SvStage, SvDetailBeforeClose, PreClosingCaption: String;   // SvStage = 'close' пока помощник закрывает игру и лаунчер (протокол: поле stage)
+  SvLaunchState, SvLaunchMessage: String;
   ClosingShown: Boolean;
   SvDone, SvTotal: Int64;
   SvCanRemove, SvInterrupted, SvFailedBefore: Boolean;
@@ -454,6 +455,7 @@ begin
     '","eta":"' + JsonStr(SvEta) + '","done_bytes":' + IntToStr(SvDone) + ',"total_bytes":' + IntToStr(SvTotal) +
     ',"state":"' + SvState + '","stage":"' + SvStage + '","launcher_on":' + JsonBool(LauncherOn) + ',"launcher_available":' + JsonBool(LauncherAvailable) +
     ',"launcher_installed":' + JsonBool(LauncherWanted) + ',"has_launcher_shortcut":' + JsonBool((LauncherLnk <> '') or LauncherWanted) +
+    ',"launch_state":"' + JsonStr(SvLaunchState) + '","launch_message":"' + JsonStr(SvLaunchMessage) + '"' +
     ',"failure_code":"' + JsonStr(SvFailCode) + '","failure_message":"' + JsonStr(SvFailMsg) + '","failed_before_write":' + JsonBool(SvFailedBefore) +
     ',"fail_kind":"' + SvFailKind + '","note":"' + JsonStr(SvNote) + '","interrupted":' + JsonBool(SvInterrupted) +
     ',"can_remove":' + JsonBool(SvCanRemove) + ',"manager_version":"{#AppVersion}","translation_version":"' + JsonStr(InstalledVersion) +
@@ -1832,22 +1834,31 @@ begin
   if Length(Result) > 36 then Result := Copy(Result, 1, 10) + '…' + Copy(Result, Length(Result) - 23, 24);
 end;
 
-procedure LaunchGame;
+function LaunchGame: Boolean;
 var
   Code: Integer;
   Ru: String;
 begin
-  // От имени обычного пользователя, а не администратора. Оригинальный ярлык лаунчера открывается без повышения;
-  // ярлык активатора (русский лаунчер) Windows сам повысит по манифесту, UAC спросит разрешение.
+  Result := False;
+  Code := 2;
+  // Активатор сам запрашивает UAC только при реальной необходимости. Ждём его
+  // результат, а не закрываем окно после одного успешного создания процесса.
   if LauncherWanted then
   begin
-    Ru := DesktopDir('') + '\Honor of Kings ACE (RU).lnk';
-    if not FileExists(Ru) then Ru := StartDir('') + '\Honor of Kings ACE (RU).lnk';
-    if not FileExists(Ru) then Ru := ExpandConstant('{app}\launcher\WXQLauncherRU.exe');
-    ShellExecAsOriginalUser('open', Ru, '', '', SW_SHOWNORMAL, ewNoWait, Code);
+    Ru := ExpandConstant('{app}\launcher\WXQLauncherRU.exe');
+    if FileExists(Ru) then
+      Result := ShellExecAsOriginalUser('open', Ru, '', ExtractFileDir(Ru), SW_SHOWNORMAL, ewWaitUntilTerminated, Code) and (Code = 0);
   end
+  else if LauncherExe <> '' then
+    Result := ShellExecAsOriginalUser('open', LauncherExe, '', ExtractFileDir(LauncherExe), SW_SHOWNORMAL, ewNoWait, Code)
   else if LauncherLnk <> '' then
-    ShellExecAsOriginalUser('open', LauncherLnk, '', '', SW_SHOWNORMAL, ewNoWait, Code);
+    Result := ShellExecAsOriginalUser('open', LauncherLnk, '', '', SW_SHOWNORMAL, ewNoWait, Code);
+  Log('Launch game: accepted=' + JsonBool(Result) + ' code=' + IntToStr(Code));
+  if not Result then
+  begin
+    if Code = 1223 then SvLaunchMessage := 'Запуск отменён в окне подтверждения Windows. Можно повторить.'
+    else SvLaunchMessage := 'Не удалось открыть лаунчер (код ' + IntToStr(Code) + '). Перевод сохранён. Повторите запуск.';
+  end;
 end;
 
 // Тексты окна. Без жаргона: что ставится, что не входит, как удалить, что делать после обновления игры.
@@ -2038,7 +2049,13 @@ begin
   if Busy then Exit;
   if WizardForm.CurPageID = wpFinished then
   begin
-    if Mode = 2 then LaunchGame;
+    if Mode = 2 then
+      if not LaunchGame then
+      begin
+        InfoLabel.Caption := SvLaunchMessage;
+        InfoLabel.Visible := True;
+        Exit;
+      end;
     WizardForm.NextButton.OnClick(WizardForm.NextButton);
   end
   else if Mode = 1 then
@@ -2494,12 +2511,31 @@ begin
   end
   else if Cmd = 'launch' then
   begin
-    if (SvScreen = 'done') and (Page = wpFinished) then
+    if (SvScreen = 'done') and (Page = wpFinished) and (SvLaunchState <> 'starting') then
     begin
-      UiClosing := True;
-      LaunchGame;
-      WizardForm.NextButton.OnClick(WizardForm.NextButton);
-      UiClosing := False;
+      SvLaunchState := 'starting';
+      SvLaunchMessage := '';
+      PublishState;
+      if LaunchGame then
+      begin
+        if not UiClosing then
+        begin
+          UiClosing := True;
+          UiCloseAt := GetTickCount;
+          WizardForm.NextButton.OnClick(WizardForm.NextButton);
+        end;
+      end
+      else
+      begin
+        SvLaunchState := 'failed';
+        PublishState;
+      end;
+    end
+    else if SvLaunchState <> 'starting' then
+    begin
+      SvLaunchState := 'failed';
+      SvLaunchMessage := 'Окно ещё не готово к запуску. Повторите действие.';
+      PublishState;
     end;
   end
   else if Cmd = 'close' then

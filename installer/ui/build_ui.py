@@ -30,7 +30,7 @@ def build(exe, test_build=False):
            "/win32manifest:" + os.path.join(HERE, "WXQSetupUI.manifest"), "/lib:" + WPF]
     if test_build:
         cmd.append("/define:TESTBUILD")
-    for r in ["PresentationCore.dll", "PresentationFramework.dll", "WindowsBase.dll", "System.Xaml.dll"]:
+    for r in ["PresentationCore.dll", "PresentationFramework.dll", "WindowsBase.dll", "System.Xaml.dll", "UIAutomationProvider.dll", "UIAutomationTypes.dll"]:
         p = os.path.join(WPF, r)
         cmd.append("/r:" + (p if os.path.exists(p) else r))
     cmd.append("/r:System.dll")

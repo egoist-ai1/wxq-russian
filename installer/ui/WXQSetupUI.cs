@@ -15,6 +15,8 @@ using System.Threading;
 using System.Web.Script.Serialization;
 using System.Windows;
 using System.Windows.Automation;
+using System.Windows.Automation.Peers;
+using System.Windows.Automation.Provider;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -215,7 +217,29 @@ namespace WXQSetup
             };
         }
 
-        public bool IsEnabledBtn { get { return enabled; } set { enabled = value; Opacity = value ? 1 : 0.4; Cursor = value ? Cursors.Hand : Cursors.Arrow; } }
+        public bool IsEnabledBtn { get { return enabled; } set { enabled = value; IsEnabled = value; Opacity = value ? 1 : 0.4; Cursor = value ? Cursors.Hand : Cursors.Arrow; } }
+
+        protected override AutomationPeer OnCreateAutomationPeer() { return new BtnAutomationPeer(this); }
+
+        internal void InvokeAccessible()
+        {
+            if (enabled && IsEnabled && IsVisible && Click != null) Click();
+        }
+
+        // Штатный API доступности Windows: тот же Click без мыши, клавиатуры и смены фокуса.
+        sealed class BtnAutomationPeer : FrameworkElementAutomationPeer, IInvokeProvider
+        {
+            public BtnAutomationPeer(Btn owner) : base(owner) { }
+            protected override string GetClassNameCore() { return "Button"; }
+            protected override AutomationControlType GetAutomationControlTypeCore() { return AutomationControlType.Button; }
+            public override object GetPattern(PatternInterface pattern) { return pattern == PatternInterface.Invoke ? this : base.GetPattern(pattern); }
+            public void Invoke()
+            {
+                var button = (Btn)Owner;
+                if (!button.IsEnabledBtn || !button.IsEnabled) throw new ElementNotEnabledException();
+                button.Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(button.InvokeAccessible));
+            }
+        }
 
         Color BgColor(bool h, bool d)
         {
@@ -323,6 +347,7 @@ namespace WXQSetup
         public string ManagerVersion = "";
         public string GameVersion = "";
         public bool HasLauncherShortcut = true;
+        public string LaunchState = "none", LaunchMessage = "";
         public bool UpdateEnabled;
         public string UpdateState = "none";  // none | checking | current | available | downloading | ready | handoff | failed
         public string UpdateVersion = "", UpdateMessage = "";
@@ -458,6 +483,7 @@ namespace WXQSetup
         {
             if (Array.IndexOf(Cmds, cmd) < 0 || s.State == "running" || s.Screen == "progress") return false;
             if (cmd == "close") return true;  // загрузку можно остановить закрытием установщика
+            if (s.LaunchState == "starting") return false;
             if (s.UpdateBusy) return false;
             if (cmd == "checkupdate") return s.UpdateEnabled && s.UpdateState != "checking";
             if (cmd == "update") return s.UpdateEnabled && (s.UpdateState == "available" || s.UpdateState == "ready");
@@ -497,6 +523,9 @@ namespace WXQSetup
             s.LauncherAvailable = Bool(d, "launcher_available", true);
             s.LauncherInstalled = Bool(d, "launcher_installed");
             s.HasLauncherShortcut = Bool(d, "has_launcher_shortcut", true);
+            string launchState = Plain(d, "launch_state", 20);
+            s.LaunchState = launchState == "starting" || launchState == "failed" ? launchState : "none";
+            s.LaunchMessage = Plain(d, "launch_message", 280);
             s.FailureCode = Str(d, "failure_code"); s.FailureMessage = Str(d, "failure_message");
             s.FailedBeforeWrite = Bool(d, "failed_before_write", true);
             s.FailKind = Str(d, "fail_kind") == "remove" ? "remove" : "install";
@@ -512,7 +541,7 @@ namespace WXQSetup
             // Галочка «Русский лаунчер» принадлежит окну: из состояния она берётся только при входе на экран, чтобы клик не перерисовывал экран.
             if (intoNew) s.LauncherOn = Bool(d, "launcher_on");
             sig = string.Join("|", scr, s.CanRemove, s.Interrupted, s.FailureMessage, s.FailKind, s.Note, s.LauncherAvailable, s.LauncherInstalled,
-                s.HasLauncherShortcut, s.TranslationVersion, s.GameVersion, s.FailedBeforeWrite, s.Op);
+                s.HasLauncherShortcut, s.TranslationVersion, s.GameVersion, s.FailedBeforeWrite, s.Op, s.LaunchState, s.LaunchMessage);
             return true;
         }
     }
@@ -526,7 +555,7 @@ namespace WXQSetup
         readonly Grid host = new Grid();
         readonly Grid updateHost = new Grid();
         readonly Dictionary<Btn, bool> operationButtons = new Dictionary<Btn, bool>();
-        bool updatePending, checkPending;
+        bool updatePending, checkPending, launchPending;
         string commandError = "", retryCommand = "";
         string updateSig;
         string current;
@@ -592,15 +621,17 @@ namespace WXQSetup
         public void Do(string cmd) { Fire(cmd); }
         void Fire(string cmd)
         {
-            if (!Proto.CanSend(S, cmd) || (updatePending && cmd != "close") || (checkPending && cmd == "checkupdate")) return;
+            if (!Proto.CanSend(S, cmd) || ((updatePending || launchPending) && cmd != "close") || (checkPending && cmd == "checkupdate")) return;
             commandError = retryCommand = "";
             if (cmd == "update") { updatePending = true; UpdateUpdates(false); }
             if (cmd == "checkupdate") { checkPending = true; UpdateUpdates(false); }
+            if (cmd == "launch") { launchPending = true; UpdateUpdates(false); }
             if (Command != null) Command(cmd);
         }
 
         public void AcceptUpdateState()
         {
+            if (S.LaunchState == "starting" || S.LaunchState == "failed") launchPending = false;
             if (S.UpdateBusy || S.UpdateState == "failed" || S.UpdateState == "current" || S.UpdateState == "available") updatePending = false;
             if (S.UpdateState != "none") checkPending = false;
             UpdateUpdates(false);
@@ -615,6 +646,7 @@ namespace WXQSetup
 
         public void CommandFailed(string cmd)
         {
+            if (cmd == "launch") launchPending = false;
             if (cmd == "update" || cmd == "checkupdate") { UpdateCommandFailed(); return; }
             commandError = "Не удалось передать действие установщику. Нажмите ещё раз.";
             retryCommand = cmd;
@@ -631,10 +663,10 @@ namespace WXQSetup
 
         public void UpdateUpdates(bool animate)
         {
-            bool busy = S.UpdateBusy || updatePending;
+            bool busy = S.UpdateBusy || updatePending || launchPending || S.LaunchState == "starting";
             foreach (var item in operationButtons) item.Key.IsEnabledBtn = item.Value && !busy;
             if (launcherToggle != null) launcherToggle.IsEnabled = !busy;
-            updateHost.Visibility = S.UpdateEnabled ? Visibility.Visible : Visibility.Collapsed;
+            updateHost.Visibility = S.UpdateEnabled || commandError.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
             string st = commandError.Length > 0 ? "command_failed" : updatePending ? "pending" : checkPending ? "checking" : S.UpdateState;
             string nextSig = string.Join("|", st, S.UpdateVersion, S.UpdateMessage, S.UpdateDoneBytes, S.UpdateTotalBytes, S.UpdateEnabled, S.State, S.Screen);
             if (nextSig == updateSig) return;
@@ -1109,6 +1141,8 @@ namespace WXQSetup
         public static string DoneDescription(UiState s)
         {
             string text = string.IsNullOrEmpty(s.Note) ? "" : s.Note + " ";
+            if (s.LaunchState == "failed") text = s.LaunchMessage + " " + text;
+            else if (s.LaunchState == "starting") text = "Запускаю лаунчер. Подтвердите запрос прав, если его покажет Windows. " + text;
             text += s.LauncherInstalled ? "Перевод лаунчера подготовлен. " : "Лаунчер остаётся на китайском. ";
             return text + "Некоторые изображения и ранние экраны игры ещё могут оставаться на китайском.";
         }
@@ -1136,7 +1170,7 @@ namespace WXQSetup
             var card = new StackPanel();
             card.Children.Add(Tk.TB("Что дальше", 12, Tk.Muted));
             var l1 = ItemRow("play", S.HasLauncherShortcut ? "Запустите игру" : "Откройте игру вручную",
-                S.HasLauncherShortcut ? (S.LauncherInstalled ? "Откроется русский лаунчер от обычного пользователя" : "Откроется оригинальный лаунчер") : "Ярлык лаунчера не найден");
+                S.HasLauncherShortcut ? (S.LauncherInstalled ? "Откроется русский лаунчер. Windows может запросить права" : "Откроется оригинальный лаунчер") : "Ярлык лаунчера не найден");
             l1.Margin = new Thickness(0, 16, 0, 12); card.Children.Add(l1);
             card.Children.Add(ItemRow("redo", "После обновления игры", "Дойдите до главного меню, закройте игру и откройте русификатор для переустановки"));
             if (S.LauncherInstalled) card.Children.Add(ItemRow("shield", "Русский лаунчер", "Ярлык «Honor of Kings ACE (RU)»; новая функция, с ACE в игре не проверена. Выключить: переустановка с выключенным переключателем"));
@@ -1146,6 +1180,7 @@ namespace WXQSetup
             var close = new Btn(BK.Secondary, "Закрыть", null, null, 44, 112); close.Click += delegate { Fire("close"); };
             var run = new Btn(BK.Primary, "Запустить игру", "play", null, 44, 180); run.Click += delegate { Fire("launch"); };
             run.IsEnabledBtn = S.HasLauncherShortcut;
+            operationButtons.Add(run, S.HasLauncherShortcut);
             footer.Children.Add(Buttons(close, run));
             return root;
         }
@@ -1472,7 +1507,7 @@ namespace WXQSetup
             v.Command += delegate (string cmd)
             {
                 if (!Proto.CanSend(v.S, cmd)) return;   // запись игры и обновление не запускаются одновременно
-                if (cmd == "close" || cmd == "launch") { if (sentClose) return; sentClose = true; send(cmd); exitSoon(); return; }
+                if (cmd == "close") { if (sentClose) return; sentClose = true; send(cmd); exitSoon(); return; }
                 send(cmd);
             };
             w.Closing += delegate (object o, System.ComponentModel.CancelEventArgs e)

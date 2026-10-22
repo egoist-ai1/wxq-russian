@@ -557,7 +557,7 @@ if ($probeProc.HandleCount -gt $before + 8) { throw 'refused constructors leaked
 
     def test_game_running_skips_attachment(self) -> None:
         rig = self.make('game')
-        game = BIN / (rig.game + '.exe')
+        game = rig.root / (rig.game + '.exe')
         shutil.copy2(BIN / 'fake.exe', game)
         proc = subprocess.Popen([str(game)], env=rig.env(FAKE_ROLE='idle'))
         rig.processes.append(proc)

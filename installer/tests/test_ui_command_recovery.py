@@ -196,7 +196,8 @@ def main() -> int:
     command = [str(CSC), '/nologo', '/target:exe', '/main:UiCommandRecoveryHarness',
                '/platform:anycpu', '/optimize+', '/codepage:65001',
                f'/out:{executable}', f'/lib:{WPF}']
-    for assembly in ('PresentationCore.dll', 'PresentationFramework.dll', 'WindowsBase.dll', 'System.Xaml.dll'):
+    for assembly in ('PresentationCore.dll', 'PresentationFramework.dll', 'WindowsBase.dll',
+                     'System.Xaml.dll', 'UIAutomationProvider.dll', 'UIAutomationTypes.dll'):
         reference = WPF / assembly
         command.append('/r:' + (str(reference) if reference.is_file() else assembly))
     command += ['/r:System.dll', '/r:System.Web.Extensions.dll']

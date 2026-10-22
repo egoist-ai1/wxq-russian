@@ -30,9 +30,20 @@ const GUEST_RULES = [
 // Дополнительные защищённые классы гостевых страниц: авторы, ведущие, названия пользовательского контента.
 const GUEST_PROTECTED = 'author|anchor|streamer|creator|up[-_]?name|(?:lineup|room|video|live)[-_]?(?:name|title)|ugc|(?:^|\\s)user-info-content_name(?:$|\\s)';
 // Только безопасные свойства: русский текст длиннее китайского, поэтому слова не рвём, а вкладки не переносим. Размер шрифта не меняется.
-const GUEST_CSS = '[data-wxq-ru]{word-break:normal;overflow-wrap:normal;hyphens:none}'
-  + '[data-wxq-ru="tab"]{white-space:nowrap}\n';
+const GUEST_CSS = '[data-wxq-ru]{font-family:"Segoe UI",Arial,sans-serif!important;word-break:normal;overflow-wrap:normal;hyphens:none}'
+  + '[data-wxq-ru="tab"]{white-space:nowrap}'
+  + '[data-wxq-ru="role"]{flex-shrink:0;white-space:nowrap;width:auto!important}'
+  + '[class*="subTabContainer-"]{width:max-content!important;max-width:100%;height:auto!important;min-height:40px;display:inline-flex!important;box-sizing:border-box}'
+  + '[class*="subTabItem-"]{flex:0 0 auto!important;width:auto!important;min-width:144px;height:36px;padding:0 12px;box-sizing:border-box;display:flex;align-items:center;justify-content:center}'
+  + '[class*="subTabText-"][data-wxq-ru="tab"]{width:auto!important;height:auto!important;line-height:20px}'
+  + '[class^="tag-"][data-wxq-ru]{flex-shrink:0;white-space:nowrap;height:auto!important;min-height:16px;line-height:16px}'
+  + '[class*="assetInfo-"] [class*="nameWrap-"]{width:84px!important;flex:0 0 84px;height:auto!important}'
+  + '[class*="assetInfo-"] [class*="nameWrap-"] [data-wxq-ru]{width:auto!important;height:auto!important;white-space:normal;line-height:16px}\n';
 const FRAME_DEBOUNCE_MS = 300;
+const FRAME_RETRY_MS = 1000;
+const FRAME_OPERATION_MS = 10000;
+const FRAME_MAX_ATTEMPTS = 60;
+const FRAME_RETRY_WINDOW_MS = 120000;
 const MAX_GUEST_TEXT = 400;
 // Числовые шаблоны лаунчера, допустимые на странице гостя (как NUMERIC_UNIT в rendererInstall).
 const GUEST_NUMERIC_TEMPLATE = /^\{\{[^{}]+\}\}(?:s|min|万|0K|分钟|小时|秒)(?:前|后|或更长)?$/;
@@ -64,6 +75,10 @@ function rendererInstall(cfg) {
   const ATTRS = ['title', 'placeholder', 'aria-label'].concat(Array.isArray(cfg.attrs) ? cfg.attrs : []);
   const ATTR_SELECTOR = ATTRS.map(name => '[' + name + ']').join(',');
   const PROTECTED_EXTRA = cfg.protectedExtra ? new RegExp(cfg.protectedExtra, 'i') : null;
+  const AUTHOR_ROLE_LABELS = new Set(Array.isArray(cfg.authorRoleLabels) ? cfg.authorRoleLabels : []);
+  const DECORATED_LABELS = new Set(Array.isArray(cfg.decoratedLabels) ? cfg.decoratedLabels : []);
+  const AUTHOR_ROLE_CLASS = /(?:^|\s)authorLabel-[\w-]+(?:\s|$)/;
+  const AUTHOR_ROLE_ANCESTOR = /^(?:authorLabel|authorInfo|author)-[\w-]+$/;
   // Класс вкладки — целым словом (tab, tabs, tab-item, x_tab__y), чтобы не цеплять table/stable.
   // Только сами вкладки (не nav/switch/toggle): nowrap и вариант «|tab» нужны именно им.
   const TABISH = /(?:^|[\s_-])(?:tabs?|tabbar|segment|segmented|pill)(?:$|[\s_-])/i;
@@ -132,7 +147,7 @@ function rendererInstall(cfg) {
     return typeof element.getAttribute === 'function' ? element.getAttribute('class') || '' : '';
   };
   // 0 — можно, 1 — защищённый блок, 2 — внутри .home-notice-item-* (только известные заголовки), 3 — соглашение входа.
-  const zone = (start, forAttribute) => {
+  const zone = (start, forAttribute, authorRole = false) => {
     let mode = 0;
     for (let element = start; element && element.nodeType === 1; element = element.parentNode) {
       const tag = String(element.tagName || '').toUpperCase();
@@ -148,7 +163,10 @@ function rendererInstall(cfg) {
       }
       const cls = classOf(element);
       if (cls) {
-        if (PROTECTED.test(cls) || (PROTECTED_EXTRA && PROTECTED_EXTRA.test(cls))) return 1;
+        // Служебный бейдж автора не является его ником. Исключение действует
+        // только для доказанного role-label; имена и явный no-translate защищены.
+        const extraClass = authorRole ? cls.split(/\s+/).filter(token => !AUTHOR_ROLE_ANCESTOR.test(token)).join(' ') : cls;
+        if (PROTECTED.test(cls) || (PROTECTED_EXTRA && PROTECTED_EXTRA.test(extraClass))) return 1;
         if (NEWS_ITEM.test(cls)) mode = 2;
         else if (!mode && AGREEMENT.test(cls)) mode = 3;
       }
@@ -159,7 +177,8 @@ function rendererInstall(cfg) {
     let depth = 0;
     for (let element = start; element && element.nodeType === 1 && depth < 3; element = element.parentNode, depth++) {
       const cls = classOf(element);
-      if (cls && TABISH.test(cls)) return true;
+      // CSS Modules используют subTabText/subTabItem; table и stable не вкладки.
+      if (cls && TABISH.test(cls.replace(/([a-z0-9])([A-Z])/g, '$1 $2'))) return true;
     }
     return false;
   };
@@ -168,6 +187,12 @@ function rendererInstall(cfg) {
     if (!clean || clean.length > MAX_TEXT) return undefined;
     if (mode === 2) return Object.hasOwn(news, clean) ? news[clean] : undefined;
     let russian = tab && Object.hasOwn(exactTab, clean) ? exactTab[clean] : exact[clean];
+    if (russian === undefined && DECORATED_LABELS.size) {
+      // Значок является частью одного text node: переводим только известный
+      // служебный суффикс, сохраняя 🚀/🔥. Свободных подстрочных замен нет.
+      const decorated = /^((?:🚀|🔥)\s*)(.+)$/u.exec(clean);
+      if (decorated && DECORATED_LABELS.has(decorated[2]) && Object.hasOwn(exact, decorated[2])) russian = decorated[1].trimEnd() + ' ' + exact[decorated[2]];
+    }
     if (russian === undefined && mode === 3 && clean === '、') russian = ', ';
     if (russian === undefined) russian = translateTemplate(clean);
     if (russian === undefined) {
@@ -208,7 +233,10 @@ function rendererInstall(cfg) {
   const processText = node => {
     const original = node.nodeValue;
     if (typeof original !== 'string' || !original.trim()) return;
-    const mode = zone(node.parentNode, false);
+    const parentClass = node.parentNode && node.parentNode.nodeType === 1 ? classOf(node.parentNode) : '';
+    const authorRole = cfg.origin === 'https://camp.qq.com' && location.origin === cfg.origin && location.pathname.startsWith('/launcher/web/game-strategy/')
+      && node.parentNode?.tagName === 'DIV' && AUTHOR_ROLE_CLASS.test(parentClass) && AUTHOR_ROLE_LABELS.has(original.trim());
+    const mode = zone(node.parentNode, false, authorRole);
     if (mode === 1) return;
     if (mode === 0 && formatBattleField(node)) return;
     const tab = cfg.mark ? tabContext(node.parentNode) : false;
@@ -221,7 +249,7 @@ function rendererInstall(cfg) {
       node.nodeValue = next; state.mapped++;
       // Пометка для CSS гостя: только атрибут data-wxq-ru на родителе, содержимое не трогаем.
       const parent = node.parentNode;
-      if (cfg.mark && parent && parent.nodeType === 1 && typeof parent.setAttribute === 'function') parent.setAttribute('data-wxq-ru', tab ? 'tab' : 'text');
+      if (cfg.mark && parent && parent.nodeType === 1 && typeof parent.setAttribute === 'function') parent.setAttribute('data-wxq-ru', authorRole ? 'role' : tab ? 'tab' : 'text');
     }
   };
   const processAttributes = element => {
@@ -664,7 +692,7 @@ function install(options = {}) {
     const hostSource = '(' + rendererInstall.toString() + ')(' + JSON.stringify(hostConfig) + ')';
     const guestDomSource = '(' + rendererInstall.toString() + ')(' + JSON.stringify({version: VERSION, fingerprint: fingerprint + 'g', strings: payload.strings, news: {}, collect}) + ')';
     const campSource = '(' + rendererInstall.toString() + ')(' + JSON.stringify({version: VERSION, fingerprint: fingerprint + 'c', origin: 'https://camp.qq.com', strings: payload.guestStrings, news: {}, collect,
-      css: GUEST_CSS, protectedExtra: GUEST_PROTECTED, attrs: ['alt'], maxText: MAX_GUEST_TEXT, mark: true}) + ')';
+      css: GUEST_CSS, protectedExtra: GUEST_PROTECTED, authorRoleLabels: ['万象棋大神'], decoratedLabels: ['近期飙升', '赛季热门'], attrs: ['alt'], maxText: MAX_GUEST_TEXT, mark: true}) + ')';
     const loadingSource ='(' + rendererInstall.toString() + ')(' + JSON.stringify({version: VERSION, fingerprint: fingerprint + 'l', strings: payload.strings, news: {}, collect: false, countOnly: true, css: LOADING_CSS}) + ')';
     const traySource = '(' + rendererInstall.toString() + ')(' + JSON.stringify({version: VERSION, fingerprint: fingerprint + 't', strings: payload.menuStrings, news: {}, collect: false, countOnly: true}) + ')';
     const startedAt = new Date().toISOString();
@@ -718,41 +746,83 @@ function install(options = {}) {
         const rule = typeof url === 'string' ? guestRuleFor(url) : null;
         return rule && rule.dict === 'camp';
       });
-    }) || [];
-    // На каждый contents: один отложенный таймер (повторные события не плодят вставок) и память «frame -> url», куда уже вставили.
+    }) || null;
+    // Один таймер на contents, одна операция на frame. Отметка готовности появляется
+    // только после ok:true: ранний wrong-origin и временный отказ требуют повтора.
     let alive = true;
     const frameWatches = new Map();
+    const scheduleFrames = (watch, delay = FRAME_DEBOUNCE_MS) => {
+      if (watch.timer || !alive) return;
+      watch.timer = setTimeout(() => { watch.timer = null; injectFrames(watch.contents); }, delay);
+    };
     const injectFrames = contents => {
       const watch = frameWatches.get(contents);
       if (!watch || !alive) return;
-      for (const frame of campFrames(contents)) {
+      // Слушатели ставятся ещё до назначения URL. Исполнение разрешается лишь
+      // после подтверждения точного хоста или его собственного webview.
+      if (!isHost(contents) && !safe(() => contents.getType() === 'webview' && isMainURL(contents.hostWebContents?.getURL()))) return;
+      const frames = campFrames(contents);
+      if (!frames) {
+        // Мгновенная недоступность Electron API не обнуляет лимиты документа.
+        if ([...watch.rows.values()].some(row => !row.running && row.attempts < FRAME_MAX_ATTEMPTS && Date.now() - row.startedAt < FRAME_RETRY_WINDOW_MS)) scheduleFrames(watch, FRAME_RETRY_MS);
+        return;
+      }
+      for (const [frame, row] of watch.rows) if (!frames.includes(frame)) {
+        if (row.guard) clearTimeout(row.guard);
+        watch.rows.delete(frame); watch.injected.delete(frame);
+      }
+      for (const frame of frames) {
         const url = safe(() => frame.url);
         const rule = typeof url === 'string' ? guestRuleFor(url) : null;
         if (!rule || rule.dict !== 'camp') continue;
         if (watch.injected.get(frame) === url) continue;
-        watch.injected.set(frame, url);
-        // Включаем синхронный отказ Electron в ту же ветку повтора, что и Promise rejection.
-        Promise.resolve().then(() => frame.executeJavaScript(campSource)).catch(() => { if (watch.injected.get(frame) === url) watch.injected.delete(frame); });
+        let row = watch.rows.get(frame);
+        if (!row || row.url !== url) {
+          if (row?.guard) clearTimeout(row.guard);
+          row = {url, startedAt: Date.now(), attempts: 0, running: false, operation: 0, guard: null};
+          watch.rows.set(frame, row);
+        }
+        if (row.running || row.attempts >= FRAME_MAX_ATTEMPTS || Date.now() - row.startedAt >= FRAME_RETRY_WINDOW_MS) continue;
+        row.running = true; row.attempts++;
+        const epoch = watch.epoch, operation = ++row.operation;
+        const finish = ready => {
+          if (!alive || watch.epoch !== epoch || watch.rows.get(frame) !== row || row.operation !== operation || !row.running) return;
+          if (row.guard) clearTimeout(row.guard); row.guard = null; row.running = false;
+          if (safe(() => frame.url) !== url) { scheduleFrames(watch); return; }
+          if (ready) watch.injected.set(frame, url);
+          else if (row.attempts < FRAME_MAX_ATTEMPTS && Date.now() - row.startedAt < FRAME_RETRY_WINDOW_MS) scheduleFrames(watch, FRAME_RETRY_MS);
+        };
+        row.guard = setTimeout(() => finish(false), FRAME_OPERATION_MS);
+        // Навигация могла сменить документ, пока задача ждала microtask.
+        Promise.resolve().then(() => {
+          if (!alive || watch.epoch !== epoch || watch.rows.get(frame) !== row || safe(() => frame.url) !== url) return {ok: false};
+          return frame.executeJavaScript(campSource);
+        }).then(result => finish(result?.ok === true), () => finish(false));
       }
     };
     const unwatchFrames = watch => {
       if (watch.timer) clearTimeout(watch.timer);
       watch.timer = null;
+      for (const row of watch.rows.values()) if (row.guard) clearTimeout(row.guard);
+      watch.rows.clear(); watch.injected.clear(); watch.epoch++;
       for (const [name, listener] of watch.listeners) safe(() => watch.contents.removeListener(name, listener));
       watch.listeners = [];
     };
     const watchFrames = contents => {
-      if (frameWatches.has(contents) || (!isHost(contents) && !safe(() => contents.getType() === 'webview'))) return;
-      const watch = {contents, timer: null, injected: new Map(), listeners: []};
-      const schedule = () => {
-        if (watch.timer || !alive) return;
-        watch.timer = setTimeout(() => { watch.timer = null; injectFrames(contents); }, FRAME_DEBOUNCE_MS);
-      };
+      if (frameWatches.has(contents) || !safe(() => ['window', 'webview'].includes(contents.getType()))) return;
+      const watch = {contents, timer: null, injected: new Map(), rows: new Map(), epoch: 0, listeners: []};
+      const schedule = () => scheduleFrames(watch);
       // Новая навигация фрейма даёт новый документ: прежняя отметка недействительна. Простая загрузка отметку не сбрасывает.
-      const onNavigate = () => { watch.injected.clear(); schedule(); };
+      const onNavigate = () => {
+        watch.epoch++;
+        for (const row of watch.rows.values()) if (row.guard) clearTimeout(row.guard);
+        watch.rows.clear(); watch.injected.clear(); schedule();
+      };
       const on = (name, listener) => { if (safe(() => { contents.on(name, listener); return true; })) watch.listeners.push([name, listener]); };
       on('did-frame-finish-load', schedule);
       on('did-frame-navigate', onNavigate);
+      on('frame-created', schedule);
+      on('did-stop-loading', schedule);
       on('destroyed', () => { unwatchFrames(watch); frameWatches.delete(contents); });
       frameWatches.set(contents, watch);
     };

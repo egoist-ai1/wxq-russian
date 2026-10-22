@@ -248,12 +248,14 @@ namespace Egoist.WXQLauncherRU
         }
     }
 
+    sealed class ElevationRequired : Exception { }
+
     sealed class Profile { public string Build, Exe, Asar, Skin, LauncherJson, Thumbprint; }
 
     sealed class Session
     {
         public string Dir, Target, ForwardArgs = "";
-        public string Profile;
+        public string Profile, StartFailure;
         public Process Proc;
         public bool Owned, AlreadyRunning, Activated, CloseTried;
         public long StartTicks;
@@ -329,15 +331,26 @@ namespace Egoist.WXQLauncherRU
 
             bool flag = false;
             try { flag = ReadFlag(); } catch (Exception) { }
+            try { return RunSession(s, flag); }
+            catch (ElevationRequired) { return ElevateSelf(s); }
+        }
+
+        static int RunSession(Session s, bool flag)
+        {
             if (!flag)
             {
                 string problem = TrustProblem(s);
-                if (problem != null || !StartOriginal(s)) WriteStatus(null, "fallback", problem ?? "untrusted-target");
+                if (problem != null || !StartOriginal(s))
+                {
+                    WriteStatus(null, "fallback", problem ?? s.StartFailure ?? "launch-failed");
+                    return 3;
+                }
                 return 0;
             }
 
             string result = "ok", code = "attached";
             try { Attach(s); }
+            catch (ElevationRequired) { throw; }
             catch (Refusal r) { result = r.Result; code = r.Code; }
             catch (Exception e)
             {
@@ -349,6 +362,7 @@ namespace Egoist.WXQLauncherRU
                 if (left != null) { code = result == "ok" ? left : code + ";" + left; result = "fallback"; }
             }
             if (result == "ok" && s.Proc != null && s.Proc.HasExited) { result = "fallback"; code = "launcher-exited"; }
+            bool launchFailed = false;
             if (result != "ok")
             {
                 bool start = false;
@@ -359,10 +373,54 @@ namespace Egoist.WXQLauncherRU
                     if (EndOwned(s)) { s.Owned = false; start = true; }
                     else code += ";restart-skipped";
                 }
-                if (start && !StartOriginal(s)) code = TrustProblem(s) ?? "untrusted-target";
+                else if (s.Owned && s.Proc != null && s.Proc.HasExited)
+                {
+                    // Оригинал завершился до подключения: мёртвый PID не означает успешный запуск.
+                    s.Owned = false;
+                    start = true;
+                }
+                if (start && !StartOriginal(s))
+                {
+                    code = TrustProblem(s) ?? s.StartFailure ?? "launch-failed";
+                    launchFailed = true;
+                }
             }
             WriteStatus(s.Profile, result, code);
-            return 0;
+            return launchFailed ? 3 : 0;
+        }
+
+        // Только штатный UAC для этого же защищённого активатора. Цель, профиль,
+        // хеши и подпись проверяются до запроса прав; SYSTEM и обхода UAC нет.
+        static int ElevateSelf(Session s)
+        {
+            try
+            {
+                if (IsElevated()) throw new Refusal("elevation-already-elevated");
+                if (!AclOk(s) || !UnderTrustedRoot(s.Target, true))
+                    throw new Refusal("elevation-unsafe-target");
+                ValidateTargetProfile(s);
+#if TESTBUILD
+                // Изолированные тесты никогда не открывают настоящий UAC.
+                WriteStatus(s.Profile, "fallback", "elevation-required");
+                return 740;
+#else
+                string self = Assembly.GetExecutingAssembly().Location;
+                using (var child = Process.Start(new ProcessStartInfo(self, s.ForwardArgs)
+                    { UseShellExecute = true, Verb = "runas", WorkingDirectory = s.Dir }))
+                {
+                    if (child == null) throw new Refusal("elevation-start-failed");
+                    child.WaitForExit();
+                    return child.ExitCode;
+                }
+#endif
+            }
+            catch (System.ComponentModel.Win32Exception error)
+            {
+                WriteStatus(s.Profile, "fallback", error.NativeErrorCode == 1223 ? "elevation-cancelled" : "elevation-failed-" + error.NativeErrorCode.ToString(CultureInfo.InvariantCulture));
+                return error.NativeErrorCode == 1223 ? 1223 : 3;
+            }
+            catch (Refusal error) { WriteStatus(s.Profile, "fallback", error.Code); return 3; }
+            catch (Exception) { WriteStatus(s.Profile, "fallback", "elevation-start-failed"); return 3; }
         }
 
         // В релизе код фиксированный; в тестовой сборке добавляем тип и текст исключения для диагностики.
@@ -476,18 +534,26 @@ namespace Egoist.WXQLauncherRU
         }
 
         // Цель внутри Program Files (или Program Files (x86)); ни один каталог на пути и сам exe не ссылки (junction, symlink).
-        static bool UnderTrustedRoot(string target)
+        static bool IsElevated()
         {
-            // При обычном пользовательском запуске допустим любой локальный каталог.
-            // Повышенный процесс по-прежнему не запускает цель из пользовательской папки.
             bool elevated = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
 #if TESTBUILD
             if (Opt.StandardUser) elevated = false;
             if (Opt.Elevated) elevated = true;
 #endif
+            return elevated;
+        }
+
+        static bool UnderTrustedRoot(string target) { return UnderTrustedRoot(target, IsElevated()); }
+
+        static bool UnderTrustedRoot(string target, bool elevated)
+        {
+            // Обычный запуск поддерживает локальные каталоги; запрос повышения
+            // допускается только для прежнего защищённого набора Program Files.
+            string full;
             try
             {
-                string full = Path.GetFullPath(target);
+                full = Path.GetFullPath(target);
                 string drive = Path.GetPathRoot(full);
                 if (full.StartsWith("\\\\", StringComparison.Ordinal) || drive == null || drive.Length != 3 || drive[1] != ':') return false;
                 string cursor = drive;
@@ -511,11 +577,11 @@ namespace Egoist.WXQLauncherRU
             {
                 if (string.IsNullOrEmpty(root)) continue;
                 string prefix = Path.GetFullPath(root).TrimEnd('\\') + "\\";
-                if (!target.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+                if (!full.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
                 try
                 {
                     string current = prefix.TrimEnd('\\');
-                    foreach (string part in target.Substring(prefix.Length).Split('\\'))
+                    foreach (string part in full.Substring(prefix.Length).Split('\\'))
                     {
                         current = current + "\\" + part;
                         if (IsReparse(current)) return false;
@@ -539,16 +605,37 @@ namespace Egoist.WXQLauncherRU
         {
             if (TrustProblem(s) != null) return false;
             try { s.Proc = Launch(s); s.Owned = true; return true; }
-            catch (Exception) { return false; }
+            catch (ElevationRequired) { throw; }
+            catch (System.ComponentModel.Win32Exception error)
+            { s.StartFailure = "launch-failed-" + error.NativeErrorCode.ToString(CultureInfo.InvariantCulture); return false; }
+            catch (Exception) { s.StartFailure = "launch-failed"; return false; }
         }
 
         static Process Launch(Session s)
         {
             var info = new ProcessStartInfo(s.Target, s.ForwardArgs) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(s.Target) };
-            return Process.Start(info);
+            try { return Process.Start(info); }
+            catch (System.ComponentModel.Win32Exception error)
+            {
+                if (error.NativeErrorCode == 740) throw new ElevationRequired();
+                throw;
+            }
         }
 
         // ---------- подключение перевода ----------
+
+        static void ValidateTargetProfile(Session s)
+        {
+            Profile profile = FindProfile(File.ReadAllText(Path.Combine(s.Dir, "profiles.json"), Encoding.UTF8), s.Target);
+            s.Profile = profile.Build;
+            string exeDir = Path.GetDirectoryName(s.Target);
+            string lib = Path.Combine(exeDir, @"resources\app.asar.unpacked\node_modules\@tencent\native-resource\dist\lib");
+            RequireHash(s.Target, profile.Exe, "hash-exe");
+            RequireHash(Path.Combine(exeDir, @"resources\app.asar"), profile.Asar, "hash-asar");
+            RequireHash(Path.Combine(lib, "skin.zip"), profile.Skin, "hash-skin");
+            RequireHash(Path.Combine(lib, @"locales-i18n\launcher.json"), profile.LauncherJson, "hash-launcher-json");
+            CheckSignature(s.Target, profile);
+        }
 
         static void Attach(Session s)
         {
@@ -563,15 +650,7 @@ namespace Egoist.WXQLauncherRU
             if (Files.Sha256(runtimePath) != runtimeSha) throw new Refusal("module-pin");
             if (Files.Sha256(dictionaryPath) != dictionarySha) throw new Refusal("dictionary-pin");
 
-            Profile profile = FindProfile(File.ReadAllText(profilesPath, Encoding.UTF8), s.Target);
-            s.Profile = profile.Build;
-            string exeDir = Path.GetDirectoryName(s.Target);
-            string lib = Path.Combine(exeDir, @"resources\app.asar.unpacked\node_modules\@tencent\native-resource\dist\lib");
-            RequireHash(s.Target, profile.Exe, "hash-exe");
-            RequireHash(Path.Combine(exeDir, @"resources\app.asar"), profile.Asar, "hash-asar");
-            RequireHash(Path.Combine(lib, "skin.zip"), profile.Skin, "hash-skin");
-            RequireHash(Path.Combine(lib, @"locales-i18n\launcher.json"), profile.LauncherJson, "hash-launcher-json");
-            CheckSignature(s.Target, profile);
+            ValidateTargetProfile(s);
 
             if (GameRunning()) throw new Refusal("game-running", "skipped");
 
