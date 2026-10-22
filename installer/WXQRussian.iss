@@ -2576,7 +2576,10 @@ begin
       begin
         if not UiClosing then UiLost;
       end
-      else if not InStatus then
+      // Окно уже показывает welcome/installed во время InitializeWizard,
+      // но Inno ещё не открыл wpWelcome. Команды остаются в файле до готовности:
+      // ранний Next иначе только открывает приветствие и теряет установку.
+      else if WizardReady and (not InStatus) then
         UiReadCommands;
     end;
   finally
@@ -2707,6 +2710,7 @@ var
   Exe, Dir, Expected, Source: String;
   Started: Boolean;
 begin
+  WizardReady := False;
   UiActive := False;
   UiGone := False;
   UiClosing := False;
@@ -2958,7 +2962,7 @@ end;
 // Всё, что пишет в игру, идёт здесь: в обычном и в тихом режиме. Пустая строка — успех.
 function DoInstall: String;
 var
-  State, Label_: String;
+  State, Label_, ActualGameVersion: String;
 begin
   Result := '';
   LastFailure := '';
@@ -3060,7 +3064,9 @@ begin
     end;
   end;
   State := ToolValue('state');
-  SetStep(2, StDone, 'игра {#GameVersion}');
+  ActualGameVersion := ToolValue('game_version');
+  if ActualGameVersion = '' then ActualGameVersion := '{#GameVersion}';
+  SetStep(2, StDone, 'игра ' + ActualGameVersion);
 
   Label_ := '';
   if State = 'same' then
@@ -3194,8 +3200,7 @@ begin
   CloseLabel.Visible := CurPageID <> wpInstalling;
   if CurPageID = wpWelcome then
   begin
-    WizardReady := True;
-    WelcomeReadyAt := GetTickCount;
+    WizardReady := False;
     ResetSteps;
     // На welcome {app} ещё не готов: WizardDirValue возвращает выбранный
     // или стандартный путь без преждевременного раскрытия константы.
@@ -3232,6 +3237,9 @@ begin
         begin
           AutoContinue := False;
           UiInstallFailed(LastFailure);
+          // Состояние ошибки уже опубликовано: доступны закрытие и возврат.
+          WelcomeReadyAt := GetTickCount;
+          WizardReady := True;
           Exit;
         end;
       end;
@@ -3274,6 +3282,11 @@ begin
     if (LauncherLnk = '') and not LauncherWanted then Mode := 3;
   end;
   UiOnPage(CurPageID);
+  if CurPageID = wpWelcome then
+  begin
+    WelcomeReadyAt := GetTickCount;
+    WizardReady := True;
+  end;
 end;
 
 // ---- удаление из «Установки и удаления программ» ------------------------------------------

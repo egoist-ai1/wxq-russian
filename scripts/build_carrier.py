@@ -640,13 +640,13 @@ def build(game: Path, resources: list[dict], output: Path, stub: Path, keep_lab:
     lab = Path(tempfile.gettempdir()) / 'wxq-pilot' / 'tasks' / thread_id / 'work' / ('pilot-' + uuid.uuid4().hex[:8])
     lab.mkdir(parents=True)
     if shutil.disk_usage(lab).free < total * 1.3 + (256 << 20):
-        shutil.rmtree(lab.parents[2], ignore_errors=True)
+        bp.cleanup_lab_task(lab, thread_id)
         raise CarrierError(f'Не хватает места во временной папке: нужно около {int(total * 1.3 + (256 << 20)) >> 20} МБ')
     try:
         return bp._build_in_lab(game, resources, {}, [], output, stub, state, all_packages, [package], prime_files, thread_id, lab)
     finally:
         if not keep_lab:
-            shutil.rmtree(lab.parents[2], ignore_errors=True)
+            bp.cleanup_lab_task(lab, thread_id)
 
 
 # ---------------------------------------------------------------- отчёт и манифест

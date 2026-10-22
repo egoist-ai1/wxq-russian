@@ -351,7 +351,6 @@
   "05ead40f09d8247d": {
    "module": "UISpectateApexArenaPlayerHeadClass_AutoBind",
    "fields": [
-    "Name",
     "RankTitle"
    ],
    "sha256": "031e503f87ee87960621ab4ce8cbc7c80419e0e3bbfeed1243c47968de3495c1"
@@ -409,7 +408,7 @@
     "ticketReturnTip1",
     "moneyLimitDesc"
    ],
-   "sha256": "5410ba0b9724c1e88a1534ecf1dd8b9cbf90a8440d2a02853ef611d9ee694804"
+   "sha256": "f33b341894b752fce95ee57dbb77841c39917f47ec3aca50f1938ce369fd8d3e"
   },
   "06d067889d173eba": {
    "module": "UIRankRestGuidePageClass_AutoBind",
@@ -1097,7 +1096,7 @@
     "currentPoints",
     "privilegeOne"
    ],
-   "sha256": "528333765268da750bc03cae82ee0b2e367b28c64be534245fd008cac369d663"
+   "sha256": "a455f326a83568c63c81455f3cccc4002475610679af2549644eca2360811120"
   },
   "121db2439a08adf1": {
    "module": "UICommonDrawTabItemClass_AutoBind",
@@ -1123,7 +1122,6 @@
   "1296700611283434": {
    "module": "UICareerKingPanelClass_AutoBind",
    "fields": [
-    "Txt_Name",
     "Txt_Tips"
    ],
    "sha256": "7ed5361894f3ff067bc364d100777909bcb5ca08e9e1da7496dda336f8810983"
@@ -1407,6 +1405,14 @@
     "name"
    ],
    "sha256": "d4af483730e88e450cba2a908c550048707909653c5d4b91a0d3ba599a457896"
+  },
+  "16d5462d5965121f": {
+   "module": "UIEmbattleLineupItem2Class_AutoBind",
+   "fields": [
+    "heatValue",
+    "poke"
+   ],
+   "sha256": "59f93853ea2f4a8f970ff61bd553e718c25d267f7575ba89d4d92a1e51377636"
   },
   "16e20adf8a45ab2d": {
    "module": "UIHighlighterBlindBoxSelectNumItemClass_AutoBind",
@@ -1823,13 +1829,6 @@
    ],
    "sha256": "79ccbb0623e5c99ff43fe627209af94795be0e9efda2b24afa8932abef83e653"
   },
-  "1f5d1d93b6451921": {
-   "module": "UICheerGoldMedalPlayerItemClass_AutoBind",
-   "fields": [
-    "name"
-   ],
-   "sha256": "d4cf9ecbbde59d05b31eb5ca8782f4ee9d1e9a1448298e20873be662afc5759e"
-  },
   "1f7d674f2d2e7f3d": {
    "module": "UIShopDrawShowRecieveNewClass_AutoBind",
    "fields": [
@@ -2168,6 +2167,14 @@
     "description"
    ],
    "sha256": "377913cd7570b15e4ff9f4fb0d56d138531a87babee25f6a6fd88e7fff47625b"
+  },
+  "23d7118bd066a3b9": {
+   "module": "UITRFilterLordItemClass_AutoBind",
+   "fields": [
+    "titleTxt1",
+    "titleTxt2"
+   ],
+   "sha256": "154fe858c22920c0222433cc43e746ebea75c0eab30d17a064ea7f1f42e33c0f"
   },
   "240bd8e42ccdf556": {
    "module": "UIGameAtlasCardAttrListClass_AutoBind",
@@ -2510,9 +2517,10 @@
    "module": "UITeamRcommendAIItemClass_AutoBind",
    "fields": [
     "lineupName",
-    "btnContent"
+    "btnContentTxt1",
+    "btnContentTxt2"
    ],
-   "sha256": "23c5eae023e51a90a843b7f0a8ee6fe0d59c6044e2c64402c31ceffe8bda5ac6"
+   "sha256": "ad8d01d362261f1a4e170f0e0797c215f92f8a872e9bd941d7e37c15b9ea1f81"
   },
   "2a42ca1b4a6e23e9": {
    "module": "UIBillPoPItemClass_AutoBind",
@@ -2706,7 +2714,7 @@
     "numberTxt1",
     "numberTxt2"
    ],
-   "sha256": "b19775d44d90292b0952156da35d1792c9e54871089f028757cc692fda328b81"
+   "sha256": "b144c0e962a8a6f8218f45ee58947f6221dd06d4c69a46872d8548fdb230395b"
   },
   "2d56a78a63186f58": {
    "module": "UIPioneerSkinNameItemClass_AutoBind",
@@ -2714,6 +2722,13 @@
     "skinName"
    ],
    "sha256": "977b07bb30e13cad67f2da7babbd388f30c6976efb5912583913d11865bb7daa"
+  },
+  "2d630feef6ee535c": {
+   "module": "UIPVPRoomRecommendOperationBtnClass_AutoBind",
+   "fields": [
+    "txtName"
+   ],
+   "sha256": "e6888092032e39db47e1116da13e05da1cc92ad643b9e94ce786a0427730991c"
   },
   "2dcf2af499eede66": {
    "module": "UIOperationAbilityTreasureCoffersClass_AutoBind",
@@ -2743,7 +2758,6 @@
   "2e523e9b2e606129": {
    "module": "UIGuildApplyForItemClass_AutoBind",
    "fields": [
-    "name",
     "segment",
     "onlineStatus"
    ],
@@ -2793,6 +2807,14 @@
     "num"
    ],
    "sha256": "c16e930af77d7df1a96d19c7d4248b3fdd4b5c589028f460a1f305a7e8eec150"
+  },
+  "30db40a97f99371b": {
+   "module": "UIEmbattleIntroductionItemClass_AutoBind",
+   "fields": [
+    "title",
+    "description"
+   ],
+   "sha256": "19b53dc93e385e9510f43dc977323fefdd0ee6a9c4539568b49c0ee22be18723"
   },
   "30fab867d5e28115": {
    "module": "UICommonSubscribePopClass_AutoBind",
@@ -3112,8 +3134,7 @@
     "list",
     "numberOfPeople",
     "level",
-    "described",
-    "name"
+    "described"
    ],
    "sha256": "b2dc912bb1818abc3c872a2ccc0e7ab137413d286f33ec8dc29eb8d596b968e5"
   },
@@ -3266,7 +3287,7 @@
     "subtitleTxt2",
     "subtitleTxt3"
    ],
-   "sha256": "6e8e8a5825b624ec54cc63e3dc3e227666b31872ec8fd74d269763a82bf68fe4"
+   "sha256": "3bc9c2363c55c74a1b39f50648d3babf874048c08aa8f0053d04abe7d957a60d"
   },
   "3824b8d51d478467": {
    "module": "UIShareLrodChessBoardItemClass_AutoBind",
@@ -3640,7 +3661,7 @@
    "fields": [
     "tipOffNum"
    ],
-   "sha256": "a6dce09c459c58ed3cdc0da8ea2330d8228f6278fb6cd0dd4f5d2d5cd3b86d5d"
+   "sha256": "b52ce1e4e78f993134e4208b8c604c6aaa06a7bf2afd6c614996cc8c82ea9d4d"
   },
   "3eec28794d3a2b0b": {
    "module": "UIOSHSettleProfitShareClass_AutoBind",
@@ -3648,7 +3669,7 @@
     "currencyNum",
     "subTitle"
    ],
-   "sha256": "9a2322b16d14a9ad40b922aa0bf5957afc50894dbbc2319ef908ca3e6a771a42"
+   "sha256": "bc73227a1c9be6eceda45a3ff4df8cdc78448f92ced0b1d811838e5b76e07199"
   },
   "3eefd00b56345c79": {
    "module": "UIChargeGoodsClass_AutoBind",
@@ -4632,8 +4653,7 @@
   "54bf745b5d5d56e9": {
    "module": "UIPVPSettleTeamItemForMailClass_AutoBind",
    "fields": [
-    "ranking",
-    "name"
+    "ranking"
    ],
    "sha256": "13ab063f56cd502e3710d4ba3c0566587aac7dd527e16acfbe18dcb4d5b25ac7"
   },
@@ -4963,7 +4983,7 @@
     "rankTxt",
     "totalTime"
    ],
-   "sha256": "a577ccc3ac5ce1e215b0e88045e502d7a2410dc52c712caa21c1a4340a1393c6"
+   "sha256": "234a3f7e06f4cab667c0ec25492d0ca43bc0732184e5476ff2df4bc166013e1c"
   },
   "5b8562d61d4fcb84": {
    "module": "UIAuctionActionBtnClass_AutoBind",
@@ -5542,7 +5562,7 @@
     "Tips01Txt",
     "Tips02Txt"
    ],
-   "sha256": "44685aaaefecba390c333016ab598731b5feef2db866b2f440b9c2e7a53d3da7"
+   "sha256": "3fe4815d18641fbfd379114a4c46d210bd66e0d6889930f4eb14d1691ee56954"
   },
   "68e35f0681f31e54": {
    "module": "UIBootcampEffectItemClass_AutoBind",
@@ -5620,7 +5640,7 @@
    "fields": [
     "txtEmpty"
    ],
-   "sha256": "b92eb4f0f3020755b722f2d94a680fe1b47fbfb92713557a2f23fad412afe482"
+   "sha256": "78322cdcc7b9903d2fd14e19e872be8c19aa2e4902f370597ff39fb98dd3d465"
   },
   "6b91c06b78d4a799": {
    "module": "UIGameCenterWangXiangZhouLiDateItemClass_AutoBind",
@@ -5841,6 +5861,13 @@
    ],
    "sha256": "6f5b93c6ba1e812d207f23ed227c805894e9ffed1db04f7c45cc8275b28cdd78"
   },
+  "6f6ae550affd7d22": {
+   "module": "UICommonTips_SimpleText_Length2Class_AutoBind",
+   "fields": [
+    "content"
+   ],
+   "sha256": "316e86f19a1cb7b88c67ca5b4364be2d5bafccddd87fef670d14376b3462c3f8"
+  },
   "6fba91b0ba8c3da2": {
    "module": "UICareerEmojiItemClass_AutoBind",
    "fields": [
@@ -5871,7 +5898,6 @@
    "fields": [
     "indexTxt1",
     "indexTxt2",
-    "name",
     "number",
     "level",
     "experience"
@@ -5914,13 +5940,6 @@
     "frontNumLimite"
    ],
    "sha256": "d10b67ca6c255bcaffd9971ece85d5c6ae241f3cc2266e4b449712b4992cd467"
-  },
-  "70eb8459df1ae66b": {
-   "module": "UICheerTopTitlePlayerItemClass_AutoBind",
-   "fields": [
-    "name"
-   ],
-   "sha256": "330e7a0ab74b66e80f3cb49622e972592f01aa5c19e5586e67d5292d08c2eec5"
   },
   "70fc8154d9cf37e6": {
    "module": "UIEmbattleLevelSettingPopClass_AutoBind",
@@ -5981,6 +6000,13 @@
     "gameType"
    ],
    "sha256": "72267cd257b2966e2f8c3e45fbf91d89dc4eff36bda5aa68b286f100a1d7c3e9"
+  },
+  "72556e8519f89ab7": {
+   "module": "UIRoomSettingItemStyle3Class_AutoBind",
+   "fields": [
+    "title"
+   ],
+   "sha256": "ffb09bc54737065ed1dbb34c25a50dfa60c99a35d91970ed6f7f0b764404435e"
   },
   "727551cc393949fe": {
    "module": "UIOpChessPlayerStrategyGuideTitle_WuFengClass_AutoBind",
@@ -7095,8 +7121,7 @@
   "8547ca6c8f3dcfde": {
    "module": "UILoginFriendHeaderClass_AutoBind",
    "fields": [
-    "serverName",
-    "name"
+    "serverName"
    ],
    "sha256": "0206753571e21d04827afad636ebde7a25b9a4a91ea9d220666d07cbce05f9b1"
   },
@@ -7126,10 +7151,9 @@
    "module": "UISettleBattle_OSHTopInfoClass_AutoBind",
    "fields": [
     "eventInfo",
-    "poolTitle",
-    "poolNum"
+    "poolTitle"
    ],
-   "sha256": "0facad278b5e7f2fa68e4350cd7a530c315b7dc88828cb4f7437964546ec81e2"
+   "sha256": "e39b6d21fedab79cd4b013411054241b0df3c79c9062b7dc4c11cd67f152def7"
   },
   "85ef5051721b4563": {
    "module": "UIFriendInheritPopClass_AutoBind",
@@ -7412,12 +7436,11 @@
    "module": "UIOperationGuiLaiTiaoZhanLineUpItem2Class_AutoBind",
    "fields": [
     "proPlayer",
-    "score",
     "support",
     "lineupName",
     "heat"
    ],
-   "sha256": "b497c9a7a83500767e3ac316f32fc82d014f5c202754c887c07b8c070558beaa"
+   "sha256": "93822e2284170c1adf38048a5665f144bf716aefb15c4c2ae41d21af32998ae2"
   },
   "8b9f789e4570a74c": {
    "module": "UIChartsGradeItemClass_AutoBind",
@@ -7561,10 +7584,8 @@
    "fields": [
     "fraction1",
     "rank1",
-    "name1",
     "score2",
     "ranked2",
-    "name2",
     "tips1",
     "tip2"
    ],
@@ -7765,7 +7786,7 @@
     "relationshipName",
     "rankValue"
    ],
-   "sha256": "2815296be875dc02cba4a1fe86479f679f956217609a50a4e8d5b84737503120"
+   "sha256": "6372c4caeb4a308cf7f909478aa7ac7edf5c547253355690d232bb815f9943d3"
   },
   "90707b0c2c3caebe": {
    "module": "UIOmniCommissionTypeItemClass_AutoBind",
@@ -7776,6 +7797,13 @@
     "questChances"
    ],
    "sha256": "f52c1fb3de5c6b3eb1ed289962de6ddaa17ac14d2ff01b0cf2f2818be2ccbaf1"
+  },
+  "90743f4ec1705bfc": {
+   "module": "UIPVPRoomNestedRecommendClass_AutoBind",
+   "fields": [
+    "txtEmpty"
+   ],
+   "sha256": "31e580ead8d52971ddbe56d420be909010bf0c6dc70c6ee8484e8e1f8153dff4"
   },
   "908a0b803120fc92": {
    "module": "UICommonFiltrateListItem03Class_AutoBind",
@@ -7864,6 +7892,13 @@
     "disableTips"
    ],
    "sha256": "385a449bdcc0b633297e18102bcb1f22d06652db9dec6a869aab1d10efe21726"
+  },
+  "92592d64b9bf1d56": {
+   "module": "UIRoomSettingItemStyle2Class_AutoBind",
+   "fields": [
+    "title"
+   ],
+   "sha256": "012f118036a9b0207756c76a38a21f53eb420ddafe1f67008d2c3aba6d9306b4"
   },
   "92d1f520aa93ba92": {
    "module": "UIChartsDiamondCrazeItemClass_AutoBind",
@@ -8098,7 +8133,6 @@
   "9759934b2c369cb9": {
    "module": "UISeasonJourneyDataDisplayClass_AutoBind",
    "fields": [
-    "name",
     "year",
     "month",
     "day",
@@ -8716,6 +8750,19 @@
    ],
    "sha256": "5c9cc31216d5115b41902887fed446f4d5196130b0819fe2f0277176d09d41ca"
   },
+  "a20477b6a89cf064": {
+   "module": "UITRThreadOutSideAIClass_AutoBind",
+   "fields": [
+    "leftContentTxt1",
+    "leftContentTxt2",
+    "rightContentTxt1",
+    "rightContentTxt2",
+    "rightContentTxt3",
+    "leftSkill",
+    "rightSkill"
+   ],
+   "sha256": "17775431c6b7489c5ca645652ec9c43f8ea874c5a62b3cf71f7b67c04af9fa44"
+  },
   "a24ed5447601b856": {
    "module": "UiChessboardNumberItemClass_AutoBind",
    "fields": [
@@ -8887,6 +8934,13 @@
    ],
    "sha256": "2edcc2bedd35fc6999a3e3dddb5db82159a9d5bc28c3e1b91738fa5cfde7a6fc"
   },
+  "a6b7f0ca164e3f78": {
+   "module": "UIEmbattleLordInstructionsItemClass_AutoBind",
+   "fields": [
+    "title"
+   ],
+   "sha256": "6c361c312e39f59e1d6f86f75564382a5499f547f05d7c11115cbed15be9eb9d"
+  },
   "a6c4a88f1cf768fd": {
    "module": "UIGainLordProficiencyPopClass_AutoBind",
    "fields": [
@@ -8936,7 +8990,6 @@
    "module": "UIChartsGuildRankListItemClass_AutoBind",
    "fields": [
     "index",
-    "name",
     "number",
     "level",
     "experience"
@@ -9162,7 +9215,6 @@
   "ad621e3f38462dcd": {
    "module": "UIGuildInviteJoinItemClass_AutoBind",
    "fields": [
-    "name",
     "level",
     "number",
     "condition1",
@@ -9297,7 +9349,6 @@
   "af4b695053426842": {
    "module": "UIGuildCheckListItemClass_AutoBind",
    "fields": [
-    "name",
     "number",
     "level"
    ],
@@ -9416,13 +9467,6 @@
    ],
    "sha256": "f0840f183bbb0800613394a45f92bb1f5ff5a0d5b8b0bc4f0f42f20b7cd32788"
   },
-  "b11ea4655f9af997": {
-   "module": "UIPVPRoomFastRecommendPlayerItemClass_AutoBind",
-   "fields": [
-    "txtName"
-   ],
-   "sha256": "9485a641433f83a9c7dd9f6123ebed47d9d3cd93aabed8025c812947e1d6c262"
-  },
   "b151bbeb57034419": {
    "module": "UIDrawShowRewardClass_AutoBind",
    "fields": [
@@ -9481,6 +9525,13 @@
     "prompt"
    ],
    "sha256": "7e5c734b79c2313ab0902ac181d77d07e8dcc97463c0b2a7979a2ac45577bcf8"
+  },
+  "b2af76ccc0c8a3de": {
+   "module": "UIPVPRoomNestedRecommendTabItemClass_AutoBind",
+   "fields": [
+    "txtTitle"
+   ],
+   "sha256": "4a92222aac5d4530c7a8206c1ff2ac088eef88e6addeba743af1aed4d5270317"
   },
   "b2b997f3174b9001": {
    "module": "UICommonActivateEffectConfirmPopClass_AutoBind",
@@ -9578,7 +9629,7 @@
     "titleText",
     "nameText"
    ],
-   "sha256": "9192b14ba4972937390222aa524a7ba465f06a10d6bdde145e1a3aaf6d8cceed"
+   "sha256": "fde368e2b45a6ec00248141805165efe4421fa3df4f4d8bc0137002f83bec356"
   },
   "b42fde3b3d071a09": {
    "module": "UISplashGamePlay_OSHClass_AutoBind",
@@ -9652,7 +9703,6 @@
   "b504d4affd8951dd": {
    "module": "UIGuildInviteFriendItemClass_AutoBind",
    "fields": [
-    "name",
     "segment",
     "onlineStatus"
    ],
@@ -10214,7 +10264,7 @@
     "titlePlaceholder",
     "subTitlePlaceholder"
    ],
-   "sha256": "a730916bbe7ebf3c5548f2eac76bed382fbac027f3719f58d005bc49dc4424b3"
+   "sha256": "eb203c558eaabaae74fa451f01bb77b360c9e551a72b44cc8dbade14d66fc882"
   },
   "bf3d7ea10ea4ce13": {
    "module": "UIPlayerInfoTips1Class_AutoBind",
@@ -10255,6 +10305,14 @@
     "txtContent"
    ],
    "sha256": "6e0a0a25ad165ebc2b75fd1627efe039ea06cf23b2379c34a41a39fdf79dc5a6"
+  },
+  "bff77baef8a69e7c": {
+   "module": "UIEmbattleLineupItem1Class_AutoBind",
+   "fields": [
+    "title",
+    "desc"
+   ],
+   "sha256": "02767877720cccc33774c921d4cdfc05eff73b0214f05b50c7f3eb358f9c6525"
   },
   "c08f36838b839371": {
    "module": "UICommonRewardItemClass_AutoBind",
@@ -10587,8 +10645,7 @@
    "module": "UISeasonHallGloryRankItemClass_AutoBind",
    "fields": [
     "rank",
-    "points",
-    "name"
+    "points"
    ],
    "sha256": "d4fa9f2017e1696a7944b8a6c009d67fc9f0716046d17c81ae4b5b5f8fccfa10"
   },
@@ -10654,7 +10711,7 @@
     "playerTitleTxt5",
     "playerTitleTxt6"
    ],
-   "sha256": "1872d141f193a0878b83e0278403fc35c364a4aff47c3126e22bc8f780b21a43"
+   "sha256": "7360bd3151c44b39b9b77e69aa3cdf7ab9715c5cfe8bc5ef84be46c0d9c51058"
   },
   "c7ec480742825075": {
    "module": "UIPersonalizationExtractChessboardOperationClass_AutoBind",
@@ -11180,6 +11237,13 @@
    ],
    "sha256": "75e1867f29470c625ec7e96efd8fc82839608aef75f726c340fa19f543756125"
   },
+  "d301cfa7883a8755": {
+   "module": "UIEmbattleMySubmissionClass_AutoBind",
+   "fields": [
+    "defaultContent"
+   ],
+   "sha256": "0a795799b897ae131d8a8d98a8e937e13c76a2de31af5c2c68c8319ebe7c2a70"
+  },
   "d32ab75bc9bddfa9": {
    "module": "UIMailClass_AutoBind",
    "fields": [
@@ -11570,7 +11634,6 @@
   "da377ea2a715f410": {
    "module": "UIGuildMemeberTitleShowItemClass_AutoBind",
    "fields": [
-    "name",
     "titleTxt1",
     "titleTxt2",
     "points"
@@ -11867,6 +11930,13 @@
    ],
    "sha256": "39528e9080613e0459cb5bbd7c4456c256eaf7466e502a829ce03a12d4f1b0a0"
   },
+  "df0977c5ca5f5d77": {
+   "module": "UICommonFiltrateListItem06Class_AutoBind",
+   "fields": [
+    "TitleTxt"
+   ],
+   "sha256": "0c54a7c11822a491077d8eca32c68ea76bf8335e2a52f385377af7504b84d20c"
+  },
   "df124ad2b13a24e0": {
    "module": "UIBasicTabItemStyle1Class_AutoBind",
    "fields": [
@@ -11886,6 +11956,13 @@
     "rankingTxt4"
    ],
    "sha256": "3802177937865cf07f5c30a9672b08fd2c3af995535d7dd87a0d1b7e4d3b130a"
+  },
+  "df97d98f149b5abd": {
+   "module": "UICommonPlayerOnlineStateStyle2Class_AutoBind",
+   "fields": [
+    "onlineStatus"
+   ],
+   "sha256": "45039bd2fe104575bc5bc7fa0d48b5f90efac7011cd6bfe66cec531cfd387e70"
   },
   "dfa1a3944f0c1f06": {
    "module": "UIShopAuctionNoticeBoardClass_AutoBind",
@@ -11940,7 +12017,6 @@
   "e1827bbf30addc4d": {
    "module": "UIGuildInviteListItemClass_AutoBind",
    "fields": [
-    "name",
     "number",
     "level"
    ],
@@ -12068,7 +12144,7 @@
    "fields": [
     "txtCDTime"
    ],
-   "sha256": "f8af6eb9899c1466ec5cdd709a31d555299ca5f4d53e64a515fc110e87360186"
+   "sha256": "ea1510380326d79080bd0294bd73877d2ce2c5a396d83997f94eded732c8fc4c"
   },
   "e3f2fdfbcf860c09": {
    "module": "UICommonEquityTypeItemClass_AutoBind",
@@ -12377,7 +12453,7 @@
    "fields": [
     "value"
    ],
-   "sha256": "d2d98eb4a6d80a2637c7c1c4b29a6f56ea0f0b6ac8607d4caab98b5d18248e02"
+   "sha256": "bf9ee6122ffca9d51a13fff42d6130158b1f52f1333a84edfe00e6f172b92a88"
   },
   "ea57b9871b1c3335": {
    "module": "UIOmniCommissionNumeItemClass_AutoBind",
@@ -12789,6 +12865,14 @@
    ],
    "sha256": "002c1ffcfb980f7725b970c9aeaf9f37632d8acee66522502fff56a76d9b18bb"
   },
+  "f1e8b9a1b6835593": {
+   "module": "UIEmbattleTitleClass_AutoBind",
+   "fields": [
+    "title",
+    "subTitle"
+   ],
+   "sha256": "70d77732b7bb3200d1533c9d2df1293cc2d6c4d07c51c7838584583327b006bd"
+  },
   "f1f2cf9c8271788e": {
    "module": "UIDrawRewardItemGroupClass_AutoBind",
    "fields": [
@@ -12804,6 +12888,13 @@
     "info"
    ],
    "sha256": "a9f6f4b7ab8727497d8fac07731125e773bce7046ceb23a26b9cd4fde17c4255"
+  },
+  "f2421dc8af5b5b7a": {
+   "module": "UIPVPRoomNestedRecommendPlayerItemClass_AutoBind",
+   "fields": [
+    "txtRank"
+   ],
+   "sha256": "81519f62daf7e315c9f7f41d8bd3c21553060efc57760c7658cd5dbcafb79371"
   },
   "f24df013e3b25fe1": {
    "module": "UITalkInsideMessageTipsClass_AutoBind",
@@ -12905,6 +12996,13 @@
     "heroName"
    ],
    "sha256": "9aa73703cabdd45a707eb00b3164ac0280fbe0710a441ea98e228bf64a74a30c"
+  },
+  "f460efbc76951d0e": {
+   "module": "UITRLineupEditClass_AutoBind",
+   "fields": [
+    "title"
+   ],
+   "sha256": "62c3217ff2f610207745c33d8868bd2cbde587c0a1a7ef10e4634ea5dc7a9528"
   },
   "f48debdc29d5dd6e": {
    "module": "UICommonOptionsGroup2Class_AutoBind",
@@ -13217,8 +13315,7 @@
    "fields": [
     "rankedMatchTag",
     "rankedMatchInfo",
-    "rankedMatchTagSubtitle",
-    "meOfName"
+    "rankedMatchTagSubtitle"
    ],
    "sha256": "fd4e8e3c9dc2ed73c9818e5f37d1098695d8c675fa405fadcfac70515c8ae297"
   },
@@ -13278,6 +13375,13 @@
    ],
    "sha256": "f1fcf49eab666efdb73250c7687b97e5f0daa608bfd57386fcd51b9fa9995c3a"
   },
+  "fb427f8136ce7d33": {
+   "module": "UIPVPRoomFriendIntimateNumItemClass_AutoBind",
+   "fields": [
+    "txtNum"
+   ],
+   "sha256": "00924520535a8577a2563d4fecf5e93b1f24fda482f85be8014b7487299d58f4"
+  },
   "fb5098510b4115e3": {
    "module": "UITRInGameTalentItemClass_AutoBind",
    "fields": [
@@ -13321,6 +13425,13 @@
     "battleMethod"
    ],
    "sha256": "2a65b123b0ffb15ba2b44daabf02520aeb90b885977ba247d89b959984eb01a3"
+  },
+  "fc44164746382af5": {
+   "module": "UIRoomSettingItemStyle1Class_AutoBind",
+   "fields": [
+    "title"
+   ],
+   "sha256": "4b0933cb1d53ac8804f067943d69dedc171b89a953206b01e363dd317bfba8d5"
   },
   "fc4d4e7dd99c6fcf": {
    "module": "UILordPickGiftShareTypePopClass_AutoBind",
@@ -13473,8 +13584,7 @@
   "ff014023fbc85ed1": {
    "module": "UIReportClass_AutoBind",
    "fields": [
-    "characterCountRestrain",
-    "titleName"
+    "characterCountRestrain"
    ],
    "sha256": "62ca0c418f5636c3cd7a80a0b6d407ac98819c1db726fafd5b626b50b9816619"
   },

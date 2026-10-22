@@ -1,8 +1,8 @@
 {
   "schema": "wxq-activity-display-proof/v2",
   "config_resource_id_hex": "b5d856bfdf22400d",
-  "config_source_sha256": "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266",
-  "current_contexts_sha256": "d5ae661d4c6f2d7b89694634c3fe85125a167621b7e2eca394a01cd4a9ccc3c8",
+  "config_source_sha256": "17257ab86965fffe791f955543ec3f0b57a05986effbfc4964efea2f8c024c9d",
+  "current_contexts_sha256": "22ac057c63a456dde07074dbb4aa5f52fdc9630593dea65635595299662dd4b5",
   "scope": "Самодостаточные конечные source/target пары визуального display. Ссылки на старые источники — provenance для отдельного локального аудита, runtime их не читает.",
   "source_approval_inputs": [
     {
@@ -2820,6 +2820,25 @@
         "queue_sha256": "638dd1fac30e39efae78ff7567e73515a0dcd445a10eca5958980a7e4ab15fb2",
         "map_sha256": "7cb429eedd0d96e4955c7d3e4c1bf2d278a45a7805abf9dc227d69ae7d733399"
       }
+    },
+    {
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>超级英雄活动规则</color>",
+      "source_sha256": "aac51df93bf126d24599abb29eb9806d6d5f3348b903e67b1106e35391e83f4a",
+      "target_ru": "<color=#FFFFFF>Правила события «Супергерои»</color>",
+      "target_sha256": "5bfc3817ff9f639257627dcaa82991fd6cd2b25a0bc25bb4d6ba2d605ca4f02f",
+      "current_contexts": [
+        {
+          "record_index": 115,
+          "field": "Title",
+          "wire_path": "root.field2[115].field2[0]",
+          "source_cn": "<color=#FFFFFF>超级英雄活动规则</color>",
+          "source_sha256": "aac51df93bf126d24599abb29eb9806d6d5f3348b903e67b1106e35391e83f4a"
+        }
+      ],
+      "approval": "task-reviewed-by-root",
+      "task_review_id": "ix-aac51df93bf1",
+      "legacy_approval": null
     }
   ]
 }

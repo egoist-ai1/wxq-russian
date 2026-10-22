@@ -28,7 +28,7 @@ TARGETS = {
     },
     BACK_ID: {
         "module": "UIFullScreenViewTemplate_BackClass",
-        "original_sha256": "08a1d83f0cfc7732ea7539f20f5e813498a451cdb9a5993b92eda2bfd795550a",
+        "original_sha256": "acf4407392b926f595655a3282fe56c13a095f03601f633aa782d121f1434d92",
         "hooks": ("vOnInitialize", "RefreshContentVisibility", "RefreshOneContentVisibility",
                   "RefreshDropdownOptions", "RefreshFilter", "RefreshSearchFrame", "RefreshTick", "vOnUninitialize"),
     },
@@ -120,7 +120,7 @@ def patch_resource(original: bytes, rid: str) -> tuple[bytes, list[dict]]:
         revert_resource(original, rid)
         return original, [{"id": "reviewed-header-layout-v2", "already_patched": True}]
     if sha(original) != row["original_sha256"]:
-        raise HeaderLayoutError(f"{rid}: SHA оригинала не совпал с проверенной игрой 1.6.0.1")
+        raise HeaderLayoutError(f"{rid}: SHA оригинала не совпал с проверенной игрой 1.7.0.1")
     text = original.decode("utf-8", "strict")
     module = row["module"]
     if len(re.findall(rf'^local {module} = DeclareClass\("{module}"', text, re.M)) != 1:

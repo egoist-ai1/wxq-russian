@@ -15,12 +15,12 @@ HELPER = PROJECT / "source/game-formatting/activity-display-v2.lua"
 METADATA = PROJECT / "source/game-formatting/activity-display-v2.json"
 REVIEWED = PROJECT / "source/game-formatting/activity-display-v2.reviewed.json"
 PROOF = PROJECT / "source/game-formatting/activity-display-v2.proof.json"
-REVIEWED_SHA256 = "98ee4b0f4ccdbd3d6b9f5216103b78d952367f760f4e791d6eef318d1cc535ce"
-PROOF_SHA256 = "ea018f1494cbb8e57441eeea0bad938573e7704a64177f8203a7ea2aa508fc65"
-CONTEXTS_SHA256 = "d5ae661d4c6f2d7b89694634c3fe85125a167621b7e2eca394a01cd4a9ccc3c8"
+REVIEWED_SHA256 = "ff8026513d1de19fca4de66e32f997ba9bc4d8984da1dff172e3a50af3717ec7"
+PROOF_SHA256 = "df4dfa6e8a7e41c9233b21638126620c931fa1e884306ff5a0f237c8093169f5"
+CONTEXTS_SHA256 = "22ac057c63a456dde07074dbb4aa5f52fdc9630593dea65635595299662dd4b5"
 PACKAGE = "10"
 CONFIG_ID = "b5d856bfdf22400d"
-CONFIG_SHA256 = "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266"
+CONFIG_SHA256 = "17257ab86965fffe791f955543ec3f0b57a05986effbfc4964efea2f8c024c9d"
 PAYLOAD_MARKER = b"-- ACE_REVIEWED_RU_WORDWRAP_v2"
 PATCH_BEGIN = "-- ACE_REVIEWED_RU_ACTIVITY_DISPLAY_v2 BEGIN"
 PATCH_END = "-- ACE_REVIEWED_RU_ACTIVITY_DISPLAY_v2 END"
@@ -114,14 +114,14 @@ def _approved_maps(data: dict) -> dict:
             or proof.get("config_source_sha256") != CONFIG_SHA256
             or proof.get("current_contexts_sha256") != CONTEXTS_SHA256
             or proof.get("source_approval_inputs") != data["approved_inputs"]
-            or len(proof.get("rows", [])) != 108):
+            or len(proof.get("rows", [])) != 109):
         raise ActivityDisplayError("Самодостаточный proof ActivityHelp не совпал с текущим контрактом")
     if sha(REVIEWED.read_bytes()) != REVIEWED_SHA256:
         raise ActivityDisplayError("Ревью новых заголовков ActivityHelp изменилось")
     reviews = _read_json(REVIEWED)
     if (reviews.get("schema") != "wxq-activity-display-reviewed/v2"
             or reviews.get("config_source_sha256") != CONFIG_SHA256
-            or len(reviews.get("rows", [])) != 12):
+            or len(reviews.get("rows", [])) != 13):
         raise ActivityDisplayError("Новые заголовки ActivityHelp не совпали с текущим review")
     current = data["current_contexts"]
     reviewed = {}
@@ -136,7 +136,7 @@ def _approved_maps(data: dict) -> dict:
                 or row.get("review_kind") not in ("new-current-title", "canon-title-override")):
             raise ActivityDisplayError("Новая пара ActivityHelp нарушает текущий source/review contract")
         reviewed[(field, source)] = row
-    if len(reviewed) != 12:
+    if len(reviewed) != 13:
         raise ActivityDisplayError("Новая пара ActivityHelp повторяется в review")
     maps = {name: {} for name in FIELD_NAMES.values()}
     old_sources, old_contexts, selected_contexts, pairs = set(), 0, [], set()
@@ -185,7 +185,7 @@ def _approved_maps(data: dict) -> dict:
         "dictionary_entries": {key: len(value) for key, value in maps.items()},
         "task_new_title_strings": sum(r["review_kind"] == "new-current-title" for r in reviewed.values()),
         "task_canon_override_strings": sum(r["review_kind"] == "canon-title-override" for r in reviewed.values())}
-    if data.get("coverage") != coverage or coverage["source_strings"] != 108 or coverage["source_contexts"] != 128:
+    if data.get("coverage") != coverage or coverage["source_strings"] != 109 or coverage["source_contexts"] != 129:
         raise ActivityDisplayError("Покрытие текущих ActivityHelp display contexts изменилось")
     return maps
 
@@ -270,7 +270,7 @@ def verify_metadata() -> dict:
                 or rows[rid].get("hooks") != list(target["hooks"])):
             raise ActivityDisplayError(f"{rid}: метаданные изменили модуль, SHA или точки ActivityHelp")
     expected_config = {"package": "1", "id_hex": CONFIG_ID, "source_sha256": CONFIG_SHA256,
-        "bytes": 26030, "records": 115, "display_contexts": 128}
+        "bytes": 26242, "records": 116, "display_contexts": 129}
     if (data.get("current_config") != expected_config or data.get("current_contexts_sha256") != CONTEXTS_SHA256
             or sha(_canonical(data.get("current_contexts"))) != CONTEXTS_SHA256):
         raise ActivityDisplayError("Текущий source-bound cfg ActivityHelp изменился")
@@ -308,7 +308,7 @@ def verify_current_config(original: bytes) -> dict:
                 contexts.append({"record_index": index, "field": FIELD_NAMES[field.number],
                     "wire_path": f"root.field2[{index}].field{field.number}[{occurrence}]",
                     "source_cn": source, "source_sha256": sha(source.encode("utf-8"))})
-    if len(records) != 115 or contexts != data["current_contexts"]:
+    if len(records) != 116 or contexts != data["current_contexts"]:
         raise ActivityDisplayError("Текущие ActivityHelp field contexts не совпали с проверенными")
     return {"source_sha256": sha(original), "records": len(records), "display_contexts": len(contexts), "modified": False}
 
@@ -349,7 +349,7 @@ def patch_resource(original: bytes, rid: str) -> tuple[bytes, list[dict]]:
         revert_resource(original, rid)
         return original, [{"id": "reviewed-activity-display-v2", "already_patched": True}]
     if sha(original) != target["original_sha256"]:
-        raise ActivityDisplayError(f"{rid}: SHA оригинала ActivityHelp не совпал с проверенной игрой 1.6.0.1")
+        raise ActivityDisplayError(f"{rid}: SHA оригинала ActivityHelp не совпал с проверенной игрой 1.7.0.1")
     text = original.decode("utf-8", "strict")
     module = target["module"]
     if len(re.findall(rf'^local {module} = DeclareClass\("{module}"', text, re.M)) != 1:

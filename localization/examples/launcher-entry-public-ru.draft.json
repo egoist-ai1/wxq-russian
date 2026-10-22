@@ -1,0 +1,88 @@
+{
+  "schema": "wxq-native-entry-public-ru-draft/v1",
+  "status": "editorial-draft-native-binding-and-fit-unverified",
+  "native_binding_verified": false,
+  "client_install_allowed": false,
+  "fit_verified": false,
+  "scope": "public launcher entry labels only",
+  "records": [
+    {
+      "id": "entry.brand",
+      "surfaces": ["header.brand-image", "login.brand-image"],
+      "source": "王者万象棋",
+      "target": "Honor of Kings Ace",
+      "representation": "image",
+      "latin_allowlist": ["Honor of Kings Ace"],
+      "note": "Перевод словаря не изменяет PNG. Нужны поддерживаемый asset contract и проверка текстовой маски."
+    },
+    {
+      "id": "entry.wechat.caption",
+      "surfaces": ["wechat.public-caption"],
+      "source": "微信扫码登录",
+      "target": "Вход по QR-коду WeChat",
+      "latin_allowlist": ["QR", "WeChat"],
+      "representation": "provider-public-caption",
+      "note": "Смысл способа входа сохраняется. Реальная ширина неизвестна; перенос только целыми словами. QR и параметры авторизации не входят в corpus."
+    },
+    {
+      "id": "entry.agreement.prefix",
+      "surfaces": ["login.agreement.prefix"],
+      "source": "登录即代表你已阅读并同意",
+      "target": "Входя, вы подтверждаете, что прочитали и принимаете",
+      "representation": "renderer-text-node",
+      "note": "Двоеточие или разделитель сохраняется отдельным токеном фактического native контракта. Неподтверждённые варианты целой строки не принимаются как exact match."
+    },
+    {
+      "id": "entry.agreement.license",
+      "surfaces": ["login.agreement.license-link"],
+      "source": "游戏许可及服务协议",
+      "target": "Лицензия и условия игры",
+      "accessible_target": "Лицензионное соглашение и условия обслуживания игры",
+      "representation": "renderer-link-label"
+    },
+    {
+      "id": "entry.agreement.privacy",
+      "surfaces": ["login.agreement.privacy-link"],
+      "source": "王者万象棋隐私保护指引",
+      "target": "Конфиденциальность",
+      "accessible_target": "Правила защиты конфиденциальности в Honor of Kings Ace",
+      "representation": "renderer-link-label"
+    },
+    {
+      "id": "entry.agreement.children",
+      "surfaces": ["login.agreement.children-link"],
+      "source": "儿童隐私保护指引",
+      "target": "Защита данных детей",
+      "accessible_target": "Правила защиты конфиденциальности детей",
+      "representation": "renderer-link-label"
+    },
+    {
+      "id": "entry.agreement.third-parties",
+      "surfaces": ["login.agreement.third-parties-link"],
+      "source": "王者万象棋第三方信息共享清单",
+      "target": "Передача данных третьим лицам",
+      "accessible_target": "Перечень сведений, передаваемых третьим лицам в Honor of Kings Ace",
+      "representation": "renderer-link-label"
+    },
+    {
+      "id": "entry.agreement.collected-data",
+      "surfaces": ["login.agreement.collected-data-link"],
+      "source": "王者万象棋已收集个人信息清单",
+      "target": "Собранные персональные данные",
+      "accessible_target": "Перечень собранных персональных данных в Honor of Kings Ace",
+      "representation": "renderer-link-label"
+    }
+  ],
+  "acceptance": {
+    "required_public_surface_count": 9,
+    "required_missing_count": 0,
+    "required_unknown_count": 0,
+    "visible_source_caption_allowed": false,
+    "links_and_handlers_preserved": true,
+    "font_size_reduction_allowed": false,
+    "within_word_break_allowed": false,
+    "actual_font_and_geometry_required": true,
+    "native_first_visible_state_required": true,
+    "auth_and_qr_collection_allowed": false
+  }
+}

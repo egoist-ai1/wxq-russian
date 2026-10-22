@@ -2641,7 +2641,12 @@ namespace Egoist.WXQRussian
             RequireNoPending(ctx);
             string state = PreflightAll(ctx, useMemo);
             ctx.Result["game"] = ctx.Game;
-            ctx.Result["game_version"] = ctx.M.GameVersion;
+            // При переносе старого перевода показываем версию установленной игры,
+            // сохраняя версию исходной сборки отдельным полем.
+            string actualVersion = ctx.M.Pkgs.Select(p => ReadVersion(Path.Combine(ctx.Cache, p.Id, p.Id + ".info")))
+                .FirstOrDefault(v => v != null);
+            ctx.Result["game_version"] = actualVersion ?? ctx.M.GameVersion;
+            ctx.Result["build_game_version"] = ctx.M.GameVersion;
             ctx.Result["state"] = state;
             Log.Write("проверка пройдена, состояние override: " + state);
         }

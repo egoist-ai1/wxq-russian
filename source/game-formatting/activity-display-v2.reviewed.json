@@ -1,8 +1,8 @@
 {
   "schema": "wxq-activity-display-reviewed/v2",
   "config_resource_id_hex": "b5d856bfdf22400d",
-  "config_source_sha256": "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266",
-  "scope": "Семь новых Title и пять точных канонических Title overrides текущего cfg; отдельное ревью задачи, прежняя карта переводов не меняется.",
+  "config_source_sha256": "17257ab86965fffe791f955543ec3f0b57a05986effbfc4964efea2f8c024c9d",
+  "scope": "Восемь новых Title и пять точных канонических Title overrides текущего cfg; прежние пары сохранены, новое название «Супергерои» проверено root 22.10.2026.",
   "rows": [
     {
       "id": "ix-4431dbfe9e99",
@@ -14,7 +14,7 @@
       "reviewed_by": "root",
       "approval_scope": "task-translation-review",
       "reviewed_date": "2026-10-21",
-      "source_cfg_sha256": "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266",
+      "source_cfg_sha256": "17257ab86965fffe791f955543ec3f0b57a05986effbfc4964efea2f8c024c9d",
       "source_context": {
         "record_index": 108,
         "field": "Title",
@@ -40,7 +40,7 @@
       "reviewed_by": "root",
       "approval_scope": "task-translation-review",
       "reviewed_date": "2026-10-21",
-      "source_cfg_sha256": "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266",
+      "source_cfg_sha256": "17257ab86965fffe791f955543ec3f0b57a05986effbfc4964efea2f8c024c9d",
       "source_context": {
         "record_index": 109,
         "field": "Title",
@@ -66,7 +66,7 @@
       "reviewed_by": "root",
       "approval_scope": "task-translation-review",
       "reviewed_date": "2026-10-21",
-      "source_cfg_sha256": "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266",
+      "source_cfg_sha256": "17257ab86965fffe791f955543ec3f0b57a05986effbfc4964efea2f8c024c9d",
       "source_context": {
         "record_index": 110,
         "field": "Title",
@@ -92,7 +92,7 @@
       "reviewed_by": "root",
       "approval_scope": "task-translation-review",
       "reviewed_date": "2026-10-21",
-      "source_cfg_sha256": "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266",
+      "source_cfg_sha256": "17257ab86965fffe791f955543ec3f0b57a05986effbfc4964efea2f8c024c9d",
       "source_context": {
         "record_index": 111,
         "field": "Title",
@@ -118,7 +118,7 @@
       "reviewed_by": "root",
       "approval_scope": "task-translation-review",
       "reviewed_date": "2026-10-21",
-      "source_cfg_sha256": "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266",
+      "source_cfg_sha256": "17257ab86965fffe791f955543ec3f0b57a05986effbfc4964efea2f8c024c9d",
       "source_context": {
         "record_index": 112,
         "field": "Title",
@@ -144,7 +144,7 @@
       "reviewed_by": "root",
       "approval_scope": "task-translation-review",
       "reviewed_date": "2026-10-21",
-      "source_cfg_sha256": "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266",
+      "source_cfg_sha256": "17257ab86965fffe791f955543ec3f0b57a05986effbfc4964efea2f8c024c9d",
       "source_context": {
         "record_index": 113,
         "field": "Title",
@@ -170,7 +170,7 @@
       "reviewed_by": "root",
       "approval_scope": "task-translation-review",
       "reviewed_date": "2026-10-21",
-      "source_cfg_sha256": "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266",
+      "source_cfg_sha256": "17257ab86965fffe791f955543ec3f0b57a05986effbfc4964efea2f8c024c9d",
       "source_context": {
         "record_index": 114,
         "field": "Title",
@@ -197,7 +197,7 @@
       "approval_scope": "task-translation-review",
       "review_kind": "canon-title-override",
       "reviewed_date": "2026-10-21",
-      "source_cfg_sha256": "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266",
+      "source_cfg_sha256": "17257ab86965fffe791f955543ec3f0b57a05986effbfc4964efea2f8c024c9d",
       "source_context": {
         "record_index": 16,
         "field": "Title",
@@ -228,7 +228,7 @@
       "approval_scope": "task-translation-review",
       "review_kind": "canon-title-override",
       "reviewed_date": "2026-10-21",
-      "source_cfg_sha256": "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266",
+      "source_cfg_sha256": "17257ab86965fffe791f955543ec3f0b57a05986effbfc4964efea2f8c024c9d",
       "source_context": {
         "record_index": 19,
         "field": "Title",
@@ -260,7 +260,7 @@
       "approval_scope": "task-translation-review",
       "review_kind": "canon-title-override",
       "reviewed_date": "2026-10-21",
-      "source_cfg_sha256": "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266",
+      "source_cfg_sha256": "17257ab86965fffe791f955543ec3f0b57a05986effbfc4964efea2f8c024c9d",
       "source_context": {
         "record_index": 53,
         "field": "Title",
@@ -291,7 +291,7 @@
       "approval_scope": "task-translation-review",
       "review_kind": "canon-title-override",
       "reviewed_date": "2026-10-21",
-      "source_cfg_sha256": "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266",
+      "source_cfg_sha256": "17257ab86965fffe791f955543ec3f0b57a05986effbfc4964efea2f8c024c9d",
       "source_context": {
         "record_index": 55,
         "field": "Title",
@@ -322,7 +322,7 @@
       "approval_scope": "task-translation-review",
       "review_kind": "canon-title-override",
       "reviewed_date": "2026-10-21",
-      "source_cfg_sha256": "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266",
+      "source_cfg_sha256": "17257ab86965fffe791f955543ec3f0b57a05986effbfc4964efea2f8c024c9d",
       "source_context": {
         "record_index": 99,
         "field": "Title",
@@ -341,6 +341,28 @@
       "body_existing_ru_sha256": "d4bdacd7ec19bc5b8e4779376e8db5f8b54fe26a181fcd8d7c893c3da189170c",
       "term_basis": "Точное task-review root: Роза / Монеты Розы; прежняя approved map остаётся неизменной. Полного старого канона события не заявляем.",
       "qa_issues": []
+    },
+    {
+      "id": "ix-aac51df93bf1",
+      "field": "Title",
+      "source_cn": "<color=#FFFFFF>超级英雄活动规则</color>",
+      "source_sha256": "aac51df93bf126d24599abb29eb9806d6d5f3348b903e67b1106e35391e83f4a",
+      "target_ru": "<color=#FFFFFF>Правила события «Супергерои»</color>",
+      "target_sha256": "5bfc3817ff9f639257627dcaa82991fd6cd2b25a0bc25bb4d6ba2d605ca4f02f",
+      "reviewed_by": "root",
+      "approval_scope": "task-translation-review",
+      "reviewed_date": "2026-10-22",
+      "source_cfg_sha256": "17257ab86965fffe791f955543ec3f0b57a05986effbfc4964efea2f8c024c9d",
+      "source_context": {
+        "record_index": 115,
+        "field": "Title",
+        "wire_path": "root.field2[115].field2[0]",
+        "source_cn": "<color=#FFFFFF>超级英雄活动规则</color>",
+        "source_sha256": "aac51df93bf126d24599abb29eb9806d6d5f3348b903e67b1106e35391e83f4a"
+      },
+      "term_basis": "Root Codex явно проверил source/target пару 22.10.2026 через agent message; название нового события «Супергерои».",
+      "qa_issues": [],
+      "review_kind": "new-current-title"
     }
   ]
 }

@@ -92,6 +92,7 @@ local wxqReviewedActivityDisplayV2 = {
         ["<color=#FFFFFF>超级假期规则</color>"] = "<color=#FFFFFF>Правила события «Суперканикулы»</color>",
         ["<color=#FFFFFF>超级周末规则</color>"] = "<color=#FFFFFF>Правила события «Супервыходные»</color>",
         ["<color=#FFFFFF>超级拍卖场活动规则</color>"] = "<color=#FFFFFF>Правила события «Супераукцион»</color>",
+        ["<color=#FFFFFF>超级英雄活动规则</color>"] = "<color=#FFFFFF>Правила события «Супергерои»</color>",
         ["<color=#FFFFFF>送蔷薇币活动规则</color>"] = "<color=#FFFFFF>Правила события «Монеты Розы»</color>",
         ["<color=#FFFFFF>钻石狂潮活动规则</color>"] = "<color=#FFFFFF>Правила события «Алмазная лихорадка»</color>",
         ["<color=#FFFFFF>钻石结算加成</color>"] = "<color=#FFFFFF>Бонус к алмазам по итогам матча</color>",

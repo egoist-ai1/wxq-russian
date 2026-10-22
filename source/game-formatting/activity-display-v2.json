@@ -1,8 +1,8 @@
 {
   "schema": "wxq-activity-display/v2",
   "package": "10",
-  "game_version": "1.6.0.1",
-  "helper_sha256": "45c2c4550e5f95149dbd22a4361b60ffe7234d6c3b1b9fa4eb0f0b8eb49d9064",
+  "game_version": "1.7.0.1",
+  "helper_sha256": "74333e42cb5b6d718c5d76e7b39bac3f81f82e9eb24d7e21b3aba25c05ba8ef4",
   "resources": [
     {
       "id_hex": "556806005bdb0a12",
@@ -41,12 +41,12 @@
   "current_config": {
     "package": "1",
     "id_hex": "b5d856bfdf22400d",
-    "source_sha256": "b6577afb2715f2094d777e195a70f93cc9c10f045d96f6f93ac381236b705266",
-    "bytes": 26030,
-    "records": 115,
-    "display_contexts": 128
+    "bytes": 26242,
+    "source_sha256": "17257ab86965fffe791f955543ec3f0b57a05986effbfc4964efea2f8c024c9d",
+    "records": 116,
+    "display_contexts": 129
   },
-  "current_contexts_sha256": "d5ae661d4c6f2d7b89694634c3fe85125a167621b7e2eca394a01cd4a9ccc3c8",
+  "current_contexts_sha256": "22ac057c63a456dde07074dbb4aa5f52fdc9630593dea65635595299662dd4b5",
   "current_contexts": [
     {
       "record_index": 0,
@@ -943,6 +943,13 @@
       "wire_path": "root.field2[114].field2[0]",
       "source_cn": "<color=#FFFFFF>蔷薇加码活动规则</color>",
       "source_sha256": "e889472911ee07e734029bd2551fa7114ac21be2035991c64a6ed1bd56abe02b"
+    },
+    {
+      "record_index": 115,
+      "field": "Title",
+      "wire_path": "root.field2[115].field2[0]",
+      "source_cn": "<color=#FFFFFF>超级英雄活动规则</color>",
+      "source_sha256": "aac51df93bf126d24599abb29eb9806d6d5f3348b903e67b1106e35391e83f4a"
     }
   ],
   "approved_inputs": [
@@ -965,37 +972,37 @@
   ],
   "task_reviewed_input": {
     "path": "source/game-formatting/activity-display-v2.reviewed.json",
-    "sha256": "98ee4b0f4ccdbd3d6b9f5216103b78d952367f760f4e791d6eef318d1cc535ce"
+    "sha256": "ff8026513d1de19fca4de66e32f997ba9bc4d8984da1dff172e3a50af3717ec7"
   },
   "coverage": {
-    "source_strings": 108,
-    "source_contexts": 128,
+    "source_strings": 109,
+    "source_contexts": 129,
     "historical_approved_strings_present": 101,
     "historical_approved_contexts_present": 121,
-    "task_reviewed_strings": 12,
+    "task_reviewed_strings": 13,
     "field_contexts": {
-      "Title": 115,
+      "Title": 116,
       "ConfirmContent": 12,
       "GroupTitle": 1
     },
     "dictionary_entries": {
-      "Title": 105,
+      "Title": 106,
       "ConfirmContent": 2,
       "GroupTitle": 1
     },
-    "task_new_title_strings": 7,
+    "task_new_title_strings": 8,
     "task_canon_override_strings": 5
   },
   "constraints": [
     "Только девять подтверждённых cfg-to-display выражений в четырёх Lua-модулях.",
     "Конфигурация, callback, ветви выбора, аргументы и идентификаторы не изменяются.",
     "Другой язык, неизвестные поля/строки/новый источник и недоступный marker возвращают исходное значение.",
-    "Семь новых Title и пять точных Title overrides утверждены root как перевод задачи; полные названия не выдаются за прежний канон."
+    "Восемь новых Title и пять точных Title overrides утверждены root как перевод задачи; полные названия не выдаются за прежний канон."
   ],
   "installed": false,
   "live_layout_verified": false,
   "proof_snapshot": {
     "path": "source/game-formatting/activity-display-v2.proof.json",
-    "sha256": "ea018f1494cbb8e57441eeea0bad938573e7704a64177f8203a7ea2aa508fc65"
+    "sha256": "df4dfa6e8a7e41c9233b21638126620c931fa1e884306ff5a0f237c8093169f5"
   }
 }

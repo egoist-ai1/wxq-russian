@@ -1,0 +1,152 @@
+{
+ "schema": "wxq-display-columns/v1",
+ "game_version": "1.7.0.1",
+ "pkg": {
+  "pb": "1",
+  "unity": "19"
+ },
+ "columns": [
+  {
+   "table_id": "18d7782de2909bdf",
+   "table_type": "ResBetaJourneyLikeDataBin",
+   "path": "2/5/3",
+   "leaves": 13,
+   "utf8_share": 1.0,
+   "cjk_share": 1.0,
+   "cjk_leaves": 13,
+   "unique": 13,
+   "excluded_leaves": {},
+   "count": 13,
+   "field_hint": {
+    "name": "UnlockCfg.DftName",
+    "type": "string",
+    "desc": "通过解锁逻辑找不到名称时用这个fallback 默认名称",
+    "by": "ordinal-unverified"
+   },
+   "examples": [
+    "棋手竞猜",
+    "钻石狂潮",
+    "交易行"
+   ],
+   "evidence": [
+    {
+     "kind": "needle",
+     "hits": 6,
+     "examples": [
+      "交易行",
+      "钻石狂潮",
+      "棋手竞猜"
+     ]
+    },
+    {
+     "kind": "global",
+     "hits": 5,
+     "examples": [
+      "万象大赛",
+      "王牌对决",
+      "交易行"
+     ]
+    },
+    {
+     "kind": "lua-table",
+     "callers": 1
+    }
+   ],
+   "status": "include",
+   "reason": "needle-or-tm"
+  },
+  {
+   "table_id": "18d7782de2909bdf",
+   "table_type": "ResBetaJourneyLikeDataBin",
+   "path": "2/7",
+   "leaves": 3,
+   "utf8_share": 1.0,
+   "cjk_share": 1.0,
+   "cjk_leaves": 3,
+   "unique": 1,
+   "excluded_leaves": {},
+   "count": 3,
+   "field_hint": {
+    "name": "LockStatusName",
+    "type": "string",
+    "desc": "未解锁时名称",
+    "by": "ordinal-consistent"
+   },
+   "examples": [
+    "新棋手"
+   ],
+   "evidence": [
+    {
+     "kind": "needle",
+     "hits": 3,
+     "examples": [
+      "新棋手"
+     ]
+    },
+    {
+     "kind": "lua-field",
+     "name": "LockStatusName",
+     "callers": 1,
+     "approx": true
+    }
+   ],
+   "status": "include",
+   "reason": "needle-or-tm"
+  },
+  {
+   "table_id": "9e45602f1857539d",
+   "table_type": "ResPVPRandInitialCardPackCfg",
+   "path": "2/13",
+   "status": "include",
+   "field_hint": {
+    "name": "SubModeTypeName",
+    "type": "string",
+    "desc": "子模式分类",
+    "by": "current-annotations+native-shape+current-display-consumer"
+   },
+   "reason": "All five exact values are atlas group/filter captions. Replace the complete text equivalence class, retaining IDs, enum values, weights, sorting, card lists and all other fields.",
+   "evidence": [
+    {
+     "resource": "a55302cbed7fce79",
+     "original_sha256": "cd1262203d14644a661dd361545b54df8d126da020a56fc36002b1d757b7f2be",
+     "module": "UIGameAtlasCardBaseClass",
+     "lines": [
+      433,
+      436,
+      457,
+      523,
+      524
+     ],
+     "source": "cfg.SubModeTypeName -> group.title -> className/titleData.info; same complete text equivalence class is only an in-memory atlas grouping/filter key."
+    }
+   ]
+  },
+  {
+   "table_id": "58aeacb13a133e03",
+   "table_type": "FaceToFaceRedPackDataBin",
+   "path": "2/8",
+   "status": "include",
+   "field_hint": {
+    "name": "jumpDes",
+    "type": "string",
+    "desc": "跳转提示",
+    "by": "current-annotations+native-shape+current-display-consumer"
+   },
+   "reason": "GiftShare lock/availability captions. Adjacent field9 jump is a route and must remain unchanged.",
+   "evidence": [
+    {
+     "resource": "cacc56375bba5585",
+     "original_sha256": "a3a1cd8d97743a7d2b62fe4c714369140e4ea323d63d9450be8bea8c97cd3de5",
+     "module": "UIGiftShareBtnGroupClass",
+     "lines": [
+      24,
+      56,
+      58
+     ],
+     "source": "typed FaceToFaceRedPackDataBin; rigtBtnTxt.text and oneBtnTxt.text = data.jumpDes"
+    }
+   ]
+  }
+ ],
+ "unity_groups": []
+}

@@ -1,7 +1,7 @@
 {
   "schema": "wxq-header-layout/v1",
   "package": "10",
-  "game_version": "1.6.0.1",
+  "game_version": "1.7.0.1",
   "helper": "source/game-wordwrap/header-layout.lua",
   "helper_sha256": "ac50441b4cdaeb8159832257e8c7bebda2a73c8304ba247ba910b818c775a43c",
   "resources": [
@@ -21,7 +21,7 @@
     {
       "id_hex": "1eaf50bae2c25fe8",
       "module": "UIFullScreenViewTemplate_BackClass",
-      "original_sha256": "08a1d83f0cfc7732ea7539f20f5e813498a451cdb9a5993b92eda2bfd795550a",
+      "original_sha256": "acf4407392b926f595655a3282fe56c13a095f03601f633aa782d121f1434d92",
       "hooks": [
         "vOnInitialize",
         "RefreshContentVisibility",

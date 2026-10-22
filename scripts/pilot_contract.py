@@ -71,13 +71,13 @@ LUA_REPLACEMENT_ALLOWED = {
         '18fa377c5b87a9ee': '975248a623a2adebe15cfee4e49115f82d7c4983ef30f7b3a8577f3d7550a0c7',  # UIOperationGuiLaiTiaoZhanSlapPage_AutoBind
         '1d64e5a6b3a66d14': '6befd4d8aada1dc6812aa24d1e223879410ae169aa73e16e55e86b92d279d38b',  # UIGameAtlasFlowItem_AutoBind
         '392a9662d3a36d50': 'b15b0baf2f418e274f049ec835bcfe37ecfe0748dbbdf6fe98b82e033e20cead',  # UINewbieGuideItem2_AutoBind
-        '39422ecbfe2e5839': '5499280e122177a98b09b308c592b971b2a88213d3d0a2bfefcba568e9f04dd4',  # UIOperationGuiLaiTiaoZhanHotLineup2_AutoBind
+        '39422ecbfe2e5839': '18aa8b8726cc3f5a8754171747c805583315a4ab563e19f76eac3f9bd77f5829',  # UIOperationGuiLaiTiaoZhanHotLineup2_AutoBind
         '3f6e43f0668755c2': '25181ab17fae5da81a2b9273297e1cd36195e4ad825b4717338e3b1d587b87d0',  # UIBPTaskItem_AutoBind
         '450b988136ab07b3': '35abd9b9fafe33c9c9668c0e86fdd1f8ef84f8ddac89b036916a446851abd5cb',  # UIOperationChessPlayerThemePage3_AutoBind
         '4aa6c8da11cb1608': '947a24f9289235a8b644bfde377678888ac20c80042c7ba71b34b6399660ae52',  # UINewBieGuideKeywordItem3_AutoBind
         '5205c92e6c7933fc': '690d50bec50c854e80f63c86ae12a402b3c9f2ed81c0103dfe57673fe0deb28c',  # UIOmniCommissionNewPlayerGuide_AutoBind
         '5548fa4e1a9a179c': 'd84b0b56ea66ab5c8c8a8f9a6523c21606c04e6e27603ced176a7b78a83714e8',  # UIOperationSpacialWishCard_AutoBind
-        '55a86aea2f2f19b8': '7d13a18aba8807ad9cf9f56ed5075dabb5d3dfa2be948a042b12020c05767998',  # UIAchieveListPage_AutoBind
+        '55a86aea2f2f19b8': '4b43c0b165ed6bccb8f284d07cda47b886a505fae643bf035d15b093583de31a',  # UIAchieveListPage_AutoBind
         '5737770b9be55ab9': 'b4cb10cac2a7ab36b78d17d528c9cd10b5a5e4c61bac116cfbebd08a1a858165',  # UIAchieveSettleItem_AutoBind
         '5e99f2b9f0963c0b': 'f9e47617a9dfdf090ecbfbc7f8cd032020ab2e6f341f1c6795270243b992d315',  # UIOperationServerLaunchProgressAwardBigItem_AutoBind
         '5f3ad2b974bac90b': '873d7ac8e51602435b090582f9c0af8ea3163e6f47578fa2483a32e92b03ab09',  # UIOperationServerLaunchProgressMainPage_AutoBind
@@ -197,7 +197,7 @@ LUA_REPLACEMENT_ALLOWED = {
         '26c75cb4012fb706': 'f67d88ebeabda85de91670d69b81ec9d98e9b3da645556b0dbeb61001504db59',  # ItemInfoGroupClass_AutoBind
         '2edf6a0c3c595d9e': 'c1ad42265a819c2e0d9a25ae1176153b169140d5144c6efa0139bbe5c81aac0d',  # MergeItemInfoGroupClass_AutoBind
         '02dfb833a7112cc1': 'bb928ef69d437f91e36bcbec882a87b5f773a485930714b06ce32e861765ea47',  # UICommonLingTipsClass_AutoBind
-        '0fa9bbc9d82f71fb': '782e3df9ad6a54b6d8d435d676b2a49d85a37dc8ce7603fa041e9d58818f6783',  # UIActiveTaskItemBase (прямые присваивания)
+        '0fa9bbc9d82f71fb': '47f73969730ccd9ee75e46b2c7b17dade0e3fe6b1d76e2687a5bda628d7d764c',  # UIActiveTaskItemBase (прямые присваивания)
         '131d0f3b0c28c189': 'a932447e7b2894938d8d3716987007e52075eb91eb98c976b79a61c9b9aa986b',  # UIGameAtlasCardInfoLevelDesItemClass (прямые присваивания)
         '1a2363c3ea46b3b1': '03311b6bf7268b2cf864d125a40ccdeffea4b07202e227b0f11e0df82c81df0d',  # UICareerRecieveTitleViewPopClass (прямые присваивания); пин 1.6.0.1, до 1.6.0.1 был 9ac850d65a89...e647 (изменилась только ShowLordTitleWindow, места вставок те же)
         '1ee062f289f5ddc0': '5a92460da80ad87c00889e6f171d6cc6f3b50ec406514f85ccdf9d27d8b21103',  # UIRelationInfoItemClass (прямые присваивания)
@@ -225,7 +225,7 @@ LUA_REPLACEMENT_ALLOWED = {
         '2c75c6435106ad31': '7f4d930e85cea67e503d466002df93d422bb462c27cae9bfc5b2ce3a78867f8c',  # UITRComposeClass_AutoBind
         'c8e7ae354aa38ac7': '53a8691dd8c3924c60aa2eb4ded83ae56e79256f8c1aac10f685adb7af1a7d12',  # UIAchieveSelectAchievePageClass_AutoBind
         '483b10cd60af387f': '04418c2ab7709952e1fd34f4375e0de98261744ecaa8a7594932da384bdbf4bf',  # UIAchieveCompletionProgressItemClass_AutoBind
-        'beb26c52450fb3e0': 'ca266995c328356031bc4058377d16564abae2eeaf1efbe9e85b42216e4527a3',  # UICommonAchieveTipsClass_AutoBind
+        'beb26c52450fb3e0': 'fa81ee4a4d59a8e4054c169947e4ef1df8747e25281e0597709a8aea48bbbbca',  # UICommonAchieveTipsClass_AutoBind
         '96acd16b8f0eca99': '4191a2276c39f1ecda089d181fd986c8733bb72afd7aa2d3a721fe9e03ea43ce',  # UIAchieveChessboardTipsClass_AutoBind
         'ffb86dbd995cc04f': '4c630ca28042b773abdfa8bda86f95d43ab71343498ecb6aa7329d98782046ee',  # UIHelpContentItemClass_AutoBind
         '6a433e4f6da01cbd': '651cac468d8c57fcd8335068258702b548d45819d2a649aa40e6f04a2a90f492',  # UIHelpContentItem2Class_AutoBind
@@ -264,22 +264,22 @@ BC7_TEXTURE_ALLOWED = {
         '13c19e4e4486b31c': 'fb5344a1d947ecfdd4444d5aea43b14a8b90eb730332eb0323294ea99bd54bb5',  # CareerAtlas 1024x1024 (1.6.0.1; на 1.5.0.1 было 51c906dc…)
         'd60aedde2d4cbb8c': 'ce081113a99c4258ecc230cb6dbace6af10a596b0bafce67863bd900baea7a9e',  # SeasonAtlas 1024x1024
         'e86df43167ca2143': '34cedad5573ccb44b86114164dc22838b9ea77123dd58e2929199f23dd6b5f08',  # GameCenterAtlas 1024x1024
-        '362253ea729c72f8': '586852f3655629146f32bf57129f09ca2e359525fbf43e46bf9839f3c24b15f2',  # TeamRecommendAtlas 1024x1024 (1.6.0.1)
+        '362253ea729c72f8': 'fdbde29580fe046fc274477403d3131999915bf07ba6444933a0768fc37d59ef',  # TeamRecommendAtlas 1024x1024 (1.6.0.1)
         'a4f638ac4ed7627e': '09c3c1e8cf04161b5bc44d3b329785ef6715433132a7b7b3a125d9d7c1695380',  # UI_skill_TaiYi_myj_03 492x360 (1.6.0.1)
         '10c984e383eb5351': 'c0fd90c49978479147f7afaf1564b2d60363bb1ef2ef14aaef4b73bb8efdc330',  # LordCheeringAtlas 1024x1024 (1.6.0.1)
         '8ddce9d259b27700': '48805e9c50336ecf12dfad66c1032efb9da1985ac50a11b7780047b1bcab4c15',  # LordAtlas 1024x1024 (1.6.0.1)
         '6677881457c07686': '95971d68342a64ca631ba00125555393a71292eb26d2b00df0f1bbead5f6c29b',  # TradeAtlas 1024x1024 (1.6.0.1)
         '0638abc65b434114': '2ca50e12c92522e7dcd84e78def056302ce93fc9e61fb9ce21f9bdc4f11b0752',  # tex-2026-10-17-c-g3 268x20 (1.6.0.1)
         '0b4da7a85d27e87a': '0d349bbcd342ad42273634916d9d0bb9e7309e5fca2396d3f06aa9ffa6e46a79',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
-        '2e7df9820d2f9ed0': '040746883a16c28b6b07535a9d129905ada3db53e853d9f36f29e796ed7a895c',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
-        '3a90000940f528bb': '8a9a832c9f74a394d7b14e0f645a1940f575173f29e4629189c21730687cfeba',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
+        '2e7df9820d2f9ed0': 'fe3d5cd2d84b61663990ce361ba72669135cdb2a472dd8b5e00f074ffd178db7',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
+        '3a90000940f528bb': '6033d9919be8686a433bad66ef77751aa7f938e7db48e3621111ccc4ccd3e103',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
         '4afb2b3933c898cb': 'dd195336dc81c32776b48168ef231b3b70e162373492b6f6d7d5a024d0044058',  # tex-2026-10-17-c-g3 268x20 (1.6.0.1)
         '675e036b7ee068d9': '8279b7cb72f8c3f5677c3d55f82471a3a0f8807958592df2783cd5e1a7ecf2a4',  # tex-2026-10-17-c-g3 268x20 (1.6.0.1)
         '8561dd4cf927c3de': 'b84ab8de0a7cb426d88f6d9154f12c6c1f5d6ea55166bc4f8c952f0ef34f0d3f',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
         '8cc3ecc3d972bc31': '2a3fbc6e76fedc65e3af8d1ef4f3c02fc59e292c6cb544ae386ee192eff4697e',  # tex-2026-10-17-c-g3 492x360 (1.6.0.1)
         '990a38402bdc48d2': '2cb3197d537f6320da8fef30e8b7f0510986fe9e700224b199046bd916975386',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
         '9b5a3658d5858bca': '67b61108d68bc07def040ec1b70bb1e51aead1ddbcc8950a3d6566e6d2bec146',  # tex-2026-10-17-c-g3 2048x2048 (1.6.0.1)
-        'bcc158c3874d51b1': 'fea097aec9b7e92159f0f3aefb334cf58c025f2e07eb682b02c71bd7c763347e',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
+        'bcc158c3874d51b1': '6f7609e9f7558c35526eb641ac23a8f0de4828d04f4401fb372a9f3782c8c0e3',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
         'e140fc4e02b5dd1c': '71773ea59d352afd0b7737a604f70f5d7690a866c292d9ed748e807a8c3cbf2d',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
         'ff5a9152d69df380': '1b375177f77253e0d8f8e6b1a00be6f716f8d9bd977c704a57a9ac843f136a8c',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
         '00a250bf2721738d': '08d67b3d2e98204a7a09ab2f34053964712e92b6cf51c87f14fd82672dee93a0',  # tex-2026-10-18-d-g5/g6 192x48 (1.6.0.1)
@@ -331,10 +331,10 @@ BC7_TEXTURE_ALLOWED = {
         'b0e95993be660de1': '122d5171508463ae1ae8bde10c8a2401fc8c1bdd49cb14b7d590ece9614d93a4',  # tex-2026-10-18-d-g5/g6 512x1024 (1.6.0.1)
         'b19bbbb42b6e76e6': '95c354f4627ac492f12a9362b3e3f84eb19517182bbbf717e873293b6c376de7',  # tex-2026-10-18-d-g5/g6 420x588 (1.6.0.1)
         'b26d9ceeb14aca7c': '1bf23087e85a1b0be592fae320d4892c23b5d4ffa68b1b2b26a09aa35f2b8b7a',  # tex-2026-10-18-d-g5/g6 256x128 (1.6.0.1)
-        'b4a8709346c4c561': '2358132468f460f888708381cddaf7cc984e46c8180f25b145bbcc49422aeb96',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
+        'b4a8709346c4c561': 'd33d5e69d8649c5ca5197d660a94d29d5ad0c0142287c63e42b97c56887aab10',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
         'b53c579132f1bda3': '5fd5d11cfaef5d51f957ba1064d9c8a05164167c9247ed2696bd84ff3355d937',  # tex-2026-10-18-d-g5/g6 540x184 (1.6.0.1)
         'baa04e16db2ea0c4': '787961f77331223339965ecceac6323efa52a6c95f2b455a6dea49792ad7dcc9',  # tex-2026-10-18-d-g5/g6 600x124 (1.6.0.1)
-        'bb42cc7a1e727de8': '82696c048140770eed4148ff12a90fa8731c4f740d1b29384415d571c13c6061',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
+        'bb42cc7a1e727de8': 'f9f6498487189a7d861b90ebfc649c55ea30cec7b05323eb29231396b55eb07d',  # tex-2026-10-18-d-g5/g6 1024x1024 (1.6.0.1)
         'c2c95ade3e79378c': 'a9fb35d1768d5fbef98cf749c8360ce1818ac66a769d2375f43571ad7de12e92',  # tex-2026-10-18-d-g5/g6 540x184 (1.6.0.1)
         'd2e37a391949ba4b': 'fe3058a650ac8b1ba5e542c31ebc48779eed9aaa6b9ead8ade59028ffc2dfb8c',  # tex-2026-10-18-d-g5/g6 416x100 (1.6.0.1)
         'd400829093f2e202': '9ab8cb9d126fcbe0e51f800c62dae0284b28a20d376f95625d6328821a1c308a',  # tex-2026-10-18-d-g5/g6 512x256 (1.6.0.1)
@@ -542,11 +542,11 @@ def _merge_bc7_pins() -> None:
 
 _merge_bc7_pins()
 
-# Пины SHA оригиналов общего покрытия Lua (пакет 10, v12c): список построен gen_wrap_targets.py по оригиналам prime игры 1.6.0.1.
+# Пины SHA оригиналов общего покрытия Lua (пакет 10, v12c): список построен gen_wrap_targets.py по оригиналам prime игры 1.7.0.1.
 # Вливаются при импорте контракта (а не только при импорте build_lua_package), поэтому require_lua_replacements в установщике и validate_carrier
 # принимают эти ресурсы в любом процессе. Файл закреплён SHA-256; уже заданный пин может только совпасть, расхождение - ошибка.
 LUA_COVERAGE_PATH = PROJECT / 'source/game-wordwrap/coverage-targets.json'
-LUA_COVERAGE_SHA256 = 'f87b1274dfd580163e09ae8cf60e2a30ca78008d5e1583d49c5b5dd5c4126f9c'
+LUA_COVERAGE_SHA256 = 'e38be218ed8395ef0fbbc4e525642cdc08cce538f709405cdf0122753e3a4bc8'
 
 
 def _merge_lua_coverage_pins() -> None:
@@ -570,7 +570,7 @@ _merge_lua_coverage_pins()
 
 # Общие шаблоны шапки и контроллер горизонтального меню: отдельные пины, прежние 1914 ресурса переноса остаются прежними.
 LUA_HEADER_LAYOUT_PATH = PROJECT / 'source/game-wordwrap/header-layout.json'
-LUA_HEADER_LAYOUT_SHA256 = 'ca4c8d227144d74b51ec5b918418706fd42822cd867f318854a943c8ccf90dfe'
+LUA_HEADER_LAYOUT_SHA256 = 'd391c78659b3d704a09732e510d19534d70f5bc7e9c17ec5d43fc0856b69f0b2'
 
 
 def _merge_lua_header_layout_pins() -> None:
@@ -626,7 +626,7 @@ _merge_lua_numeric_display_pins()
 
 # ActivityHelp: четыре display-потребителя; cfg служит source proof сборки и не заменяется.
 LUA_ACTIVITY_DISPLAY_PATH = PROJECT / 'source/game-formatting/activity-display-v2.json'
-LUA_ACTIVITY_DISPLAY_SHA256 = 'd1d4ccb1a02c37269009571cbb3a4c0a7db579539c1fb0a58409a51cb15e38c8'
+LUA_ACTIVITY_DISPLAY_SHA256 = 'a6db2fde33a79dfb95677a20bc8224d8398c73e3acdf074b147f4b52282a8884'
 
 
 def _merge_lua_activity_display_pins() -> None:

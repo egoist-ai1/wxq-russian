@@ -21,6 +21,7 @@ import sys
 import tempfile
 import uuid
 from pathlib import Path
+from contextlib import ExitStack
 
 sys.dont_write_bytecode = True
 PROJECT = Path(__file__).resolve().parents[1]
@@ -299,6 +300,22 @@ def prepare(game: Path, items: list[dict]) -> tuple[list[dict], dict]:
 
 # ---------------------------------------------------------------- лаборатория и сборка
 
+def cleanup_lab_task(lab: Path, thread_id: str) -> None:
+    """Удаляет только лабораторию данного задания, сохраняя соседние сборки."""
+    temporary = Path(tempfile.gettempdir()).resolve()
+    tasks = temporary / 'wxq-pilot/tasks'
+    task = tasks / thread_id
+    resolved_tasks = tasks.resolve()
+    resolved_task = task.resolve()
+    resolved_lab = lab.resolve()
+    if (not re.fullmatch(r'[0-9a-f]{32}', thread_id)
+            or resolved_lab.parent.name != 'work' or resolved_lab.parent.parent != resolved_task
+            or not resolved_tasks.is_relative_to(temporary)
+            or resolved_task.parent != resolved_tasks or resolved_task.name != thread_id):
+        raise PilotError('Отказ от очистки: лаборатория не принадлежит текущему временному заданию')
+    shutil.rmtree(resolved_task, ignore_errors=True)
+
+
 def installed_state(game: Path, packages: list[str]) -> dict:
     cache = game / 'QtsDataFolder/QtsVFSCache/packages'
     log = game / 'QtsDataFolder/QtsVFSCache/QtsVFS.log'
@@ -368,13 +385,13 @@ def build(game: Path, resources: list[dict], report: dict, items: list[dict], ou
     lab = Path(tempfile.gettempdir()) / 'wxq-pilot' / 'tasks' / thread_id / 'work' / ('pilot-' + uuid.uuid4().hex[:8])
     lab.mkdir(parents=True)
     if shutil.disk_usage(lab).free < total * 1.3 + (64 << 20):
-        shutil.rmtree(lab.parents[2], ignore_errors=True)
+        cleanup_lab_task(lab, thread_id)
         raise PilotError(f'Не хватает места на диске временной папки: нужно около {int(total * 1.3) >> 20} МБ')
     try:
         return _build_in_lab(game, resources, report, items, output, content_path, state, all_packages, packages, prime_files, thread_id, lab)
     finally:
         if not keep_lab:
-            shutil.rmtree(lab.parents[2], ignore_errors=True)
+            cleanup_lab_task(lab, thread_id)
 
 
 def _build_in_lab(game, resources, report, items, output, content_path, state, all_packages, packages, prime_files, thread_id, lab) -> dict:
@@ -401,18 +418,25 @@ def _build_in_lab(game, resources, report, items, output, content_path, state, a
     for package in all_packages:
         (lab / 'raw' / package).mkdir(parents=True)
         lines = []
-        for resource in (r for r in resources if r['package'] == package):
-            ident = int(resource['id_hex'], 16)
-            with QtsContainer(lab / 'prime' / package / resource['data_file']) as container:
+        # Один индекс на storage: повторный разбор того же архива для каждого
+        # ресурса делал большие сборки квадратичными по числу записей.
+        with ExitStack() as readers:
+            containers = {}
+            for resource in (r for r in resources if r['package'] == package):
+                ident = int(resource['id_hex'], 16)
+                data_file = resource['data_file']
+                if data_file not in containers:
+                    containers[data_file] = readers.enter_context(QtsContainer(lab / 'prime' / package / data_file))
+                container = containers[data_file]
                 if sha_bytes(container.decode_entry(ident)) != resource['original_sha256']:
                     raise PilotError('Источник ресурса в копии prime не совпал с оригиналом')
-            original_file = 'expected/original-' + resource['id_hex']
-            (lab / original_file).write_bytes(resource['original'])
-            modified_file = 'raw/' + package + resource['alias']
-            (lab / modified_file).parent.mkdir(parents=True, exist_ok=True)
-            (lab / modified_file).write_bytes(resource['payload'])
-            lines.append(f'{ident}|0|0|{resource["alias"]}|{(lab / modified_file).as_posix()}|{FILE_CONFIG_CHUNKS};')
-            samples.append({'name': 'Pilot_' + resource['id_hex'], 'id_hex': resource['id_hex'], 'original_file': original_file, 'modified_file': modified_file})
+                original_file = 'expected/original-' + resource['id_hex']
+                (lab / original_file).write_bytes(resource['original'])
+                modified_file = 'raw/' + package + resource['alias']
+                (lab / modified_file).parent.mkdir(parents=True, exist_ok=True)
+                (lab / modified_file).write_bytes(resource['payload'])
+                lines.append(f'{ident}|0|0|{resource["alias"]}|{(lab / modified_file).as_posix()}|{FILE_CONFIG_CHUNKS};')
+                samples.append({'name': 'Pilot_' + resource['id_hex'], 'id_hex': resource['id_hex'], 'original_file': original_file, 'modified_file': modified_file})
         (lab / f'file-config-{package}.txt').write_text('\n'.join(lines) + '\n', 'utf-8')
         # Нетронутые ресурсы того же пакета: чтение через override должно остаться побайтно прежним.
         own_files = sorted({r['data_file'] for r in resources if r['package'] == package}) or [f'{package}_0.db']

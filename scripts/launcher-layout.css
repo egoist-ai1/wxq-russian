@@ -1,0 +1,135 @@
+/* Only existing launcher labels; original fonts already include Cyrillic. */
+.left-menu-title {
+  white-space: nowrap;
+}
+.left-menu {
+  width: 132px !important;
+}
+.home-notice-panel .notice-tabs-bar .notice-tabs-all .text {
+  width: 52px !important;
+  white-space: nowrap !important;
+}
+.home-notice-panel .notice-tabs-bar .notice-tabs-all .text .arrow-icon {
+  margin-right: 0 !important;
+  flex-shrink: 0 !important;
+}
+.login-agreement .content {
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  hyphens: none !important;
+}
+
+/* The native modal body uses break-all; keep Russian words intact at its stock size. */
+.launcher-common-modal-wrap .common-modal-content {
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  hyphens: none !important;
+}
+
+/* Keep the native dropdown type size; translated rows grow with their content. */
+.personal-wrap {
+  width: 238px !important;
+  max-width: calc(100vw - 64px) !important;
+}
+.personal-wrap .row {
+  height: auto !important;
+  min-height: 22px !important;
+}
+.personal-wrap .row .icon {
+  flex-shrink: 0 !important;
+}
+.personal-wrap .row .name {
+  flex: 1 !important;
+  min-width: 0 !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  hyphens: none !important;
+}
+.setting-page .ant-collapse-content-box {
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  hyphens: none !important;
+}
+
+/* Russian labels use the existing modal, with room for two complete words lines. */
+.setting-page #commom-modal {
+  width: 820px !important;
+  max-width: calc(100vw - 48px) !important;
+}
+.setting-page .common-tabs.ant-tabs > .ant-tabs-nav {
+  flex: 0 0 174px !important;
+  width: 174px !important;
+  padding-right: 20px !important;
+  box-sizing: border-box !important;
+}
+.setting-page .common-tabs.ant-tabs .ant-tabs-tab {
+  justify-content: flex-start !important;
+  width: 154px !important;
+  min-height: 36px !important;
+  height: auto !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+.setting-page .common-tabs.ant-tabs .ant-tabs-tab + .ant-tabs-tab {
+  margin-top: 18px !important;
+}
+.setting-page .common-tabs.ant-tabs .ant-tabs-tab-btn {
+  width: 100% !important;
+  white-space: normal !important;
+  text-align: left !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  line-height: 21px !important;
+}
+.setting-page .common-tabs.ant-tabs .ant-tabs-content-holder {
+  min-width: 0 !important;
+}
+.setting-page .common-button__fixed-width {
+  flex-shrink: 0 !important;
+  width: auto !important;
+  min-width: 112px !important;
+  height: 32px !important;
+  padding: 0 12px !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+}
+.setting-page .common-button__fixed-width .common-button__content {
+  white-space: nowrap !important;
+  line-height: 20px !important;
+}
+.setting-page .setting-about-check-update {
+  flex-shrink: 0 !important;
+  width: auto !important;
+  min-width: 132px !important;
+  height: 28px !important;
+  padding: 0 12px !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+}
+.setting-page .memory-module-wrap .label {
+  line-height: 16px !important;
+}
+
+/* Keep the four news tabs and the separate All link inside their original bar. */
+.home-notice-panel .notice-tabs-bar .notice-tabs {
+  gap: 12px !important;
+  flex-shrink: 0 !important;
+}
+.home-notice-panel .notice-tabs-bar .notice-tabs .notice-tab-item {
+  white-space: nowrap;
+  font-size: 13px !important;
+}
+
+/* Native WeChat guest captions; QR images and links retain original content. */
+.loginPanel .title::after {
+  content: "Вход в WeChat" !important;
+  font-family: Arial, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 21px !important;
+}
+.js_quick_login_nickname.qlogin_user_nickname::after {
+  content: "Быстрый вход через WeChat" !important;
+  font-family: Arial, sans-serif !important;
+}
