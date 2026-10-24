@@ -26,7 +26,7 @@ TEXTURE_KINDS = ('rgba32-texture', 'bc7-texture')  # длина потока с�
 # правки перечислены в manifest['table_text_edits'] / manifest['unity_text_edits'] и ПОВТОРНО доказываются кодеком при проверке кандидата.
 TEXT_KINDS = {'pb-table-text': ('1', 'table_text_edits'), 'unity-text': ('19', 'unity_text_edits')}
 TEXT_RESOURCE_PINS_PATH = PROJECT / 'localization/profiles/text-resource-pins-1.5.0.1.json'
-TEXT_RESOURCE_PINS_SHA256 = '2ed29187f0f7da65833a6013220eb7f8c2f5a0a66869dac88253c4f4fedf02b0'  # SHA-256 файла пинов (scripts/build_text_resource_pins.py)
+TEXT_RESOURCE_PINS_SHA256 = '69b2a2ec825cc5429a9dd9f5befaae440592e549151a411789b8117e5bb1612c'  # SHA-256 файла пинов (scripts/build_text_resource_pins.py)
 # Ресурсы, которые можно заменить целиком готовыми байтами (правила переноса строк, Unity TextAsset пакета 1).
 # Явный белый список: пакет -> {id: SHA-256 оригинала в prime}. Любой другой id как raw-replacement отклоняется.
 RAW_REPLACEMENT_ALLOWED = {
@@ -271,7 +271,7 @@ BC7_TEXTURE_ALLOWED = {
         '6677881457c07686': '95971d68342a64ca631ba00125555393a71292eb26d2b00df0f1bbead5f6c29b',  # TradeAtlas 1024x1024 (1.6.0.1)
         '0638abc65b434114': '2ca50e12c92522e7dcd84e78def056302ce93fc9e61fb9ce21f9bdc4f11b0752',  # tex-2026-10-17-c-g3 268x20 (1.6.0.1)
         '0b4da7a85d27e87a': '0d349bbcd342ad42273634916d9d0bb9e7309e5fca2396d3f06aa9ffa6e46a79',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
-        '2e7df9820d2f9ed0': 'fe3d5cd2d84b61663990ce361ba72669135cdb2a472dd8b5e00f074ffd178db7',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
+        '2e7df9820d2f9ed0': '33dee4b7568543f9f00f38138fa6131ee7a4a00907e7e0f224672e1acc1089fd',  # DifficultyAtlas 1024x1024 (1.7.0.2)
         '3a90000940f528bb': '6033d9919be8686a433bad66ef77751aa7f938e7db48e3621111ccc4ccd3e103',  # tex-2026-10-17-c-g3 1024x1024 (1.6.0.1)
         '4afb2b3933c898cb': 'dd195336dc81c32776b48168ef231b3b70e162373492b6f6d7d5a024d0044058',  # tex-2026-10-17-c-g3 268x20 (1.6.0.1)
         '675e036b7ee068d9': '8279b7cb72f8c3f5677c3d55f82471a3a0f8807958592df2783cd5e1a7ecf2a4',  # tex-2026-10-17-c-g3 268x20 (1.6.0.1)
