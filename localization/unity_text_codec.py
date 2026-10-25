@@ -22,6 +22,8 @@ if str(PROJECT / 'scripts') not in sys.path:
 import game_unity_fields as guf  # noqa: E402
 
 TEXT_FIELDS = ('m_Text', 'text', 'm_text')
+# Целочисленные поля шрифта, которые разрешено менять вместе с текстом (автоподбор размера, перенос строк); длина в байтах не меняется.
+STYLE_FIELDS = ('m_FontData.m_BestFit', 'm_FontData.m_MinSize', 'm_FontData.m_MaxSize', 'm_FontData.m_HorizontalOverflow')
 CJK = re.compile('[㐀-䶿一-鿿　-〿＀-￯]')
 CJK_BYTES = re.compile(rb'[\xe3-\xef][\x80-\xbf]{2}')
 FILE_SIZE_OFFSET = 24  # '>Q' в заголовке v22
@@ -74,6 +76,10 @@ def _is_text_path(path: str) -> bool:
     return last in TEXT_FIELDS
 
 
+def is_style_path(path: str) -> bool:
+    return path in STYLE_FIELDS
+
+
 def _hash_key_empty(spans: dict, path: str) -> bool:
     parent = path.rsplit('.', 1)[0] + '.' if '.' in path else ''
     sibling = spans.get(parent + 'm_textHashKey')
@@ -119,7 +125,10 @@ def read_field_values(data: bytes, keys) -> dict[tuple[int, str], str]:
         spans = {s['path']: s for s in _parse_object(data, objects[path_id])['spans']}
         for path in paths:
             span = spans.get(path)
-            if span is None or span['type'] != 'string':
+            if is_style_path(path):
+                if span is None or not span['format']:
+                    raise UnityTextError(f'{path_id}:{path}: не числовое поле объекта')
+            elif span is None or span['type'] != 'string':
                 raise UnityTextError(f'{path_id}:{path}: не строковое поле объекта')
             out[(path_id, path)] = span['value']
     return out
@@ -134,10 +143,16 @@ def _apply_to_object(body: bytes, parsed: dict, fields: dict, path_id: int) -> b
     spans = {s['path']: s for s in parsed['spans']}
     for path in fields:
         span = spans.get(path)
+        if is_style_path(path):
+            if span is None or not span['format']:
+                raise UnityTextError(f'{path_id}:{path}: не числовое поле объекта')
+            if isinstance(fields[path], bool) or not isinstance(fields[path], int):
+                raise UnityTextError(f'{path_id}:{path}: ожидается int')
+            continue
         if span is None or span['type'] != 'string':
             raise UnityTextError(f'{path_id}:{path}: не строковое поле объекта')
         if not _is_text_path(path):
-            raise UnityTextError(f'{path_id}:{path}: правка разрешена только для ' + '/'.join(TEXT_FIELDS))
+            raise UnityTextError(f'{path_id}:{path}: правка разрешена только для ' + '/'.join(TEXT_FIELDS) + ' и ' + '/'.join(STYLE_FIELDS))
         if any(body[span['value_end']:span['span_end']]):
             raise UnityTextError(f'{path_id}:{path}: выравнивание строки не нулевое')
         if not isinstance(fields[path], str):
@@ -145,6 +160,12 @@ def _apply_to_object(body: bytes, parsed: dict, fields: dict, path_id: int) -> b
     out = bytearray(body)
     for path in sorted(fields, key=lambda p: spans[p]['offset'], reverse=True):
         span = spans[path]
+        if is_style_path(path):
+            try:
+                out[span['offset']:span['value_end']] = struct.pack('<' + span['format'], fields[path])
+            except struct.error as error:
+                raise UnityTextError(f'{path_id}:{path}: значение не помещается в поле: {error}') from error
+            continue
         out[span['offset']:span['span_end']] = _encode_string(fields[path])
     return bytes(out)
 

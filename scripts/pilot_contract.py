@@ -892,6 +892,11 @@ def require_text_resources(manifest: dict) -> None:
                     raise ValueError(f'{kind} {ident[0]}/{ident[1]} has an edit without address')
                 if kind == 'unity-text' and (type(edit.get('path_id')) is not int or not isinstance(edit.get('field'), str)):
                     raise ValueError(f'{kind} {ident[0]}/{ident[1]} has an edit without path_id/field')
+            if kind == 'unity-text':
+                for style in row.get('styles', []):
+                    if (not isinstance(style, dict) or type(style.get('path_id')) is not int or not isinstance(style.get('field'), str)
+                            or type(style.get('source')) is not int or type(style.get('value')) is not int):
+                        raise ValueError(f'{kind} {ident[0]}/{ident[1]} has an invalid style edit')
 
 
 def _digest(text: str) -> str:
@@ -935,6 +940,18 @@ def prove_text_resource(kind: str, declaration: dict, original: bytes, payload: 
         for edit, key in zip(edits, keys):
             if _digest(old_values[key]) != edit['source_sha256'] or _digest(new_values[key]) != edit['sha256']:
                 raise ValueError(f'Unity text edit {key}: hashes differ from the manifest')
+        styles = declaration.get('styles', [])
+        style_keys = [(style['path_id'], style['field']) for style in styles]
+        if len(set(style_keys)) != len(style_keys) or set(style_keys) & set(keys):
+            raise ValueError('Unity style edits are duplicated')
+        if any(field not in codec.STYLE_FIELDS for _, field in style_keys):
+            raise ValueError('Unity style edit targets a field outside the font-size whitelist')
+        if style_keys:
+            old_styles, new_styles = codec.read_field_values(original, style_keys), codec.read_field_values(payload, style_keys)
+            for style, key in zip(styles, style_keys):
+                if old_styles[key] != style['source'] or new_styles[key] != style['value']:
+                    raise ValueError(f'Unity style edit {key}: values differ from the manifest')
+            new_values = {**new_values, **new_styles}
         codec.prove_text_only(original, payload, new_values)
     except codec.UnityTextError as error:
         raise ValueError(f'Unity text proof failed: {error}') from error

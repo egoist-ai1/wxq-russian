@@ -59,7 +59,7 @@ from localization import lang_waivers  # noqa: E402
 import pilot_contract  # noqa: E402
 import wxq_install  # noqa: E402
 from game_inspect import QtsContainer  # noqa: E402
-from localization import core, fit_rules, latin_allow, markup_exceptions, pb_table_codec, protected_cjk, ru_cli, token_spacing, unity_text_codec  # noqa: E402
+from localization import core, fit_rules, latin_allow, markup_exceptions, pb_table_codec, protected_cjk, ru_cli, token_spacing, unity_fit, unity_text_codec  # noqa: E402
 from localization.global_map_codec import GlobalMapDocument, prove_text_only  # noqa: E402
 from scripts.game_lang_codec import LangDocument, validate_rewrite, validate_text  # noqa: E402
 
@@ -210,7 +210,12 @@ def row_issues(namespace: str, source: str, ru_text: str, slot: dict | None, gly
     # Переводы строк по краям исходника (`\n` в начале/конце) - часть вёрстки игры: strip() их не должен съедать.
     lead_lf = min(len(source) - len(source.lstrip('\n')), len(ru_text) - len(ru_text.lstrip('\n')))
     tail_lf = min(len(source) - len(source.rstrip('\n')), len(ru_text) - len(ru_text.rstrip('\n')))
-    ru_game = lead + '\n' * lead_lf + ru_game + '\n' * tail_lf + tail
+    # то же для \r и \r\n: если край перевода записан теми же переводами строк, что и край исходника, сохраняем их как есть
+    source_lead, source_tail = source[:len(source) - len(source.lstrip('\r\n'))], source[len(source.rstrip('\r\n')):]
+    ru_lead, ru_tail = ru_text[:len(ru_text) - len(ru_text.lstrip('\r\n'))], ru_text[len(ru_text.rstrip('\r\n')):]
+    lead_br = source_lead if source_lead == ru_lead and '\r' in source_lead else '\n' * lead_lf
+    tail_br = source_tail if source_tail == ru_tail and '\r' in source_tail else '\n' * tail_lf
+    ru_game = lead + lead_br + ru_game + tail_br + tail
     proofs = semantic_proofs()
     proven = is_proven(source, ru_text, ru_game)
     issues = list(core.target_issues(source, ru_game, proofs if proven else set(), (), formatter={}, engine_latin=latin))
@@ -411,7 +416,7 @@ def _text_resource(package: str, ident: str, kind: str, original: bytes, data_fi
 
 
 def prepare_text(game: Path, package: str, edits: list[dict], catalog: dict, *, glyphs: frozenset | None = None,
-                 latin: frozenset = latin_allow.BUILTIN) -> tuple[list[dict], list[dict], dict]:
+                 latin: frozenset = latin_allow.BUILTIN, fit_styles: bool = False) -> tuple[list[dict], list[dict], dict]:
     """Ресурсы kind=pb-table-text (пакет 1) и kind=unity-text (пакет 19) из файла правок; исключённые строки и статистика."""
     mine = [row for row in edits if row['pkg'] == package]
     resources, excluded, stats = [], [], collections.Counter()
@@ -488,12 +493,18 @@ def prepare_text(game: Path, package: str, edits: list[dict], catalog: dict, *, 
             chosen_u = {k: t for k, t in chosen_u.items() if t != fields[k]}
             if not chosen_u:
                 continue
-            payload = unity_text_codec.replace(original, chosen_u)
-            unity_text_codec.prove_text_only(original, payload, chosen_u)
+            styles = unity_fit.plan_styles(original, chosen_u, fields) if fit_styles else {}
+            payload = unity_text_codec.replace(original, {**chosen_u, **styles})
+            unity_text_codec.prove_text_only(original, payload, {**chosen_u, **styles})
             declaration = {'package': package, 'id_hex': ident, 'original_sha256': bp.sha_bytes(original), 'sha256': bp.sha_bytes(payload),
                            'edits': [{'path_id': pid, 'field': path, 'source_sha256': core.digest(fields[(pid, path)]), 'sha256': core.digest(t)}
                                      for (pid, path), t in sorted(chosen_u.items())],
                            'translations': [{'path_id': pid, 'field': path, 'cn': fields[(pid, path)], 'ru': t} for (pid, path), t in sorted(chosen_u.items())]}
+            if styles:
+                before = unity_text_codec.read_field_values(original, styles)
+                declaration['styles'] = [{'path_id': pid, 'field': path, 'source': before[(pid, path)], 'value': value}
+                                         for (pid, path), value in sorted(styles.items())]
+                stats['fit_labels'] += sum(1 for _, path in styles if path.endswith('m_BestFit'))
             resources.append(_text_resource(package, ident, 'unity-text', original, data_file, payload, declaration))
         stats['text_edits'] += resources[-1]['rows_changed']
     stats['text_resources'] = len(resources)
@@ -750,6 +761,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument('--package', default=PACKAGE, help='Пакет кандидата: один кандидат на пакет (1, 4, 19...)')
     parser.add_argument('--carrier', type=Path, default=None, help='Строки .lang/Global (только пакет 1; по умолчанию DEFAULT_CARRIER для пакета 1)')
     parser.add_argument('--text-edits', type=Path, default=None, help='Файл правок таблиц и Unity-текста (формат - в шапке скрипта)')
+    parser.add_argument('--fit-styles', action='store_true', help='Для Unity-надписей, которые по геометрии не влезут по-русски, включить автоподбор размера (m_BestFit, localization/unity_fit.py)')
     parser.add_argument('--catalog', type=Path, default=DEFAULT_CATALOG, help='Каталог колонок: правка допускается при status=include')
     parser.add_argument('--import-textures', type=Path, default=None, metavar='DIR',
                         help='Взять rgba32/bc7-текстуры пакета из готового кандидата build/pilot-... (SHA сверяются)')
@@ -801,7 +813,7 @@ def main(argv: list[str] | None = None) -> int:
         else:
             resources, excluded, stats = [], [], {'resources': 0, 'rows_changed': 0, 'excluded': 0}
         stats = collections.Counter(stats)
-        text_resources, text_excluded, text_stats = prepare_text(game, package, text_edits, load_catalog(args.catalog), glyphs=glyphs, latin=latin)
+        text_resources, text_excluded, text_stats = prepare_text(game, package, text_edits, load_catalog(args.catalog), glyphs=glyphs, latin=latin, fit_styles=args.fit_styles)
         clash = sorted({r['id_hex'] for r in resources} & {r['id_hex'] for r in text_resources})
         if clash:
             raise CarrierError(f'Ресурс меняется и строками carrier, и текстовой правкой: {", ".join(clash)}')
